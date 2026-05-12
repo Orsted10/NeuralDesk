@@ -143,8 +143,19 @@
             <!-- Email Tab -->
             <div class="tab-content active" id="tab-emails">
                 <div class="tab-title-row">
-                    <h3>Email Priority Dashboard</h3>
-                    <button class="btn-refresh" onclick="loadEmails()" title="Refresh">&#x21BB;</button>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <h3>Email Priority Dashboard</h3>
+                        <span id="email-source-badge" class="panel-badge" style="background: var(--bg-glass); color: var(--text-muted); display: none;">Sample Data</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-refresh" id="btn-gmail-connect" onclick="connectGmail()" title="Connect Gmail" style="display: none; width: auto; padding: 0 0.75rem; font-size: 0.75rem; color: #ea4335;">
+                            &#x1F4E7; Connect Gmail
+                        </button>
+                        <button class="btn-refresh" id="btn-gmail-disconnect" onclick="disconnectGmail()" title="Disconnect Gmail" style="display: none; width: auto; padding: 0 0.75rem; font-size: 0.75rem;">
+                            Disconnect
+                        </button>
+                        <button class="btn-refresh" onclick="loadEmails()" title="Refresh">&#x21BB;</button>
+                    </div>
                 </div>
                 <div class="email-list" id="email-list">
                     <div class="loading-state">

@@ -216,9 +216,55 @@ async function loadEmails() {
     try {
         const res = await fetch('/api/emails');
         const data = await res.json();
+        
+        // Update UI based on source
+        const badge = document.getElementById('email-source-badge');
+        const btnConnect = document.getElementById('btn-gmail-connect');
+        const btnDisconnect = document.getElementById('btn-gmail-disconnect');
+        
+        if (badge) {
+            badge.style.display = 'inline-block';
+            if (data.source === 'gmail') {
+                badge.textContent = 'Live Gmail';
+                badge.style.background = 'rgba(234, 67, 53, 0.15)';
+                badge.style.color = '#ea4335';
+                if (btnConnect) btnConnect.style.display = 'none';
+                if (btnDisconnect) btnDisconnect.style.display = 'inline-block';
+            } else {
+                badge.textContent = 'Sample Data';
+                badge.style.background = 'var(--bg-glass)';
+                badge.style.color = 'var(--text-muted)';
+                if (btnDisconnect) btnDisconnect.style.display = 'none';
+                if (btnConnect) btnConnect.style.display = data.auth_available ? 'inline-block' : 'none';
+            }
+        }
+        
         renderEmails(data.emails || []);
     } catch (err) {
         list.innerHTML = '<div class="empty-state"><p>Could not load emails</p></div>';
+    }
+}
+
+async function connectGmail() {
+    try {
+        const res = await fetch('/api/gmail/connect');
+        const data = await res.json();
+        if (data.auth_url) {
+            window.location.href = data.auth_url;
+        } else {
+            alert('Cannot connect: ' + (data.error || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Failed to connect to Gmail');
+    }
+}
+
+async function disconnectGmail() {
+    try {
+        await fetch('/api/gmail/disconnect', { method: 'POST' });
+        loadEmails(); // Reload to show sample data
+    } catch (e) {
+        console.error(e);
     }
 }
 

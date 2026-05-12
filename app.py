@@ -9,12 +9,15 @@ memory management, and model performance visualization.
 import json
 import os
 import time
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from engine.gmail_integration import GmailClient
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)  # For session storage (OAuth state)
 
-# Global agent instance
+# Global instances
 agent = None
+gmail_client = GmailClient()
 
 
 def get_agent():
@@ -61,13 +64,63 @@ def process_command():
 
 @app.route("/api/emails", methods=["GET"])
 def get_emails():
-    """Get emails scored by the priority model."""
+    """Get emails. If Gmail is connected, fetch real emails; otherwise fallback to sample data."""
     try:
         a = get_agent()
+        
+        # Check for real Gmail integration
+        if gmail_client.is_connected():
+            raw_emails = gmail_client.fetch_emails(max_results=15)
+            # Score real emails
+            scored_emails = a.email_engine.score_batch(raw_emails)
+            return jsonify({"emails": scored_emails, "count": len(scored_emails), "source": "gmail"})
+            
+        # Fallback to sample data
         emails = a.get_scored_emails()
-        return jsonify({"emails": emails, "count": len(emails)})
+        return jsonify({"emails": emails, "count": len(emails), "source": "sample", "auth_available": gmail_client.has_credentials_file()})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ──────────────────────────────────────────────────
+# Gmail OAuth Routes
+# ──────────────────────────────────────────────────
+
+@app.route("/api/gmail/status", methods=["GET"])
+def gmail_status():
+    """Check Gmail connection status."""
+    return jsonify({
+        "connected": gmail_client.is_connected(),
+        "auth_available": gmail_client.has_credentials_file()
+    })
+
+@app.route("/api/gmail/connect", methods=["GET"])
+def gmail_connect():
+    """Start Gmail OAuth flow."""
+    redirect_uri = url_for('gmail_callback', _external=True)
+    auth_url = gmail_client.get_auth_url(redirect_uri)
+    
+    if auth_url:
+        return jsonify({"auth_url": auth_url})
+    return jsonify({"error": "Missing credentials file"}), 400
+
+@app.route("/api/gmail/callback")
+def gmail_callback():
+    """Handle Gmail OAuth callback."""
+    if "error" in request.args:
+        return "Authorization failed. Please try again."
+        
+    redirect_uri = url_for('gmail_callback', _external=True)
+    success = gmail_client.handle_callback(request.url, redirect_uri)
+    
+    if success:
+        return redirect(url_for('index'))
+    return "Failed to complete authorization.", 400
+
+@app.route("/api/gmail/disconnect", methods=["POST"])
+def gmail_disconnect():
+    """Disconnect Gmail."""
+    gmail_client.disconnect()
+    return jsonify({"status": "disconnected"})
 
 
 @app.route("/api/emails/score", methods=["POST"])
