@@ -1,9 +1,0 @@
-{
-  "name": "User",
-  "tone": "professional",
-  "email_priority_keywords": ["urgent", "deadline", "important", "asap"],
-  "frequent_contacts": ["Rohan", "Priya", "Professor", "Mom"],
-  "preferred_greeting": "Hey",
-  "learned_intents": {},
-  "feedback_log": []
-}

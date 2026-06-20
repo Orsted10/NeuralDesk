@@ -1,0 +1,348 @@
+Ankan, here's your **complete production-grade JARVIS blueprint** — 20+ phases, zero mock features, fully deployable on Vercel + Render + Supabase. Let's build your Me 2.0.
+
+***
+
+# 🧠 JARVIS – Me 2.0: Full Build Blueprint
+
+## The Stack
+
+| Layer | Tech | Why |
+|---|---|---|
+| Frontend | Next.js 14 (App Router) + TypeScript | SSR, API routes, Vercel deploy |
+| Styling | Tailwind CSS + Framer Motion + shadcn/ui | JARVIS-level UI |
+| Auth | Supabase Auth + Google OAuth | One-click login, free |
+| DB | Supabase PostgreSQL + Realtime | Free tier, realtime |
+| Backend APIs | Next.js API Routes + FastAPI on Render | Serverless + Python AI |
+| AI Brain | OpenAI GPT-4o / Gemini 1.5 Pro | Actual intelligence |
+| Email | Gmail API via Nodemailer / Resend | Real emails  [boonjf-dev.vercel](https://boonjf-dev.vercel.app/blogs/how-to-send-emails-in-nodejs) |
+| WhatsApp | Twilio API | Real messages  [twilio](https://www.twilio.com/docs/whatsapp/tutorial) |
+| Calendar | Google Calendar API via `googleapis` | Real scheduling  [stackoverflow](https://stackoverflow.com/questions/71647706/how-to-use-google-calendar-api-for-javascript-with-npm-install-or-is-it-possib) |
+| Voice | Web Speech API (browser-native) | Free, no library |
+| Deployment | Vercel (frontend) + Render (FastAPI) | Free tiers |
+
+***
+
+## Windsurf AI Prompts Strategy
+
+Before each phase, open Windsurf and use this **master prompt prefix**:
+```
+You are helping me build JARVIS — a production-grade personal AI assistant web app. 
+Stack: Next.js 14 App Router, TypeScript, Tailwind CSS, Supabase, shadcn/ui, Framer Motion.
+Write complete, production-ready code. No placeholders, no TODOs.
+```
+Then append the phase-specific prompt below.
+
+***
+
+# Phase 1 — Project Scaffold
+
+**Tool:** Terminal (inside Antigravity or your machine)
+
+```bash
+npx create-next-app@latest jarvis-me2 --typescript --tailwind --eslint --app --src-dir
+cd jarvis-me2
+npx shadcn@latest init
+npx shadcn@latest add button card input dialog toast badge
+npm install @supabase/supabase-js @supabase/ssr framer-motion lucide-react
+npm install nodemailer @types/nodemailer resend twilio googleapis
+npm install openai zustand date-fns react-hot-toast
+```
+
+**Folder structure to create manually:**
+```
+src/
+├── app/
+│   ├── (auth)/login/page.tsx
+│   ├── dashboard/page.tsx
+│   ├── api/
+│   │   ├── ai/route.ts
+│   │   ├── send-email/route.ts
+│   │   ├── whatsapp/route.ts
+│   │   ├── calendar/route.ts
+│   │   └── weather/route.ts
+├── components/
+│   ├── jarvis/
+│   │   ├── HUD.tsx
+│   │   ├── VoiceOrb.tsx
+│   │   ├── ChatPanel.tsx
+│   │   └── CommandBar.tsx
+├── lib/
+│   ├── supabase/client.ts
+│   ├── supabase/server.ts
+│   ├── mailer.ts
+│   ├── twilio.ts
+│   └── ai.ts
+└── store/
+    └── jarvis.ts
+```
+
+***
+
+# Phase 2 — Supabase + Google OAuth Setup
+
+**Windsurf Prompt:**
+> "Set up Supabase Auth with Google OAuth in Next.js 14 App Router. Create `lib/supabase/client.ts` and `lib/supabase/server.ts` using `@supabase/ssr`. Add middleware.ts that protects `/dashboard` and redirects unauthenticated users to `/login`. Use environment variables."
+
+**Manual Steps:**
+1. Go to [supabase.com](https://supabase.com) → New Project
+2. Dashboard → Auth → Providers → Enable **Google**
+3. Go to [console.cloud.google.com](https://console.cloud.google.com) → Create Project → Enable **Google OAuth 2.0** → Copy Client ID + Secret into Supabase
+4. Create `.env.local`:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+**Supabase SQL to run:**
+```sql
+create table public.users (
+  id uuid references auth.users primary key,
+  email text, full_name text, avatar_url text,
+  created_at timestamp default now()
+);
+alter table users enable row level security;
+create policy "Users see own data" on users for all using (auth.uid() = id);
+```
+
+***
+
+# Phase 3 — Login Page (JARVIS UI)
+
+**Windsurf Prompt:**
+> "Create a login page at `app/(auth)/login/page.tsx` that looks like JARVIS from Iron Man. Dark background (#0a0a0f), glowing blue/cyan HUD elements, animated circular ring using Framer Motion, a 'JARVIS SYSTEM ONLINE' text with typewriter animation, and a 'Sign in with Google' button that calls Supabase `signInWithOAuth`. The button should glow cyan on hover. Add scanline CSS effect."
+
+This page should feel like Tony Stark's lab — dark, glowing rings, animated status text. [commudle](https://www.commudle.com/builds/jarvis-ai-next-gen-smart-assistant)
+
+***
+
+# Phase 4 — Dashboard HUD Layout
+
+**Windsurf Prompt:**
+> "Create the main dashboard at `app/dashboard/page.tsx` as a JARVIS HUD. Dark `#050510` background. Left sidebar with module icons (Email, WhatsApp, Calendar, Weather, Tasks, AI Chat, Voice). Center: large animated chat/voice interface with glowing circular VoiceOrb component using Framer Motion. Right panel: live status cards (time, weather, upcoming events). Add an animated particle background. All text in cyan/blue palette. Use CSS grid layout."
+
+***
+
+# Phase 5 — AI Chat Brain (OpenAI / Gemini)
+
+**Windsurf Prompt:**
+> "Create `app/api/ai/route.ts` as a Next.js POST route that accepts `{ message, history }`, sends it to OpenAI GPT-4o with a system prompt that says JARVIS is Ankan's personal AI, knows his schedule, and responds like JARVIS from Iron Man (formal, witty, uses 'Sir'). Stream the response using `ReadableStream`. Then create `components/jarvis/ChatPanel.tsx` that displays messages with typing animation, user vs JARVIS bubbles, and renders markdown."
+
+Get your free OpenAI key or use Gemini 1.5 Pro (free tier via Google AI Studio).
+
+***
+
+# Phase 6 — Voice Input + TTS Output
+
+**Windsurf Prompt:**
+> "Add voice control to ChatPanel. Use the browser's `window.SpeechRecognition` API to listen for voice input. When the user speaks, transcribe it and send to the AI API. When the AI responds, use `window.speechSynthesis` with a deep male voice (voice index 0 or 'Google UK English Male') to read the response aloud. Add a `VoiceOrb` component that pulses with Framer Motion when listening. No external library needed."
+
+***
+
+# Phase 7 — Real Email Sending (Gmail SMTP)
+
+**Windsurf Prompt:**
+> "Create `lib/mailer.ts` using nodemailer with Gmail SMTP. Read `SMTP_USER` and `SMTP_PASS` (Gmail app password) from env. Export a `sendMail(to, subject, html)` function. Then create `app/api/send-email/route.ts` as a POST route. Then build `components/jarvis/EmailModule.tsx` — a glass-morphism panel where user types `To`, `Subject`, `Body` and can say 'Send email to [name] saying [message]' to auto-fill via AI. Show a success toast after sending."
+
+**Manual Steps:**
+1. Gmail → Settings → Security → Enable 2FA → App Passwords
+2. Generate app password for "Mail"
+3. Add to `.env.local`: `SMTP_USER=you@gmail.com` `SMTP_PASS=xxxx xxxx xxxx xxxx`
+
+This sends REAL emails from your Gmail account. [boonjf-dev.vercel](https://boonjf-dev.vercel.app/blogs/how-to-send-emails-in-nodejs)
+
+***
+
+# Phase 8 — WhatsApp Integration (Twilio)
+
+**Windsurf Prompt:**
+> "Create `lib/twilio.ts` using the `twilio` npm package. Read `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` from env. Export `sendWhatsApp(to, message)`. Create `app/api/whatsapp/route.ts`. Build `components/jarvis/WhatsAppModule.tsx` with contact list saved in Supabase, quick message templates, and voice command support like 'WhatsApp Mom that I'll be late'."
+
+**Setup:** Sign up at [twilio.com](https://twilio.com), get free $15 trial credit, activate WhatsApp Sandbox. [youtube](https://www.youtube.com/watch?v=18ccWsMaQQI)
+
+***
+
+# Phase 9 — Google Calendar Integration
+
+**Windsurf Prompt:**
+> "Create `app/api/calendar/route.ts` using the `googleapis` npm package. Use the OAuth2 access token from Supabase session (user logged in via Google) to call the Google Calendar API v3. Support GET (list today's events) and POST (create event with title, date, time, description). Create `components/jarvis/CalendarModule.tsx` showing a timeline view of today's schedule with glowing event cards."
+
+This uses the user's actual Google Calendar — real events, real creation. [stackoverflow](https://stackoverflow.com/questions/71647706/how-to-use-google-calendar-api-for-javascript-with-npm-install-or-is-it-possib)
+
+***
+
+# Phase 10 — Weather Module (Real-Time)
+
+**Windsurf Prompt:**
+> "Create `app/api/weather/route.ts` that calls OpenWeatherMap API (free tier, no key cost for 1000 calls/day) with `OPENWEATHER_API_KEY` env var. Return current weather + 5-day forecast. Create `components/jarvis/WeatherHUD.tsx` showing temperature, condition, humidity, wind speed as animated JARVIS-style gauges using SVG arcs and Framer Motion. Auto-detect city from user profile stored in Supabase."
+
+***
+
+# Phase 11 — Task Manager + Supabase Realtime
+
+**Windsurf Prompt:**
+> "Create a `tasks` table in Supabase with columns: id, user_id, title, description, priority (low/medium/high/critical), status (pending/in-progress/done), due_date, created_at. Enable RLS. Create `app/api/tasks/route.ts` for CRUD. Build `components/jarvis/TasksModule.tsx` that uses Supabase Realtime to subscribe to task changes — tasks update live without refresh. Style as a mission briefing panel with red/yellow/green priority indicators."
+
+***
+
+# Phase 12 — AI Command Interpreter
+
+**Windsurf Prompt:**
+> "Create `lib/commandParser.ts` that takes a natural language string and uses OpenAI function calling (tools API) to classify the intent as one of: `send_email`, `send_whatsapp`, `create_event`, `add_task`, `get_weather`, `play_music`, `chat`. Extract parameters (recipient, message, date, etc). Return a structured JSON action. Call this from both the voice input handler and the text chat input. Route to the correct module automatically."
+
+This is the core "JARVIS brain" — say anything, it figures out what to do.
+
+***
+
+# Phase 13 — Spotify / YouTube Music Control
+
+**Windsurf Prompt:**
+> "Create a music module. For Spotify: use Spotify Web API with OAuth (user connects their Spotify). Support play/pause/next/previous/search via `app/api/spotify/route.ts`. If no Spotify, fall back to embedding a YouTube search using YouTube Data API v3. Create `components/jarvis/MusicModule.tsx` as a floating mini-player with waveform animation."
+
+Spotify Web API is free for personal use. [app.readytensor](https://app.readytensor.ai/publications/jarvis-ai-PrsBAzlcJ63h)
+
+***
+
+# Phase 14 — News Briefing (AI-Summarized)
+
+**Windsurf Prompt:**
+> "Create `app/api/news/route.ts` that fetches top 10 headlines from NewsAPI (free tier). Pass headlines to GPT-4o and ask it to give a JARVIS-style morning briefing summary in 5 bullet points. Create `components/jarvis/NewsBriefing.tsx` as a scrolling ticker + expandable panel. Add a 'Good morning, Sir' auto-briefing that triggers on first login of the day, stored in Supabase."
+
+***
+
+# Phase 15 — Notes with AI (Smart Notes)
+
+**Windsurf Prompt:**
+> "Create a `notes` table in Supabase. Build `components/jarvis/NotesModule.tsx` with a rich text editor using `@uiw/react-md-editor`. Add AI enhancement: button 'Improve with JARVIS' sends note content to GPT-4o for grammar/clarity improvement. Add 'Summarize' and 'Action Items' extraction. Voice-to-note: speak and it transcribes + saves automatically."
+
+***
+
+# Phase 16 — Contact Book + AI Relationship Memory
+
+**Windsurf Prompt:**
+> "Create a `contacts` table in Supabase with name, phone, email, whatsapp, relationship, notes fields. Build a contacts UI. Add an AI memory feature: when chatting with JARVIS and mentioning a person ('Tell Mom I'll be home by 8'), it auto-looks up 'Mom' in contacts and pre-fills the WhatsApp/email form. Store contact 'last interacted' timestamp."
+
+***
+
+# Phase 17 — System Status HUD (Your Digital Life Dashboard)
+
+**Windsurf Prompt:**
+> "Create a top HUD bar component `components/jarvis/StatusBar.tsx` that shows: current time (animated digital clock), weather temp, unread emails count (Gmail API), today's event count, pending tasks count, battery-style 'focus level' indicator, current music playing. All in one line, JARVIS style with cyan separators and pulse animations. Update every 30 seconds."
+
+***
+
+# Phase 18 — Notifications + Reminders
+
+**Windsurf Prompt:**
+> "Use Supabase Edge Functions (or a cron on Render) to check tasks due within 1 hour. Send a browser push notification using the Web Push API. Store notification preferences in Supabase. Also build an in-app notification center (bell icon) with real-time updates using Supabase Realtime. Style as a JARVIS alert panel with red pulse for critical items."
+
+***
+
+# Phase 19 — Mobile Responsive + PWA
+
+**Windsurf Prompt:**
+> "Make the entire JARVIS app a Progressive Web App. Add `manifest.json` with JARVIS icon, name 'JARVIS – Me 2.0', theme color `#0d1117`. Add a service worker for offline caching of the dashboard shell. Ensure all modules are responsive for mobile (≤768px) — collapse sidebar to bottom navigation, stack panels vertically. The app should be installable on Android/iPhone."
+
+***
+
+# Phase 20 — Deployment to Vercel
+
+**Steps:**
+1. Push to GitHub: `git init && git add . && git commit -m "JARVIS v1" && git push`
+2. Go to [vercel.com](https://vercel.com) → Import repo
+3. Add all env variables from `.env.local` in Vercel dashboard
+4. Set `NEXTAUTH_URL` = your Vercel URL
+5. In Supabase → Auth → URL Config → add your Vercel URL to **Redirect URLs**
+6. In Google Cloud Console → OAuth → add Vercel URL to **Authorized redirect URIs**
+
+Your teacher can now open the Vercel URL, click "Sign in with Google", and everything works instantly. [github](https://github.com/supabase-community/ai-writer)
+
+***
+
+# Phase 21 — Python FastAPI Backend on Render (Optional Heavy AI)
+
+If you need heavier AI (image gen, ASL detection from your other projects):
+
+```bash
+mkdir jarvis-backend && cd jarvis-backend
+python -m venv venv && source venv/bin/activate
+pip install fastapi uvicorn openai requests pillow
+```
+
+**Windsurf Prompt for FastAPI:**
+> "Create a FastAPI app in `main.py` with routes: POST `/analyze-image` (takes base64 image, returns GPT-4o Vision description), POST `/transcribe` (takes audio blob, returns Whisper transcription), GET `/health`. Add CORS for Vercel domain. Create `requirements.txt` and `render.yaml` for Render deployment."
+
+Deploy free on [render.com](https://render.com) → New Web Service → connect GitHub.
+
+***
+
+# Phase 22 — Final Polish (YouTube-Level UI)
+
+**Windsurf Prompt:**
+> "Polish the entire JARVIS UI. Add: (1) animated hexagonal grid background using CSS clip-path, (2) blue/cyan glowing borders on all cards using `box-shadow`, (3) smooth page transitions with Framer Motion `AnimatePresence`, (4) JARVIS boot sequence animation on first load (systems initializing, progress bars), (5) custom cursor that changes to a targeting reticle on hover, (6) glass-morphism panels with `backdrop-filter: blur(12px)`, (7) Orbitron or Rajdhani font for all headings."
+
+***
+
+## Environment Variables Master List
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+# AI
+OPENAI_API_KEY=
+
+# Email
+SMTP_USER=your@gmail.com
+SMTP_PASS=xxxx xxxx xxxx xxxx   # Gmail App Password
+
+# WhatsApp
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+
+# Calendar/Google
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Weather
+OPENWEATHER_API_KEY=
+
+# News
+NEWS_API_KEY=
+
+# Spotify (optional)
+SPOTIFY_CLIENT_ID=
+SPOTIFY_CLIENT_SECRET=
+```
+
+***
+
+## Free Tier Limits (All You Need)
+
+| Service | Free Limit |
+|---|---|
+| Vercel | Unlimited hobby deploys |
+| Supabase | 500MB DB, 2GB bandwidth |
+| Render | 750 hrs/month |
+| OpenAI | Pay-as-you-go (~$0.002/msg) |
+| Twilio WhatsApp | $15 free credit  [twilio](https://www.twilio.com/en-us/whatsapp/pricing) |
+| OpenWeatherMap | 1,000 calls/day |
+| NewsAPI | 100 req/day (free) |
+| Gmail SMTP | 500 emails/day |
+
+***
+
+## Antigravity Workflow
+
+Use **Antigravity** as your AI coding terminal. For each phase:
+1. Open Antigravity → paste the Windsurf Prompt
+2. Review generated code → drop into correct file
+3. Run `npm run dev` to test locally
+4. Commit and push → Vercel auto-deploys
+
+This gives you a teacher-demo-ready, Google-login-protected, fully real JARVIS that actually sends emails, WhatsApps, reads your calendar, and controls your digital life — deployed at a single Vercel URL anyone can open. [twilio](https://www.twilio.com/docs/whatsapp/tutorial)
