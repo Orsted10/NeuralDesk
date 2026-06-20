@@ -132,7 +132,6 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
                     mode="single"
                     selected={viewDate}
                     onSelect={(day) => day && setViewDate(day)}
-                    initialFocus
                     className="bg-black/90 text-cyan-300 rounded-md shadow-[0_0_15px_rgba(0,242,255,0.2)]"
                   />
                 </PopoverContent>
@@ -205,7 +204,6 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
                       mode="single"
                       selected={eventDate}
                       onSelect={(day) => day && setEventDate(day)}
-                      initialFocus
                       className="bg-black/90 text-cyan-300 rounded-md shadow-[0_0_15px_rgba(0,242,255,0.2)]"
                     />
                   </PopoverContent>
