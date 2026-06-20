@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "JARVIS – NeuralDesk OS",
   description: "Advanced Personal AI Assistant Interface",
+  verification: {
+    google: "iAFq7UHZVR1PPfzY-Nf4X7MS7derRebKr__J6HjAZAw",
+  },
 };
 
 export default function RootLayout({
