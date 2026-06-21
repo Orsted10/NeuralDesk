@@ -191,6 +191,21 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     }
   }, [messages])
 
+  // Clean raw action tags from messages so the user never sees them in the UI
+  const formatMessageDisplay = (content: string) => {
+    let text = content
+    const tags = ['schedule_event', 'delete_calendar_event', 'show_map', 'create_doc', 'play_video', 'send_email']
+    tags.forEach(tag => {
+      // Remove fully formed tags
+      const fullTagRegex = new RegExp(`<${tag}>.*?</${tag}>`, 'gis')
+      text = text.replace(fullTagRegex, '')
+      // Remove partial tags during streaming
+      const partialTagRegex = new RegExp(`<${tag}>[\\s\\S]*$`, 'gi')
+      text = text.replace(partialTagRegex, '')
+    })
+    return text.trim()
+  }
+
   function speak(text: string) {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel() // Stop any ongoing speech
@@ -625,7 +640,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
                   {msg.role === 'user' ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
                   <span className="text-[10px] uppercase tracking-widest">{msg.role === 'user' ? 'Ankan' : 'JARVIS'}</span>
                 </div>
-                <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                <p className="leading-relaxed whitespace-pre-wrap">{formatMessageDisplay(msg.content)}</p>
               </div>
             </motion.div>
           ))}
