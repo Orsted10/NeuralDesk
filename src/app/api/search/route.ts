@@ -37,26 +37,58 @@ export async function GET(req: Request) {
     const auth = new google.auth.OAuth2()
     auth.setCredentials({ access_token: session.provider_token })
 
-    // If GOOGLE_SEARCH_ENGINE_ID (cx) is missing, we must fail gracefully
-    const cx = process.env.GOOGLE_SEARCH_ENGINE_ID
-    if (!cx) {
-      return NextResponse.json({
-        error: 'GOOGLE_SEARCH_ENGINE_ID is missing in .env.local',
-        mockResults: true,
-        items: [
-          { title: 'Mock Result 1', link: 'https://example.com', snippet: 'Since CX is missing, this is a mock search result.' }
-        ]
-      })
-    }
+    // Since Google deprecated "Search the entire web" for new CX engines, 
+    // we are going Beast Mode and using a server-side DuckDuckGo HTML scraper.
+    // Zero API keys required.
 
-    const customsearch = google.customsearch('v1')
-    const res = await customsearch.cse.list({
-      q: query,
-      cx: cx,
-      auth: auth
+    const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`
+    
+    const ddgRes = await fetch(ddgUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
     })
 
-    return NextResponse.json({ items: res.data.items || [] })
+    if (!ddgRes.ok) {
+      throw new Error(`DuckDuckGo returned ${ddgRes.status}`)
+    }
+
+    const html = await ddgRes.text()
+    
+    // Quick and dirty regex parsing to extract titles, links, and snippets
+    const results = []
+    const resultBlockRegex = /<a class="result__url" href="([^"]+)".*?<h2 class="result__title">.*?<a[^>]*>(.*?)<\/a>.*?<a class="result__snippet[^>]*>(.*?)<\/a>/gs
+    
+    let match
+    let count = 0
+    while ((match = resultBlockRegex.exec(html)) !== null && count < 5) {
+      // Clean up HTML tags from the extracted text
+      const url = match[1]
+      const title = match[2].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')
+      const snippet = match[3].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')
+      
+      results.push({
+        title: title.trim(),
+        link: url,
+        snippet: snippet.trim()
+      })
+      count++
+    }
+
+    if (results.length === 0) {
+      // Fallback regex if DuckDuckGo changes their DOM slightly
+      const fallbackRegex = /<a class="result__snippet[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gs
+      let fbMatch
+      while ((fbMatch = fallbackRegex.exec(html)) !== null && results.length < 5) {
+        results.push({
+          title: "Search Result",
+          link: fbMatch[1],
+          snippet: fbMatch[2].replace(/<[^>]+>/g, '').trim()
+        })
+      }
+    }
+
+    return NextResponse.json({ items: results })
   } catch (error: any) {
     console.error('Search API error:', error)
     return NextResponse.json({ error: error.message || 'Failed to execute search' }, { status: 500 })
