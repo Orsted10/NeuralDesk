@@ -689,7 +689,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           </div>
         )}
         <AnimatePresence>
-          {messages.map((msg, i) => (
+          {messages.map((msg, i) => {
+            if (msg.content.trim().startsWith('<system>')) return null;
+            return (
             <motion.div
               key={i}
               initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20 }}
@@ -708,7 +710,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
                 <p className="leading-relaxed whitespace-pre-wrap">{formatMessageDisplay(msg.content)}</p>
               </div>
             </motion.div>
-          ))}
+          )})}
         </AnimatePresence>
         {isLoading && messages[messages.length-1]?.role === 'user' && (
           <div className="flex justify-start">
