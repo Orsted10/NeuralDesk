@@ -194,7 +194,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   // Clean raw action tags from messages so the user never sees them in the UI
   const formatMessageDisplay = (content: string) => {
     let text = content
-    const tags = ['schedule_event', 'delete_calendar_event', 'show_map', 'create_doc', 'create_sheet', 'create_slide', 'play_video', 'send_email', 'read_emails', 'get_directions', 'web_search']
+    const tags = ['schedule_event', 'delete_calendar_event', 'show_map', 'create_doc', 'create_sheet', 'create_slide', 'play_video', 'send_email', 'read_emails', 'get_directions', 'web_search', 'system']
     tags.forEach(tag => {
       // Remove fully formed tags
       const fullTagRegex = new RegExp(`<${tag}>.*?</${tag}>`, 'gis')
@@ -371,11 +371,11 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         fetch(`/api/search?q=${encodeURIComponent(query)}`)
           .then(res => res.json())
           .then(data => {
-            const results = data.items?.slice(0, 3).map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n') || 'No results found.'
-            setMessages(prev => [
-              ...prev,
-              { role: 'assistant', content: `[WEB SEARCH RESULTS FOR "${query}"]\n${results}` }
-            ])
+            const results = data.items?.slice(0, 4).map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n') || 'No results found.'
+            const injection = `<system>Web Search Results for "${query}":\n${results}</system>\nAnalyze these search results and answer my previous question.`
+            
+            // Automatically trigger the next turn so JARVIS can analyze the results!
+            handleSend(injection)
           })
           .catch(err => console.error(err))
       }
