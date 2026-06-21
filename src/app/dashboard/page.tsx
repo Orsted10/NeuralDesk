@@ -15,8 +15,11 @@ import {
   Cpu,
   Compass,
   HardDrive,
-  Tv
+  Tv,
+  LogOut
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import VoiceOrb from '@/components/jarvis/VoiceOrb'
 import ChatPanel from '@/components/jarvis/ChatPanel'
 import EmailModule from '@/components/jarvis/EmailModule'
@@ -39,6 +42,13 @@ export default function DashboardPage() {
     { id: 'mock-sync', time: '14:00', title: 'Project Sync' },
     { id: 'mock-gym', time: '16:30', title: 'Gym Session' },
   ])
+  const router = useRouter()
+  const supabase = createClient()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   const loadCalendarEvents = async () => {
     try {
@@ -207,7 +217,18 @@ export default function DashboardPage() {
               </span>
             </motion.button>
           ))}
-          <div className="mt-auto">
+          <div className="mt-auto flex flex-col gap-4">
+            <motion.button
+              whileHover={{ scale: 1.1, color: '#ef4444' }}
+              whileTap={{ scale: 0.9 }}
+              onClick={handleLogout}
+              className="p-3 text-cyan-500/20 hover:text-red-500 transition-colors relative group"
+            >
+              <LogOut className="w-6 h-6" />
+              <span className="absolute left-14 bg-red-900/80 text-red-100 px-2 py-1 rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-red-500/30">
+                System Disconnect
+              </span>
+            </motion.button>
             <Settings className="w-6 h-6 text-cyan-500/20 hover:text-cyan-400 cursor-pointer" />
           </div>
         </aside>
