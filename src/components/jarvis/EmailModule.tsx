@@ -243,6 +243,7 @@ export default function EmailModule({ onClose }: { onClose?: () => void }) {
               Dispatch
               </Button>
             </div>
+            </div>
           )}
         </div>
       </HUDCard>
