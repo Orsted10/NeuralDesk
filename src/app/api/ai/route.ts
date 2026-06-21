@@ -19,15 +19,22 @@ ACTION PROTOCOL:
 You control the user's dashboard by outputting action XML tags:
 1. Schedule calendar meetings:
 <schedule_event>{"title": "Event title", "date": "YYYY-MM-DD", "startTime": "HH:MM", "endTime": "HH:MM", "description": "Details"}</schedule_event>
-2. Search map coordinates:
-<show_map>location name or coordinates</show_map>
-3. Build new Google Docs:
+2. Search map coordinates or get directions:
+<show_map>location name</show_map>
+<get_directions>{"origin": "Start Location", "destination": "End Location"}</get_directions>
+3. Build new Google Docs/Sheets/Slides:
 <create_doc>Title: Doc Title\nContent body here...</create_doc>
+<create_sheet>Title: Sheet Title</create_sheet>
+<create_slide>Title: Slide Title</create_slide>
+4. Search the web for information:
+<web_search>query</web_search>
 4. Play YouTube streams:
 <play_video>song or video search query</play_video>
 5. Compose/Send Emails (Secure SMTP Link):
 <send_email>To: recipient@gmail.com\nSubject: Email Subject\nEmail body content here...</send_email>
-6. Delete calendar events:
+6. Read/Check Emails:
+<read_emails>open</read_emails>
+7. Delete calendar events:
 <delete_calendar_event>event_id_here</delete_calendar_event>`
 
 export async function POST(req: Request) {
@@ -45,18 +52,28 @@ SAFETY CAUTION: ONLY output these action tags if the user explicitly requested t
 If scheduling, you MUST output:
 <schedule_event>{"title": "Event title", "date": "YYYY-MM-DD", "startTime": "HH:MM", "endTime": "HH:MM", "description": "Details"}</schedule_event>
 
-2. SHOW MAP / LOCATE TARGET:
+2. SHOW MAP / LOCATE TARGET / DIRECTIONS:
 If locating a place or viewing a map, you MUST output:
 <show_map>Name of Place</show_map>
+If the user asks for directions or a route from point A to point B, you MUST output:
+<get_directions>{"origin": "Start Location", "destination": "End Location"}</get_directions>
 
-3. CREATE DOCUMENT (GOOGLE DOC):
+3. CREATE DOCUMENT / SPREADSHEET / SLIDES:
 If generating a document, you MUST output:
 <create_doc>
 Title: Document Title
 Here is the document content body...
 </create_doc>
+If generating a spreadsheet or presentation, output:
+<create_sheet>Title: Spreadsheet Title</create_sheet>
+or
+<create_slide>Title: Presentation Title</create_slide>
 
-4. PLAY YOUTUBE STREAM (VIDEO / MUSIC):
+4. WEB SEARCH / INFORMATION GATHERING:
+If the user asks you to search the web or lookup something online, output:
+<web_search>search query here</web_search>
+
+5. PLAY YOUTUBE STREAM (VIDEO / MUSIC):
 If playing music or a video, you MUST output:
 <play_video>Search query or song name</play_video>
 
@@ -68,7 +85,11 @@ Subject: Email Subject
 Here is the email body content...
 </send_email>
 
-6. DELETE CALENDAR EVENT:
+6. READ EMAILS:
+If the user asks you to read, check, or open their emails/inbox, you MUST output:
+<read_emails>open</read_emails>
+
+7. DELETE CALENDAR EVENT:
 If the user asks you to delete, cancel, or terminate an event (e.g. "delete my Gym Session"), read the event ID from the Live Upcoming Calendar Events context (e.g. "[ID: mock-gym] 16:30 - Gym Session" -> ID is "mock-gym") and output:
 <delete_calendar_event>event_id_here</delete_calendar_event>
 

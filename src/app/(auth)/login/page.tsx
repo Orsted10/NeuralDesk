@@ -25,7 +25,7 @@ export default function LoginPage() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        scopes: 'https://mail.google.com/ https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/docs https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/presentations https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/games',
+        scopes: 'https://mail.google.com/ https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/games',
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     })

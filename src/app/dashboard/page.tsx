@@ -79,21 +79,18 @@ export default function DashboardPage() {
     // Track Time
     const timer = setInterval(() => setTime(new Date()), 1000)
     
-    // Fetch Real System Stats from our local API
-    const statsTimer = setInterval(async () => {
+    // System Telemetry fetch
+    const fetchTelemetry = async () => {
       try {
-        const res = await fetch('/api/system')
+        const res = await fetch('/api/gcp-telemetry')
         const data = await res.json()
         if (data.cpu !== undefined) {
-          setStats({
-            cpu: data.cpu,
-            ram: data.ram
-          })
+          setStats({ cpu: data.cpu, ram: data.ram })
         }
-      } catch (e) {
-        console.error("System stats fetch failed", e)
-      }
-    }, 3000)
+      } catch (e) {}
+    }
+    fetchTelemetry()
+    const statsTimer = setInterval(fetchTelemetry, 10000)
 
     // Track Location & Fetch REAL Weather
     if ("geolocation" in navigator) {
@@ -124,6 +121,18 @@ export default function DashboardPage() {
     // Load active calendar events
     loadCalendarEvents()
 
+    // Load unread emails for context
+    const loadUnreadEmails = async () => {
+      try {
+        const res = await fetch('/api/gmail')
+        const data = await res.json()
+        if (data.emails) {
+          (window as any).unreadEmailsContext = data.emails.map((e: any) => `[From: ${e.from}] ${e.subject}`).join(' | ')
+        }
+      } catch (e) {}
+    }
+    loadUnreadEmails()
+
     // Auto HUD Module switches when JARVIS triggers actions
     const handleMapSwitch = () => setActiveModule('maps')
     const handleDriveSwitch = () => setActiveModule('drive')
@@ -135,6 +144,7 @@ export default function DashboardPage() {
     window.addEventListener('create-doc', handleDriveSwitch)
     window.addEventListener('play-video', handleYoutubeSwitch)
     window.addEventListener('send-email', handleEmailSwitch)
+    window.addEventListener('read-emails', handleEmailSwitch)
     window.addEventListener('calendar-updated', handleCalendarUpdate)
 
     return () => {
@@ -144,6 +154,7 @@ export default function DashboardPage() {
       window.removeEventListener('create-doc', handleDriveSwitch)
       window.removeEventListener('play-video', handleYoutubeSwitch)
       window.removeEventListener('send-email', handleEmailSwitch)
+      window.removeEventListener('read-emails', handleEmailSwitch)
       window.removeEventListener('calendar-updated', handleCalendarUpdate)
     }
   }, [])
@@ -259,7 +270,7 @@ export default function DashboardPage() {
               <div className="mt-8 w-full flex justify-center">
                 <ChatPanel 
                   onVoiceStateChange={setVoiceState} 
-                  context={`User: Ankan. Current Date & Time: ${time.toString()}. Live Location: (LAT: ${location.lat}, LONG: ${location.long}). Status: ${location.city}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Live Upcoming Calendar Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ')}.`}
+                  context={`User: Ankan. Current Date & Time: ${time.toString()}. Live Location: (LAT: ${location.lat}, LONG: ${location.long}). Status: ${location.city}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Live Upcoming Calendar Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ')}. Unread Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
                 />
               </div>
 

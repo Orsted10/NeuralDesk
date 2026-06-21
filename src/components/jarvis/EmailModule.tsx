@@ -14,6 +14,30 @@ export default function EmailModule({ onClose }: { onClose?: () => void }) {
   const [body, setBody] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isDrafting, setIsDrafting] = useState(false)
+  const [view, setView] = useState<'compose' | 'inbox'>('compose')
+  const [emails, setEmails] = useState<any[]>([])
+  const [isLoadingEmails, setIsLoadingEmails] = useState(false)
+
+  const loadInbox = async () => {
+    setIsLoadingEmails(true)
+    try {
+      const res = await fetch('/api/gmail')
+      const data = await res.json()
+      if (data.emails) {
+        setEmails(data.emails)
+      }
+    } catch (e) {
+      toast.error('Failed to access secure inbox.')
+    } finally {
+      setIsLoadingEmails(false)
+    }
+  }
+
+  useEffect(() => {
+    if (view === 'inbox') {
+      loadInbox()
+    }
+  }, [view])
 
   const sendEmailDirectly = async (targetTo: string, targetSubject: string, targetBody: string) => {
     setIsSending(true)
@@ -121,8 +145,21 @@ export default function EmailModule({ onClose }: { onClose?: () => void }) {
     >
       <HUDCard title="Email Dispatch System">
         <div className="space-y-4 p-2">
-          <div className="flex justify-between items-center mb-2">
-             <span className="text-[10px] text-cyan-500/40 uppercase tracking-widest">Secure SMTP Link Active</span>
+           <div className="flex justify-between items-center mb-2 border-b border-cyan-500/20 pb-2">
+             <div className="flex gap-4">
+               <button 
+                 onClick={() => setView('compose')} 
+                 className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded transition-colors ${view === 'compose' ? 'bg-cyan-500/20 text-cyan-300' : 'text-cyan-500/40 hover:text-cyan-400'}`}
+               >
+                 Compose
+               </button>
+               <button 
+                 onClick={() => setView('inbox')} 
+                 className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded transition-colors ${view === 'inbox' ? 'bg-cyan-500/20 text-cyan-300' : 'text-cyan-500/40 hover:text-cyan-400'}`}
+               >
+                 Inbox (Unread)
+               </button>
+             </div>
              {onClose && (
                <button onClick={onClose} className="text-cyan-500/40 hover:text-cyan-400">
                  <X className="w-4 h-4" />
@@ -130,7 +167,32 @@ export default function EmailModule({ onClose }: { onClose?: () => void }) {
              )}
           </div>
 
-          <div className="space-y-2">
+          {view === 'inbox' ? (
+            <div className="space-y-4 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-cyan-500/20 pr-2">
+              {isLoadingEmails ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-cyan-500/50" />
+                </div>
+              ) : emails.length === 0 ? (
+                <div className="text-center text-xs uppercase tracking-widest text-cyan-500/40 py-8">
+                  Inbox is clear, Sir.
+                </div>
+              ) : (
+                emails.map((email) => (
+                  <div key={email.id} className="bg-black/40 border border-cyan-500/20 p-3 rounded-md hover:border-cyan-500/50 transition-colors">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-[10px] text-cyan-500/60 uppercase truncate max-w-[200px]">{email.from}</span>
+                      <span className="text-[9px] text-cyan-500/40">{email.date.substring(0, 16)}</span>
+                    </div>
+                    <div className="text-xs text-cyan-300 font-bold mb-1 truncate">{email.subject}</div>
+                    <div className="text-[10px] text-cyan-500/50 line-clamp-2">{email.snippet}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
             <label className="text-[10px] uppercase text-cyan-500/60">Recipient</label>
             <Input 
               value={to}
@@ -179,8 +241,9 @@ export default function EmailModule({ onClose }: { onClose?: () => void }) {
             >
               {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               Dispatch
-            </Button>
-          </div>
+              </Button>
+            </div>
+          )}
         </div>
       </HUDCard>
     </motion.div>

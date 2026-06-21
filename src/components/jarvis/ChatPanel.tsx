@@ -194,7 +194,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   // Clean raw action tags from messages so the user never sees them in the UI
   const formatMessageDisplay = (content: string) => {
     let text = content
-    const tags = ['schedule_event', 'delete_calendar_event', 'show_map', 'create_doc', 'play_video', 'send_email']
+    const tags = ['schedule_event', 'delete_calendar_event', 'show_map', 'create_doc', 'create_sheet', 'create_slide', 'play_video', 'send_email', 'read_emails', 'get_directions', 'web_search']
     tags.forEach(tag => {
       // Remove fully formed tags
       const fullTagRegex = new RegExp(`<${tag}>.*?</${tag}>`, 'gis')
@@ -312,8 +312,12 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         const actionMatch = assistantMessage.match(/<schedule_event>\s*(.*?)\s*<\/schedule_event>/is)
         const mapMatch = assistantMessage.match(/<show_map>\s*(.*?)\s*<\/show_map>/is)
         const docMatch = assistantMessage.match(/<create_doc>\s*(.*?)\s*<\/create_doc>/is)
+        const sheetMatch = assistantMessage.match(/<create_sheet>\s*(.*?)\s*<\/create_sheet>/is)
+        const slideMatch = assistantMessage.match(/<create_slide>\s*(.*?)\s*<\/create_slide>/is)
         const youtubeMatch = assistantMessage.match(/<play_video>\s*(.*?)\s*<\/play_video>/is)
         const emailMatch = assistantMessage.match(/<send_email>\s*(.*?)\s*<\/send_email>/is)
+        const readEmailsMatch = assistantMessage.match(/<read_emails>.*?<\/read_emails>/is)
+        const searchMatch = assistantMessage.match(/<web_search>\s*(.*?)\s*<\/web_search>/is)
 
         if (actionMatch) {
           displayMessage = displayMessage.replace(actionMatch[0], '[EXECUTING PROTOCOL: CALENDAR...]')
@@ -321,14 +325,20 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         if (mapMatch) {
           displayMessage = displayMessage.replace(mapMatch[0], '[EXECUTING PROTOCOL: MAPS...]')
         }
-        if (docMatch) {
-          displayMessage = displayMessage.replace(docMatch[0], '[EXECUTING PROTOCOL: DRIVE...]')
+        if (docMatch || sheetMatch || slideMatch) {
+          displayMessage = displayMessage.replace(docMatch?.[0] || sheetMatch?.[0] || slideMatch?.[0] || '', '[EXECUTING PROTOCOL: DRIVE...]')
         }
         if (youtubeMatch) {
           displayMessage = displayMessage.replace(youtubeMatch[0], '[EXECUTING PROTOCOL: YOUTUBE...]')
         }
         if (emailMatch) {
           displayMessage = displayMessage.replace(emailMatch[0], '[EXECUTING PROTOCOL: EMAIL...]')
+        }
+        if (readEmailsMatch) {
+          displayMessage = displayMessage.replace(readEmailsMatch[0], '[EXECUTING PROTOCOL: INBOX...]')
+        }
+        if (searchMatch) {
+          displayMessage = displayMessage.replace(searchMatch[0], '[EXECUTING PROTOCOL: WEB SEARCH...]')
         }
 
         setMessages((prev) => {
@@ -342,10 +352,54 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       const finalDeleteCalendar = assistantMessage.match(/<delete_calendar_event>\s*(.*?)\s*<\/delete_calendar_event>/is)
       const finalMap = assistantMessage.match(/<show_map>\s*(.*?)\s*<\/show_map>/is)
       const finalDoc = assistantMessage.match(/<create_doc>\s*(.*?)\s*<\/create_doc>/is)
+      const finalSheet = assistantMessage.match(/<create_sheet>\s*(.*?)\s*<\/create_sheet>/is)
+      const finalSlide = assistantMessage.match(/<create_slide>\s*(.*?)\s*<\/create_slide>/is)
       const finalYoutube = assistantMessage.match(/<play_video>\s*(.*?)\s*<\/play_video>/is)
       const finalEmail = assistantMessage.match(/<send_email>\s*(.*?)\s*<\/send_email>/is)
+      const finalReadEmails = assistantMessage.match(/<read_emails>.*?<\/read_emails>/is)
+      const finalDirections = assistantMessage.match(/<get_directions>\s*(.*?)\s*<\/get_directions>/is)
+      const finalSearch = assistantMessage.match(/<web_search>\s*(.*?)\s*<\/web_search>/is)
 
       let cleanMessage = assistantMessage
+
+      if (finalSearch) {
+        cleanMessage = cleanMessage.replace(finalSearch[0], '').trim()
+        const query = finalSearch[1].trim()
+        toast.success(`Protocol Complete: Searching the web for "${query}".`, { icon: '🔍' })
+        
+        // Fetch web search results
+        fetch(`/api/search?q=${encodeURIComponent(query)}`)
+          .then(res => res.json())
+          .then(data => {
+            const results = data.items?.slice(0, 3).map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n') || 'No results found.'
+            setMessages(prev => [
+              ...prev,
+              { role: 'assistant', content: `[WEB SEARCH RESULTS FOR "${query}"]\n${results}` }
+            ])
+          })
+          .catch(err => console.error(err))
+      }
+
+      if (finalDirections) {
+        cleanMessage = cleanMessage.replace(finalDirections[0], '').trim()
+        try {
+          const payload = JSON.parse(finalDirections[1].trim())
+          if (payload.origin && payload.destination) {
+            toast.success('Protocol Complete: Calculating navigation route.', { icon: '🛣️' })
+            window.dispatchEvent(new CustomEvent('get-directions', { detail: payload }))
+          }
+        } catch (e) {
+          console.error("Failed to parse get_directions payload", e)
+        }
+      }
+
+      if (finalReadEmails) {
+        cleanMessage = cleanMessage.replace(finalReadEmails[0], '').trim()
+        try {
+          toast.success('Protocol Complete: Accessing Inbox.', { icon: '📬' })
+          window.dispatchEvent(new CustomEvent('read-emails'))
+        } catch (e) {}
+      }
 
       if (finalMatch) {
         cleanMessage = cleanMessage.replace(finalMatch[0], '').trim()
@@ -425,30 +479,36 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         }
       }
 
-      if (finalDoc) {
-        cleanMessage = cleanMessage.replace(finalDoc[0], '').trim()
-        try {
-          const content = finalDoc[1].trim()
-          let title = 'New Document'
-          let docBody = content
-          if (content.startsWith('{') || content.startsWith('[')) {
-            try {
-              const payload = JSON.parse(content)
-              title = payload.title || 'New Document'
-              docBody = payload.content || content
-            } catch (e) {}
-          } else {
-            const titleMatch = content.match(/title:\s*(.*?)\n/i)
-            if (titleMatch) {
-              title = titleMatch[1].trim()
-              docBody = content.replace(titleMatch[0], '').trim()
+      if (finalDoc || finalSheet || finalSlide) {
+        const match = finalDoc || finalSheet || finalSlide
+        const type = finalSheet ? 'sheet' : finalSlide ? 'slide' : 'doc'
+        if (match) {
+          cleanMessage = cleanMessage.replace(match[0], '').trim()
+          try {
+            const content = match[1].trim()
+            let title = 'New File'
+            let docBody = content
+            if (content.startsWith('{') || content.startsWith('[')) {
+              try {
+                const payload = JSON.parse(content)
+                title = payload.title || 'New File'
+                docBody = payload.content || content
+              } catch (e) {}
+            } else {
+              const titleMatch = content.match(/title:\s*(.*?)\n/i)
+              if (titleMatch) {
+                title = titleMatch[1].trim()
+                docBody = content.replace(titleMatch[0], '').trim()
+              } else {
+                title = content.replace('Title: ', '').trim()
+              }
             }
+            ;(window as any).pendingDocData = { title, content: docBody, type }
+            toast.success(`Protocol Complete: Constructing ${type} node.`, { icon: '📝' })
+            window.dispatchEvent(new CustomEvent('create-doc', { detail: { title, content: docBody, type } }))
+          } catch (e) {
+            console.error("Failed to parse AI doc payload", e)
           }
-          ;(window as any).pendingDocData = { title, content: docBody }
-          toast.success('Protocol Complete: Constructing Doc node.', { icon: '📝' })
-          window.dispatchEvent(new CustomEvent('create-doc', { detail: { title, content: docBody } }))
-        } catch (e) {
-          console.error("Failed to parse AI doc payload", e)
         }
       }
 

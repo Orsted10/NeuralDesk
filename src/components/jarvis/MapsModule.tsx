@@ -9,6 +9,7 @@ export default function MapsModule() {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<google.maps.Map | null>(null)
   const markerRef = useRef<google.maps.Marker | null>(null)
+  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null)
   
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(false)
@@ -141,10 +142,17 @@ export default function MapsModule() {
       }
     })
 
+    const directionsRenderer = new google.maps.DirectionsRenderer({
+      map: map,
+      suppressMarkers: false,
+      polylineOptions: { strokeColor: '#00f2ff', strokeWeight: 4 }
+    })
+
     setMapInstance(map)
     setMarker(initialMarker)
     mapInstanceRef.current = map
     markerRef.current = initialMarker
+    directionsRendererRef.current = directionsRenderer
   }
 
   const handleLocateMe = () => {
@@ -231,6 +239,34 @@ export default function MapsModule() {
     }
   }
 
+  const handleDirections = async (origin: string, destination: string) => {
+    if (!window.google || !window.google.maps) {
+      toast.error('Google Maps SDK not yet loaded, Sir.')
+      return
+    }
+
+    const directionsService = new google.maps.DirectionsService()
+    setLoading(true)
+
+    try {
+      const response = await directionsService.route({
+        origin: origin,
+        destination: destination,
+        travelMode: google.maps.TravelMode.DRIVING
+      })
+
+      if (directionsRendererRef.current) {
+        directionsRendererRef.current.setDirections(response)
+        toast.success(`Route calculated: ${response.routes[0].legs[0].distance?.text}`, { icon: '🛣️' })
+      }
+    } catch (e: any) {
+      console.error(e)
+      toast.error('Failed to calculate route.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Keep handleSearch in a ref so we can safely register single mount event listener without stale closures
   const handleSearchRef = useRef(handleSearch)
   useEffect(() => {
@@ -259,8 +295,18 @@ export default function MapsModule() {
         handleSearchRef.current(query)
       }
     }
+    const handleGetDirections = (e: CustomEvent) => {
+      const { origin, destination } = e.detail || {}
+      if (origin && destination) {
+        handleDirections(origin, destination)
+      }
+    }
     window.addEventListener('show-map' as any, handleShowMap)
-    return () => window.removeEventListener('show-map' as any, handleShowMap)
+    window.addEventListener('get-directions' as any, handleGetDirections)
+    return () => {
+      window.removeEventListener('show-map' as any, handleShowMap)
+      window.removeEventListener('get-directions' as any, handleGetDirections)
+    }
   }, [])
 
   return (

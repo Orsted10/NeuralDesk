@@ -44,7 +44,7 @@ export default function DriveModule() {
     fetchFiles()
   }, [])
 
-  const handleCreateDoc = async (forcedTitle?: string, forcedContent?: string) => {
+  const handleCreateDoc = async (forcedTitle?: string, forcedContent?: string, type: 'doc' | 'sheet' | 'slide' = 'doc') => {
     const title = forcedTitle || docTitle
     const content = forcedContent || docContent
 
@@ -58,7 +58,7 @@ export default function DriveModule() {
       const res = await fetch('/api/drive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content })
+        body: JSON.stringify({ title, content, type })
       })
       const data = await res.json()
       if (data.success) {
@@ -81,19 +81,19 @@ export default function DriveModule() {
   useEffect(() => {
     // Intercept mount data to avoid module switching race condition
     if (typeof window !== 'undefined' && (window as any).pendingDocData) {
-      const { title, content } = (window as any).pendingDocData
+      const { title, content, type } = (window as any).pendingDocData
       ;(window as any).pendingDocData = undefined
       setDocTitle(title)
       setDocContent(content || '')
-      handleCreateDoc(title, content || '')
+      handleCreateDoc(title, content || '', type || 'doc')
     }
 
     const handleCreateEvent = (e: CustomEvent) => {
-      const { title, content } = e.detail || {}
+      const { title, content, type } = e.detail || {}
       if (title) {
         setDocTitle(title)
         setDocContent(content || '')
-        handleCreateDoc(title, content || '')
+        handleCreateDoc(title, content || '', type || 'doc')
       }
     }
     window.addEventListener('create-doc' as any, handleCreateEvent)

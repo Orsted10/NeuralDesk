@@ -44,7 +44,7 @@ export async function POST(req: Request) {
       }, { status: 401 })
     }
 
-    const { title, content } = await req.json()
+    const { title, content, type = 'doc' } = await req.json()
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -55,10 +55,16 @@ export async function POST(req: Request) {
 
     const drive = google.drive({ version: 'v3', auth })
 
+    const mimeTypes = {
+      doc: 'application/vnd.google-apps.document',
+      sheet: 'application/vnd.google-apps.spreadsheet',
+      slide: 'application/vnd.google-apps.presentation'
+    }
+
     // Create file metadata
     const fileMetadata = {
       name: title,
-      mimeType: 'application/vnd.google-apps.document'
+      mimeType: mimeTypes[type as keyof typeof mimeTypes] || mimeTypes.doc
     }
 
     // Media content (HTML/text)
