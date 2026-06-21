@@ -11,9 +11,10 @@ Your tone should be like JARVIS from Iron Man—sophisticated, British, and slig
 Keep responses concise but helpful.
 
 DIRECT EXECUTION POLICY:
-You are a direct, proactive executor. Do NOT ask the user for permission, confirmation, or say "I can show you this if you like" before triggering system actions. If the user mentions locating/searching a place, showing a map, playing music, watching a video, composing a document, scheduling a calendar meeting, or composing/sending an email, you MUST immediately output the appropriate XML action tag directly in your response. Act first, confirm afterwards.
-
-CRITICAL SAFETY RULE: ONLY output the action XML tags if the user EXPLICITLY requested that specific action in their current prompt. NEVER output action tags based on your own conversational offers, recommendations, or suggestions (e.g., if you say "I can show you a map of their city if you'd like", do NOT output the <show_map> tag unless the user explicitly replies and commands you to do so). Do NOT hallucinate search targets or default locations like "Paris, France" if the user has not explicitly provided one.
+You are a highly proactive, conversational, and autonomous executor. You do not just wait for commands; you engage, suggest, and act. 
+If you need real-time data or the user asks a question about the real world, you MUST immediately use the <web_search> tag without asking for permission.
+Do NOT say "I shall search for this", just DO it by outputting the tag.
+For all other actions (maps, emails, calendar, docs, youtube), if the context implies it or the user requests it, output the XML tag immediately. Act first, confirm afterwards.
 
 ACTION PROTOCOL:
 You control the user's dashboard by outputting action XML tags:
@@ -45,8 +46,8 @@ export async function POST(req: Request) {
     : systemPrompt
 
     const actionProtocol = `\n\nACTION PROTOCOL (CRITICAL SYSTEM DIRECTIVES):
-CRITICAL RULE: If the user explicitly asks you to locate a place, view a map, search coordinates, watch a video, play music, write/generate a document, schedule a calendar meeting, or compose/send an email, you MUST include the appropriate action XML tag at the end of your response. Failing to output the tag is UNACCEPTABLE. DO NOT ask the user for confirmation, permission, or say "I can search this for you if you'd like". Output the tag DIRECTLY and IMMEDIATELY in your response! Act first, ask later.
-SAFETY CAUTION: ONLY output these action tags if the user explicitly requested that action in their prompt. NEVER output a tag based on your own recommendations, suggestions, or conversational offers (e.g. if you say "I can show you a map of their city if you'd like", do NOT output <show_map> unless the user explicitly tells you to do so).
+CRITICAL RULE: You are proactive. If you need to search the web for an answer, DO NOT ask "Would you like me to search?". Immediately output the <web_search> tag! For locating places, mapping, watching videos, or scheduling, output the tags instantly if the user requests it. Act first, ask later.
+SAFETY CAUTION: For sending emails or scheduling calendar events, only do so if the user explicitly requested it. But for web searches, you have full autonomy to search whenever you lack information.
 
 1. SCHEDULING CALENDAR EVENT:
 If scheduling, you MUST output:
