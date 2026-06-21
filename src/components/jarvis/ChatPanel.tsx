@@ -371,8 +371,13 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         fetch(`/api/search?q=${encodeURIComponent(query)}`)
           .then(res => res.json())
           .then(data => {
-            const results = data.items?.slice(0, 4).map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n') || 'No results found.'
-            const injection = `<system>Web Search Results for "${query}":\n${results}</system>\nAnalyze these search results and answer my previous question.`
+            let injection = ''
+            if (!data.items || data.items.length === 0) {
+              injection = `<system>Web Search Results for "${query}":\nNo results found.</system>\nDo NOT attempt to search again. Tell me you couldn't find the answer.`
+            } else {
+              const results = data.items.slice(0, 4).map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n')
+              injection = `<system>Web Search Results for "${query}":\n${results}</system>\nAnalyze these search results and answer my previous question.`
+            }
             
             // Automatically trigger the next turn so JARVIS can analyze the results!
             handleSend(injection)

@@ -1,7 +1,4 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { google } from 'googleapis'
 
 export async function GET(req: Request) {
   try {
@@ -11,31 +8,6 @@ export async function GET(req: Request) {
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
-
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-        },
-      }
-    )
-
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session?.provider_token) {
-      return NextResponse.json({ 
-        error: 'Not authenticated with Google',
-        details: sessionError 
-      }, { status: 401 })
-    }
-
-    const auth = new google.auth.OAuth2()
-    auth.setCredentials({ access_token: session.provider_token })
 
     // Since Google deprecated "Search the entire web" for new CX engines, 
     // we are going Beast Mode and using a server-side DuckDuckGo HTML scraper.
