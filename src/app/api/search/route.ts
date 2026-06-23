@@ -12,7 +12,7 @@ export async function GET(req: Request) {
 
     const cx = process.env.GOOGLE_SEARCH_ENGINE_ID
     // Fallbacks: If you didn't define a dedicated search key, it will try the Maps key or Gemini key.
-    const apiKey = process.env.GOOGLE_SEARCH_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.GEMINI_API_KEY
+    const apiKey = process.env.GOOGLE_SEARCH_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || process.env.GEMINI_API_KEY
 
     if (!cx || !apiKey) {
       return NextResponse.json({ 
