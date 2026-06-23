@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { google } from 'googleapis'
 
 export async function GET(req: Request) {
   try {
@@ -9,56 +10,31 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
 
-    // Since Google deprecated "Search the entire web" for new CX engines, 
-    // we are going Beast Mode and using a server-side DuckDuckGo HTML scraper.
-    // Zero API keys required.
+    const cx = process.env.GOOGLE_SEARCH_ENGINE_ID
+    // You can use your Gemini API Key here if it has Custom Search API enabled in GCP,
+    // or a dedicated GOOGLE_SEARCH_API_KEY.
+    const apiKey = process.env.GOOGLE_SEARCH_API_KEY || process.env.GEMINI_API_KEY
 
-    const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`
+    if (!cx || !apiKey) {
+      return NextResponse.json({ 
+        error: 'Missing Google Search credentials. Please add GOOGLE_SEARCH_ENGINE_ID and GOOGLE_SEARCH_API_KEY to your .env.local file.' 
+      }, { status: 500 })
+    }
+
+    const customsearch = google.customsearch('v1')
     
-    const ddgRes = await fetch(ddgUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
+    const res = await customsearch.cse.list({
+      cx: cx,
+      q: query,
+      auth: apiKey,
+      num: 5, // Get top 5 results
     })
 
-    if (!ddgRes.ok) {
-      throw new Error(`DuckDuckGo returned ${ddgRes.status}`)
-    }
-
-    const html = await ddgRes.text()
-    
-    // Quick and dirty regex parsing to extract titles, links, and snippets
-    const results = []
-    const resultBlockRegex = /<a class="result__url" href="([^"]+)".*?<h2 class="result__title">.*?<a[^>]*>(.*?)<\/a>.*?<a class="result__snippet[^>]*>(.*?)<\/a>/gs
-    
-    let match
-    let count = 0
-    while ((match = resultBlockRegex.exec(html)) !== null && count < 5) {
-      // Clean up HTML tags from the extracted text
-      const url = match[1]
-      const title = match[2].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')
-      const snippet = match[3].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')
-      
-      results.push({
-        title: title.trim(),
-        link: url,
-        snippet: snippet.trim()
-      })
-      count++
-    }
-
-    if (results.length === 0) {
-      // Fallback regex if DuckDuckGo changes their DOM slightly
-      const fallbackRegex = /<a class="result__snippet[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gs
-      let fbMatch
-      while ((fbMatch = fallbackRegex.exec(html)) !== null && results.length < 5) {
-        results.push({
-          title: "Search Result",
-          link: fbMatch[1],
-          snippet: fbMatch[2].replace(/<[^>]+>/g, '').trim()
-        })
-      }
-    }
+    const results = res.data.items?.map(item => ({
+      title: item.title,
+      link: item.link,
+      snippet: item.snippet
+    })) || []
 
     return NextResponse.json({ items: results })
   } catch (error: any) {
