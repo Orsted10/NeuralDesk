@@ -35,7 +35,7 @@ export default function DashboardPage() {
   const [time, setTime] = useState(new Date())
   const [location, setLocation] = useState({ lat: '0.0000', long: '0.0000', city: 'Detecting...' })
   const [voiceState, setVoiceState] = useState({ isListening: false, isSpeaking: false })
-  const [stats, setStats] = useState({ cpu: 5, ram: 8, totalRam: 32, ramPercent: 25 })
+  const [stats, setStats] = useState({ cpu: 5, ram: 8, totalRam: 32, ramPercent: 25, cpuModel: 'Detecting CPU...' })
   const [weather, setWeather] = useState({ temp: '--', humidity: '--', wind: '--', status: 'Updating...' })
   const [activeModule, setActiveModule] = useState<string | null>(null)
   const [emailView, setEmailView] = useState<'compose' | 'inbox'>('compose')
@@ -100,7 +100,13 @@ export default function DashboardPage() {
         const res = await fetch('/api/gcp-telemetry')
         const data = await res.json()
         if (data.cpu !== undefined) {
-          setStats({ cpu: data.cpu, ram: data.ram, totalRam: data.totalRam, ramPercent: data.ramPercent })
+          setStats({ 
+            cpu: data.cpu, 
+            ram: data.ram, 
+            totalRam: data.totalRam, 
+            ramPercent: data.ramPercent,
+            cpuModel: data.cpuModel || 'Unknown CPU'
+          })
         }
       } catch (e) {}
     }
@@ -400,7 +406,7 @@ export default function DashboardPage() {
           <span>LAT: {location.lat} • LONG: {location.long}</span>
         </div>
         <div className="flex gap-6">
-          <span className="flex items-center gap-2"><Cpu className="w-4 h-4" /> i9-12900K</span>
+          <span className="flex items-center gap-2"><Cpu className="w-4 h-4" /> {stats.cpuModel}</span>
           <span>v2.0.0</span>
         </div>
       </footer>
