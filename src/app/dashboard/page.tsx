@@ -35,14 +35,11 @@ export default function DashboardPage() {
   const [time, setTime] = useState(new Date())
   const [location, setLocation] = useState({ lat: '0.0000', long: '0.0000', city: 'Detecting...' })
   const [voiceState, setVoiceState] = useState({ isListening: false, isSpeaking: false })
-  const [stats, setStats] = useState({ cpu: 5, ram: 8 })
+  const [stats, setStats] = useState({ cpu: 5, ram: 8, totalRam: 32, ramPercent: 25 })
   const [weather, setWeather] = useState({ temp: '--', humidity: '--', wind: '--', status: 'Updating...' })
   const [activeModule, setActiveModule] = useState<string | null>(null)
   const [emailView, setEmailView] = useState<'compose' | 'inbox'>('compose')
-  const [events, setEvents] = useState<any[]>([
-    { id: 'mock-sync', time: '14:00', title: 'Project Sync' },
-    { id: 'mock-gym', time: '16:30', title: 'Gym Session' },
-  ])
+  const [events, setEvents] = useState<any[]>([])
   const router = useRouter()
   const supabase = createClient()
 
@@ -61,10 +58,24 @@ export default function DashboardPage() {
       const data = await res.json()
       if (res.ok && data.events) {
         const mapped = data.events.map((ev: any) => {
-          const timeStr = ev.start?.dateTime 
-            ? new Date(ev.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) 
-            : 'All Day'
-          return { id: ev.id, time: timeStr, title: ev.summary || 'Event' }
+          const isAllDay = ev.start?.date !== undefined;
+          let timeStr = 'All Day';
+          let dateStr = '';
+          
+          if (isAllDay) {
+            const [y, m, d] = ev.start.date.split('-');
+            const dObj = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+            dateStr = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          } else if (ev.start?.dateTime) {
+            const dateObj = new Date(ev.start.dateTime);
+            timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          }
+
+          const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const displayTime = dateStr === today ? timeStr : `${dateStr} • ${timeStr}`;
+
+          return { id: ev.id, time: displayTime, title: ev.summary || 'Event' }
         })
         if (mapped.length > 0) {
           setEvents(mapped)
@@ -89,7 +100,7 @@ export default function DashboardPage() {
         const res = await fetch('/api/gcp-telemetry')
         const data = await res.json()
         if (data.cpu !== undefined) {
-          setStats({ cpu: data.cpu, ram: data.ram })
+          setStats({ cpu: data.cpu, ram: data.ram, totalRam: data.totalRam, ramPercent: data.ramPercent })
         }
       } catch (e) {}
     }
@@ -222,7 +233,7 @@ export default function DashboardPage() {
       <div className="flex-1 grid grid-cols-12 gap-6 relative z-10">
         
         {/* Left Sidebar */}
-        <aside className="col-span-1 flex flex-col gap-6 items-center py-8 glass-panel rounded-3xl">
+        <aside className="col-span-1 flex flex-col gap-6 items-center py-8 glass-panel rounded-3xl z-20">
           {navItems.map((item) => (
             <motion.button
               key={item.id}
@@ -328,11 +339,11 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-medium text-zinc-400">
                   <span>Memory Allocation</span>
-                  <span>{stats.ram} GB</span>
+                  <span>{stats.ram} GB / {stats.totalRam} GB</span>
                 </div>
                 <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                   <motion.div 
-                    animate={{ width: `${(stats.ram/32)*100}%` }} 
+                    animate={{ width: `${stats.ramPercent}%` }} 
                     className="h-full bg-indigo-400" 
                   />
                 </div>

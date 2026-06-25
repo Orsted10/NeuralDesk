@@ -7,7 +7,8 @@ export async function GET() {
     const freeMem = os.freemem()
     const usedMem = totalMem - freeMem
     const ramPercent = Math.round((usedMem / totalMem) * 100)
-    const ramGB = Math.round(usedMem / 1024 / 1024 / 1024)
+    const ramGB = parseFloat((usedMem / 1024 / 1024 / 1024).toFixed(1))
+    const totalRamGB = parseFloat((totalMem / 1024 / 1024 / 1024).toFixed(1))
     
     const cpus = os.cpus()
     
@@ -27,6 +28,7 @@ export async function GET() {
     return NextResponse.json({
       cpu: cpuPercent,
       ram: ramGB,
+      totalRam: totalRamGB,
       ramPercent: ramPercent,
       platform: os.platform(),
       uptime: os.uptime()
