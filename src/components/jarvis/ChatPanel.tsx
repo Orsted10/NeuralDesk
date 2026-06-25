@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, User, Bot, Loader2, Mic, MicOff, Volume2 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -233,10 +234,25 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     return text.trim()
   }
 
+  function stripMarkdownForSpeech(text: string) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      .replace(/_(.*?)_/g, '$1')
+      .replace(/#(.*?)\n/g, '$1\n')
+      .replace(/`{3}([\s\S]*?)`{3}/g, 'code block omitted')
+      .replace(/`(.*?)`/g, '$1')
+      .replace(/^-\s+/gm, '')
+      .replace(/^\d+\.\s+/gm, '')
+      .trim()
+  }
+
   function speak(text: string) {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel() // Stop any ongoing speech
-      const utterance = new SpeechSynthesisUtterance(text)
+      const cleanAudioText = stripMarkdownForSpeech(text)
+      const utterance = new SpeechSynthesisUtterance(cleanAudioText)
       
       // Grab all available system speech engines
       const voices = window.speechSynthesis.getVoices()
@@ -737,7 +753,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
                   {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
                   <span className="text-[11px] font-semibold tracking-wide">{msg.role === 'user' ? 'Ankan' : 'JARVIS'}</span>
                 </div>
-                <p className="leading-relaxed whitespace-pre-wrap font-medium">{formatMessageDisplay(msg.content)}</p>
+                <div className="leading-relaxed whitespace-pre-wrap font-medium prose prose-invert max-w-none prose-sm prose-p:leading-relaxed prose-pre:bg-black/20">
+                  <ReactMarkdown>{formatMessageDisplay(msg.content)}</ReactMarkdown>
+                </div>
               </div>
             </motion.div>
           )})}
