@@ -6,6 +6,7 @@ import { Send, User, Bot, Loader2, Mic, MicOff, Volume2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
+import { useEventNotifier } from './useEventNotifier'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -103,6 +104,13 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   useEffect(() => {
     isLoadingRef.current = isLoading
   }, [isLoading])
+
+  // Start the background event notifier hook
+  useEventNotifier((msg: string) => {
+    if (handleSendRef.current) {
+      handleSendRef.current(msg)
+    }
+  })
 
   // Initialize Speech Recognition
   useEffect(() => {
