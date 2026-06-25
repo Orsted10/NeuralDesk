@@ -42,25 +42,49 @@ export async function GET(req: Request) {
         const date = headers?.find(h => h.name === 'Date')?.value || ''
 
         // Helper to extract plain text body
-        const getBody = (payload: any): string => {
-          let body = ''
-          if (payload.parts) {
-            for (let part of payload.parts) {
-              if (part.mimeType === 'text/plain' && part.body && part.body.data) {
-                body = Buffer.from(part.body.data, 'base64').toString('utf8')
-                break
-              } else if (part.parts) {
-                body = getBody(part)
-                if (body) break
+        const getBodyText = (payload: any): string => {
+          let text = ''
+          let html = ''
+
+          const extract = (p: any) => {
+            if (p.mimeType === 'text/plain' && p.body?.data) {
+              text = Buffer.from(p.body.data, 'base64').toString('utf8')
+            } else if (p.mimeType === 'text/html' && p.body?.data) {
+              html = Buffer.from(p.body.data, 'base64').toString('utf8')
+            }
+            if (p.parts) {
+              for (const part of p.parts) {
+                extract(part)
               }
             }
-          } else if (payload.body && payload.body.data) {
-            body = Buffer.from(payload.body.data, 'base64').toString('utf8')
           }
-          return body
+
+          if (payload.parts) {
+            extract(payload)
+          } else if (payload.body?.data) {
+            if (payload.mimeType === 'text/plain') {
+              text = Buffer.from(payload.body.data, 'base64').toString('utf8')
+            } else if (payload.mimeType === 'text/html') {
+              html = Buffer.from(payload.body.data, 'base64').toString('utf8')
+            } else {
+              text = Buffer.from(payload.body.data, 'base64').toString('utf8')
+            }
+          }
+
+          if (text) return text
+          if (html) {
+            // Very basic HTML to text: remove <style> and <script>, then remove all tags, then decode basic entities
+            let clean = html.replace(/<(style|script)[^>]*>[\s\S]*?<\/\1>/gi, '')
+            clean = clean.replace(/<[^>]+>/g, ' ')
+            clean = clean.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+            // Collapse multiple spaces/newlines
+            clean = clean.replace(/\s+/g, ' ').trim()
+            return clean
+          }
+          return ''
         }
 
-        const bodyStr = getBody(msgDetail.data.payload)
+        const bodyStr = getBodyText(msgDetail.data.payload)
         
         return {
           id: msg.id,
