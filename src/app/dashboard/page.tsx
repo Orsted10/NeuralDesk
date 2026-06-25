@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ cpu: 5, ram: 8 })
   const [weather, setWeather] = useState({ temp: '--', humidity: '--', wind: '--', status: 'Updating...' })
   const [activeModule, setActiveModule] = useState<string | null>(null)
+  const [emailView, setEmailView] = useState<'compose' | 'inbox'>('compose')
   const [events, setEvents] = useState<any[]>([
     { id: 'mock-sync', time: '14:00', title: 'Project Sync' },
     { id: 'mock-gym', time: '16:30', title: 'Gym Session' },
@@ -140,14 +141,21 @@ export default function DashboardPage() {
     const handleMapSwitch = () => setActiveModule('maps')
     const handleDriveSwitch = () => setActiveModule('drive')
     const handleYoutubeSwitch = () => setActiveModule('youtube')
-    const handleEmailSwitch = () => setActiveModule('email')
+    const handleEmailCompose = () => {
+      setEmailView('compose')
+      setActiveModule('email')
+    }
+    const handleEmailInbox = () => {
+      setEmailView('inbox')
+      setActiveModule('email')
+    }
     const handleCalendarUpdate = () => loadCalendarEvents()
 
     window.addEventListener('show-map', handleMapSwitch)
     window.addEventListener('create-doc', handleDriveSwitch)
     window.addEventListener('play-video', handleYoutubeSwitch)
-    window.addEventListener('send-email', handleEmailSwitch)
-    window.addEventListener('read-emails', handleEmailSwitch)
+    window.addEventListener('send-email', handleEmailCompose)
+    window.addEventListener('read-emails', handleEmailInbox)
     window.addEventListener('calendar-updated', handleCalendarUpdate)
 
     return () => {
@@ -156,8 +164,8 @@ export default function DashboardPage() {
       window.removeEventListener('show-map', handleMapSwitch)
       window.removeEventListener('create-doc', handleDriveSwitch)
       window.removeEventListener('play-video', handleYoutubeSwitch)
-      window.removeEventListener('send-email', handleEmailSwitch)
-      window.removeEventListener('read-emails', handleEmailSwitch)
+      window.removeEventListener('send-email', handleEmailCompose)
+      window.removeEventListener('read-emails', handleEmailInbox)
       window.removeEventListener('calendar-updated', handleCalendarUpdate)
     }
   }, [])
@@ -255,7 +263,7 @@ export default function DashboardPage() {
           </div>
 
           {activeModule === 'email' ? (
-            <EmailModule onClose={() => setActiveModule(null)} />
+            <EmailModule onClose={() => setActiveModule(null)} initialView={emailView} />
           ) : activeModule === 'whatsapp' ? (
             <WhatsAppModule onClose={() => setActiveModule(null)} />
           ) : activeModule === 'calendar' ? (

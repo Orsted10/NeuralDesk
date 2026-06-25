@@ -8,13 +8,14 @@ import { Button } from '@/components/ui/button'
 import { HUDCard } from './HUD'
 import { toast } from 'sonner'
 
-export default function EmailModule({ onClose }: { onClose?: () => void }) {
+export default function EmailModule({ onClose, initialView = 'compose' }: { onClose?: () => void, initialView?: 'compose' | 'inbox' }) {
   const [to, setTo] = useState('')
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isDrafting, setIsDrafting] = useState(false)
-  const [view, setView] = useState<'compose' | 'inbox'>('compose')
+  const [view, setView] = useState<'compose' | 'inbox'>(initialView)
+  const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null)
   const [emails, setEmails] = useState<any[]>([])
   const [isLoadingEmails, setIsLoadingEmails] = useState(false)
 
@@ -179,13 +180,23 @@ export default function EmailModule({ onClose }: { onClose?: () => void }) {
                 </div>
               ) : (
                 emails.map((email) => (
-                  <div key={email.id} className="bg-black/40 border border-cyan-500/20 p-3 rounded-md hover:border-cyan-500/50 transition-colors">
+                  <div 
+                    key={email.id} 
+                    onClick={() => setExpandedEmailId(expandedEmailId === email.id ? null : email.id)}
+                    className="bg-black/40 border border-cyan-500/20 p-3 rounded-md hover:border-cyan-500/50 transition-colors cursor-pointer"
+                  >
                     <div className="flex justify-between items-start mb-1">
                       <span className="text-[10px] text-cyan-500/60 uppercase truncate max-w-[200px]">{email.from}</span>
                       <span className="text-[9px] text-cyan-500/40">{email.date.substring(0, 16)}</span>
                     </div>
                     <div className="text-xs text-cyan-300 font-bold mb-1 truncate">{email.subject}</div>
-                    <div className="text-[10px] text-cyan-500/50 line-clamp-2">{email.snippet}</div>
+                    {expandedEmailId === email.id ? (
+                      <div className="text-xs text-cyan-100 mt-2 whitespace-pre-wrap leading-relaxed border-t border-cyan-500/20 pt-2">
+                        {email.body || email.snippet}
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-cyan-500/50 line-clamp-2">{email.snippet}</div>
+                    )}
                   </div>
                 ))
               )}

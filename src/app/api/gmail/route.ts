@@ -33,18 +33,39 @@ export async function GET(req: Request) {
         const msgDetail = await gmail.users.messages.get({
           userId: 'me',
           id: msg.id,
-          format: 'metadata',
-          metadataHeaders: ['Subject', 'From', 'Date']
+          format: 'full'
         })
         
         const headers = msgDetail.data.payload?.headers
         const subject = headers?.find(h => h.name === 'Subject')?.value || 'No Subject'
         const from = headers?.find(h => h.name === 'From')?.value || 'Unknown Sender'
         const date = headers?.find(h => h.name === 'Date')?.value || ''
+
+        // Helper to extract plain text body
+        const getBody = (payload: any): string => {
+          let body = ''
+          if (payload.parts) {
+            for (let part of payload.parts) {
+              if (part.mimeType === 'text/plain' && part.body && part.body.data) {
+                body = Buffer.from(part.body.data, 'base64').toString('utf8')
+                break
+              } else if (part.parts) {
+                body = getBody(part)
+                if (body) break
+              }
+            }
+          } else if (payload.body && payload.body.data) {
+            body = Buffer.from(payload.body.data, 'base64').toString('utf8')
+          }
+          return body
+        }
+
+        const bodyStr = getBody(msgDetail.data.payload)
         
         return {
           id: msg.id,
           snippet: msgDetail.data.snippet,
+          body: bodyStr,
           subject,
           from,
           date
