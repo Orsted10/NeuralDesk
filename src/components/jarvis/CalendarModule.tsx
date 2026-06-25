@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar as CalendarIcon, Clock, X, Plus, RefreshCw } from 'lucide-react'
+import { Calendar as CalendarIcon, Clock, X, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { HUDCard } from './HUD'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -59,6 +59,23 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
       window.removeEventListener('calendar-updated', handleUpdate)
     }
   }, [viewDate])
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      const res = await fetch(`/api/calendar?eventId=${encodeURIComponent(eventId)}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        toast.success('Event manually terminated.', { icon: '🗑️' })
+        fetchEvents()
+        window.dispatchEvent(new Event('calendar-updated'))
+      } else {
+        toast.error('Failed to remove event.')
+      }
+    } catch (error) {
+      toast.error('Network error while deleting event')
+    }
+  }
 
   const handleCreateEvent = async () => {
     if (!title || !eventDate || !startTime || !endTime) {
@@ -172,10 +189,20 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
                       </div>
                     </div>
                     <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 mt-2 shadow-[0_0_12px_rgba(0,242,255,1)] z-10 relative"></div>
-                    <div className="flex-1 bg-cyan-500/10 border border-cyan-500/30 p-4 rounded-lg hover:bg-cyan-500/20 hover:shadow-[0_0_15px_rgba(0,242,255,0.15)] transition-all cursor-default">
-                      <div className="text-sm text-cyan-100 font-bold tracking-wide">{ev.summary}</div>
-                      {ev.description && (
-                        <div className="text-xs text-cyan-500/80 mt-2 leading-relaxed">{ev.description}</div>
+                    <div className="flex-1 bg-cyan-500/10 border border-cyan-500/30 p-4 rounded-lg hover:bg-cyan-500/20 hover:shadow-[0_0_15px_rgba(0,242,255,0.15)] transition-all flex justify-between items-start group">
+                      <div>
+                        <div className="text-sm text-cyan-100 font-bold tracking-wide">{ev.summary}</div>
+                        {ev.description && (
+                          <div className="text-xs text-cyan-500/80 mt-2 leading-relaxed">{ev.description}</div>
+                        )}
+                      </div>
+                      {ev.id && (
+                        <button 
+                          onClick={() => handleDeleteEvent(ev.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-cyan-500/40 hover:text-red-400 hover:bg-red-500/10 rounded-md"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
                   </div>

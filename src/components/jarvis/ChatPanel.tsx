@@ -124,6 +124,25 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         rec.interimResults = true // Enable real-time interim results
         rec.lang = 'en-US'
 
+        rec.onstart = () => {
+          try {
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+            const ctx = new AudioContext()
+            const osc = ctx.createOscillator()
+            const gain = ctx.createGain()
+            osc.connect(gain)
+            gain.connect(ctx.destination)
+            osc.type = 'sine'
+            osc.frequency.setValueAtTime(880, ctx.currentTime)
+            gain.gain.setValueAtTime(0.1, ctx.currentTime)
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
+            osc.start(ctx.currentTime)
+            osc.stop(ctx.currentTime + 0.1)
+          } catch (e) {
+            console.error("Failed to play mic beep", e)
+          }
+        }
+
         rec.onresult = (event: any) => {
           let interimTranscript = ''
           let finalTranscript = ''
@@ -357,7 +376,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
 
       // Final processing of actions
       const finalMatch = assistantMessage.match(/<schedule_event>\s*(.*?)\s*<\/schedule_event>/is)
-      const finalDeleteCalendar = assistantMessage.match(/<delete_calendar_event>\s*(.*?)\s*<\/delete_calendar_event>/is)
+      const finalDeleteMatches = [...assistantMessage.matchAll(/<delete_calendar_event>\s*(.*?)\s*<\/delete_calendar_event>/gis)]
       const finalMap = assistantMessage.match(/<show_map>\s*(.*?)\s*<\/show_map>/is)
       const finalDoc = assistantMessage.match(/<create_doc>\s*(.*?)\s*<\/create_doc>/is)
       const finalSheet = assistantMessage.match(/<create_sheet>\s*(.*?)\s*<\/create_sheet>/is)
@@ -444,33 +463,35 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         }
       }
 
-      if (finalDeleteCalendar) {
-        cleanMessage = cleanMessage.replace(finalDeleteCalendar[0], '').trim()
-        try {
-          let eventId = finalDeleteCalendar[1].trim()
-          
-          if (eventId.startsWith('{') || eventId.startsWith('[')) {
-            try {
-              const payload = JSON.parse(eventId)
-              eventId = payload.id || eventId
-            } catch (e) {}
-          } else {
-            eventId = eventId.replace(/['"]/g, '')
-          }
-
-          fetch(`/api/calendar?eventId=${encodeURIComponent(eventId)}`, {
-            method: 'DELETE'
-          }).then(res => {
-            if (res.ok) {
-              toast.success('Protocol Complete: Event terminated.', { icon: '🗑️' })
-              window.dispatchEvent(new Event('calendar-updated'))
+      if (finalDeleteMatches.length > 0) {
+        finalDeleteMatches.forEach(match => {
+          cleanMessage = cleanMessage.replace(match[0], '').trim()
+          try {
+            let eventId = match[1].trim()
+            
+            if (eventId.startsWith('{') || eventId.startsWith('[')) {
+              try {
+                const payload = JSON.parse(eventId)
+                eventId = payload.id || eventId
+              } catch (e) {}
             } else {
-              toast.error('Protocol Failed: Could not terminate event.')
+              eventId = eventId.replace(/['"]/g, '')
             }
-          })
-        } catch (e) {
-          console.error("Failed to parse delete calendar event payload", e)
-        }
+
+            fetch(`/api/calendar?eventId=${encodeURIComponent(eventId)}`, {
+              method: 'DELETE'
+            }).then(res => {
+              if (res.ok) {
+                toast.success('Protocol Complete: Event terminated.', { icon: '🗑️' })
+                window.dispatchEvent(new Event('calendar-updated'))
+              } else {
+                toast.error('Protocol Failed: Could not terminate event.')
+              }
+            })
+          } catch (e) {
+            console.error("Failed to parse delete calendar event payload", e)
+          }
+        })
       }
 
       if (finalMap) {
