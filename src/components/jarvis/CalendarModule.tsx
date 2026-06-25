@@ -29,8 +29,11 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
   const fetchEvents = async () => {
     setIsLoading(true)
     try {
-      const formattedViewDate = format(viewDate, 'yyyy-MM-dd')
-      const res = await fetch(`/api/calendar?date=${formattedViewDate}`)
+      const start = new Date(viewDate)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(viewDate)
+      end.setHours(23, 59, 59, 999)
+      const res = await fetch(`/api/calendar?timeMin=${encodeURIComponent(start.toISOString())}&timeMax=${encodeURIComponent(end.toISOString())}`)
       const data = await res.json()
       if (res.ok) {
         setEvents(data.events || [])

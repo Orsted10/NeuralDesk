@@ -20,20 +20,30 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const dateParam = searchParams.get('date')
+    const timeMinParam = searchParams.get('timeMin')
+    const timeMaxParam = searchParams.get('timeMax')
     
-    // Get events for the requested date (or today)
-    const targetDate = dateParam ? new Date(dateParam) : new Date()
-    
-    const startOfDay = new Date(targetDate)
-    startOfDay.setHours(0, 0, 0, 0)
-    
-    const endOfDay = new Date(targetDate)
-    endOfDay.setHours(23, 59, 59, 999)
+    let timeMinStr, timeMaxStr;
+
+    if (timeMinParam && timeMaxParam) {
+      timeMinStr = timeMinParam;
+      timeMaxStr = timeMaxParam;
+    } else {
+      // Fallback for older calls
+      const targetDate = dateParam ? new Date(dateParam) : new Date()
+      const startOfDay = new Date(targetDate)
+      startOfDay.setHours(0, 0, 0, 0)
+      const endOfDay = new Date(targetDate)
+      endOfDay.setHours(23, 59, 59, 999)
+      
+      timeMinStr = startOfDay.toISOString()
+      timeMaxStr = endOfDay.toISOString()
+    }
 
     const response = await calendar.events.list({
       calendarId: 'primary',
-      timeMin: startOfDay.toISOString(),
-      timeMax: endOfDay.toISOString(),
+      timeMin: timeMinStr,
+      timeMax: timeMaxStr,
       maxResults: 10,
       singleEvents: true,
       orderBy: 'startTime',

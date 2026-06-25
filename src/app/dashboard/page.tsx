@@ -52,8 +52,11 @@ export default function DashboardPage() {
 
   const loadCalendarEvents = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0]
-      const res = await fetch(`/api/calendar?date=${today}`)
+      const start = new Date()
+      start.setHours(0, 0, 0, 0)
+      const end = new Date()
+      end.setHours(23, 59, 59, 999)
+      const res = await fetch(`/api/calendar?timeMin=${encodeURIComponent(start.toISOString())}&timeMax=${encodeURIComponent(end.toISOString())}`)
       const data = await res.json()
       if (res.ok && data.events) {
         const mapped = data.events.map((ev: any) => {

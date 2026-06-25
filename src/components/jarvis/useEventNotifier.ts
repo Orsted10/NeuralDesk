@@ -10,8 +10,11 @@ export function useEventNotifier(handleSend: (msg: string) => void) {
   // 1. Fetch Today's Events
   const fetchTodayEvents = async () => {
     try {
-      const today = format(new Date(), 'yyyy-MM-dd')
-      const res = await fetch(`/api/calendar?date=${today}`)
+      const start = new Date()
+      start.setHours(0, 0, 0, 0)
+      const end = new Date()
+      end.setHours(23, 59, 59, 999)
+      const res = await fetch(`/api/calendar?timeMin=${encodeURIComponent(start.toISOString())}&timeMax=${encodeURIComponent(end.toISOString())}`)
       if (res.ok) {
         const data = await res.json()
         setEvents(data.events || [])
