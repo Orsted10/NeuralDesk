@@ -88,6 +88,7 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
         setEndTime('')
         setDescription('')
         fetchEvents() // refresh list
+        window.dispatchEvent(new Event('calendar-updated'))
       } else {
         const data = await res.json()
         toast.error(data.error || 'Failed to create event')

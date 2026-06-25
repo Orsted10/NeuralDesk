@@ -39,7 +39,7 @@ You control the user's dashboard by outputting action XML tags:
 <delete_calendar_event>event_id_here</delete_calendar_event>`
 
 export async function POST(req: Request) {
-  const { message, history, provider = 'openai', context } = await req.json()
+  const { message, history, provider = 'groq', context } = await req.json()
 
   const dynamicPrompt = context 
     ? `${systemPrompt}\n\nCURRENT SYSTEM CONTEXT (DO NOT REPEAT UNLESS ASKED):\n${context}`
@@ -98,8 +98,8 @@ Always output the appropriate tag inside your response, outside of any markdown 
 
     const finalMessage = `${message}${actionProtocol}`
 
-    try {
-      if (provider === 'gemini') {
+    const tryProvider = async (p: string) => {
+      if (p === 'gemini') {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
         const model = genAI.getGenerativeModel({ 
           model: 'gemini-2.5-flash',
@@ -126,9 +126,10 @@ Always output the appropriate tag inside your response, outside of any markdown 
         return new Response(stream)
       } 
 
-      if (provider === 'grok' || provider === 'groq') {
-        const apiKey = process.env.GROK_API_KEY || process.env.GROQ_API_KEY
-        const baseURL = provider === 'groq' ? 'https://api.groq.com/openai/v1' : 'https://api.x.ai/v1'
+      if (p === 'grok' || p === 'groq') {
+        const apiKey = p === 'groq' ? process.env.GROQ_API_KEY : process.env.GROK_API_KEY
+        if (!apiKey) throw new Error(`Missing ${p.toUpperCase()}_API_KEY`)
+        const baseURL = p === 'groq' ? 'https://api.groq.com/openai/v1' : 'https://api.x.ai/v1'
         
         const grok = new OpenAI({
           apiKey: apiKey,
@@ -136,7 +137,7 @@ Always output the appropriate tag inside your response, outside of any markdown 
         })
 
         const response = await grok.chat.completions.create({
-          model: provider === 'groq' ? 'llama-3.3-70b-versatile' : 'grok-beta',
+          model: p === 'groq' ? 'llama-3.3-70b-versatile' : 'grok-beta',
           stream: true,
           messages: [
           { role: 'system', content: dynamicPrompt },
@@ -156,8 +157,9 @@ Always output the appropriate tag inside your response, outside of any markdown 
         return new Response(stream)
       }
 
-      if (provider === 'openrouter') {
+      if (p === 'openrouter') {
         const apiKey = process.env.OPENROUTER_API_KEY
+        if (!apiKey) throw new Error('Missing OPENROUTER_API_KEY')
         const openrouter = new OpenAI({
           apiKey: apiKey,
           baseURL: 'https://openrouter.ai/api/v1',
@@ -190,8 +192,10 @@ Always output the appropriate tag inside your response, outside of any markdown 
       }
 
       // Default: OpenAI
+      const apiKey = process.env.OPENAI_API_KEY
+      if (!apiKey) throw new Error('Missing OPENAI_API_KEY')
       const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
+        apiKey: apiKey,
       })
 
       const response = await openai.chat.completions.create({
@@ -213,18 +217,41 @@ Always output the appropriate tag inside your response, outside of any markdown 
         },
       })
       return new Response(stream)
+    }
+
+    try {
+      const allProviders = ['groq', 'grok', 'gemini', 'openrouter', 'openai']
+      // Push the requested provider to the front of the queue
+      const providersToTry = [provider, ...allProviders.filter(p => p !== provider)]
+      
+      let lastError: any = null
+
+      for (const p of providersToTry) {
+        try {
+          console.log(`[AI-ROUTER] Attempting provider: ${p}`)
+          const res = await tryProvider(p)
+          if (res) return res
+        } catch (err: any) {
+          console.error(`[AI-ROUTER] Provider ${p} failed:`, err.message || err)
+          lastError = err
+          // Continue to next provider in the loop!
+        }
+      }
+
+      // If we exhaust the entire list, throw the final error
+      throw lastError || new Error('All AI providers exhausted.')
 
     } catch (error: any) {
-    console.error('AI API Error:', error)
-    return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Failed to fetch AI response',
-        details: error.stack
-      }), 
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    )
+      console.error('Final AI API Error:', error)
+      return new Response(
+        JSON.stringify({ 
+          error: error.message || 'Failed to fetch AI response',
+          details: error.stack
+        }), 
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
   }
 }

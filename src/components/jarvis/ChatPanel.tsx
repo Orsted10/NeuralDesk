@@ -24,7 +24,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   const [isLoading, setIsLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [provider, setProvider] = useState<'openrouter' | 'gemini' | 'grok' | 'groq'>('openrouter')
+  const [provider, setProvider] = useState<'openrouter' | 'gemini' | 'grok' | 'groq'>('groq')
   const scrollRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
 
