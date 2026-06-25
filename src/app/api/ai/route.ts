@@ -170,7 +170,7 @@ Always output the appropriate tag inside your response, outside of any markdown 
         })
 
         const response = await openrouter.chat.completions.create({
-          model: 'openrouter/owl-alpha',
+          model: 'nvidia/nemotron-3-nano-30b-a3b:free',
           stream: true,
           max_tokens: 1500,
           messages: [
