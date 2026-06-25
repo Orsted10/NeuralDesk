@@ -54,10 +54,10 @@ export default function DashboardPage() {
   const loadCalendarEvents = async () => {
     try {
       const start = new Date()
-      start.setHours(0, 0, 0, 0)
       const end = new Date()
-      end.setHours(23, 59, 59, 999)
-      const res = await fetch(`/api/calendar?timeMin=${encodeURIComponent(start.toISOString())}&timeMax=${encodeURIComponent(end.toISOString())}`)
+      end.setDate(end.getDate() + 7) // Fetch upcoming 7 days
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      const res = await fetch(`/api/calendar?timeMin=${encodeURIComponent(start.toISOString())}&timeMax=${encodeURIComponent(end.toISOString())}&timeZone=${encodeURIComponent(tz)}`)
       const data = await res.json()
       if (res.ok && data.events) {
         const mapped = data.events.map((ev: any) => {
@@ -191,28 +191,28 @@ export default function DashboardPage() {
   ]
 
   return (
-    <main className="min-h-screen bg-[#050510] text-cyan-400 p-6 flex flex-col relative overflow-hidden">
+    <main className="min-h-screen bg-zinc-950 text-zinc-100 p-6 flex flex-col relative overflow-hidden font-sans">
       <ParticleBackground />
 
       {/* Top Header */}
-      <header className="relative z-10 flex justify-between items-center mb-8 border-b border-cyan-500/20 pb-4">
+      <header className="relative z-10 flex justify-between items-center mb-10 pb-4">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 border border-cyan-500/50 flex items-center justify-center glow-border rounded-sm">
-            <Shield className="w-6 h-6 text-cyan-400" />
+          <div className="w-12 h-12 glass-card rounded-2xl flex items-center justify-center shadow-lg">
+            <Shield className="w-6 h-6 text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-[0.3em] uppercase glow-text">NeuralDesk OS</h1>
-            <p className="text-[9px] uppercase tracking-widest text-cyan-500/40">Security Protocol: Active | User: Ankan</p>
+            <h1 className="text-2xl font-bold tracking-tight premium-text">NeuralDesk</h1>
+            <p className="text-xs font-medium text-zinc-500 mt-1">Ankan's Workspace</p>
           </div>
         </div>
         
         <div className="flex gap-8 items-center">
           <div className="text-right">
-            <div className="text-2xl font-mono tracking-tighter glow-text">
+            <div className="text-2xl font-semibold tracking-tight text-zinc-200">
               {mounted ? formatTime(time) : '--:--:--'}
             </div>
-            <div className="text-[10px] uppercase tracking-widest text-cyan-500/40">
-              {mounted ? time.toDateString() : 'INITIALIZING...'}
+            <div className="text-xs font-medium text-zinc-500 mt-1">
+              {mounted ? time.toDateString() : 'Loading...'}
             </div>
           </div>
         </div>
@@ -222,114 +222,118 @@ export default function DashboardPage() {
       <div className="flex-1 grid grid-cols-12 gap-6 relative z-10">
         
         {/* Left Sidebar */}
-        <aside className="col-span-1 flex flex-col gap-6 items-center py-8 bg-black/20 border border-cyan-500/10 rounded-xl backdrop-blur-sm">
+        <aside className="col-span-1 flex flex-col gap-6 items-center py-8 glass-panel rounded-3xl">
           {navItems.map((item) => (
             <motion.button
               key={item.id}
-              whileHover={{ scale: 1.1, color: '#00f2ff' }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setActiveModule(item.id === activeModule ? null : item.id)}
-              className={`p-3 transition-colors relative group ${
-                activeModule === item.id ? 'text-cyan-400' : 'text-cyan-500/50 hover:text-cyan-400'
+              className={`p-3 transition-all duration-300 rounded-xl relative group ${
+                activeModule === item.id ? 'bg-white/10 text-zinc-100 shadow-md' : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'
               }`}
             >
               <item.icon className="w-6 h-6" />
-              <span className="absolute left-14 bg-cyan-900/80 text-cyan-400 px-2 py-1 rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-cyan-500/30">
+              <span className="absolute left-16 bg-zinc-800 text-zinc-100 px-3 py-1.5 rounded-lg text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl border border-white/10 pointer-events-none">
                 {item.label}
               </span>
             </motion.button>
           ))}
           <div className="mt-auto flex flex-col gap-4">
             <motion.button
-              whileHover={{ scale: 1.1, color: '#ef4444' }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleLogout}
-              className="p-3 text-cyan-500/20 hover:text-red-500 transition-colors relative group"
+              className="p-3 text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all relative group"
             >
               <LogOut className="w-6 h-6" />
-              <span className="absolute left-14 bg-red-900/80 text-red-100 px-2 py-1 rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-red-500/30">
-                System Disconnect
+              <span className="absolute left-16 bg-rose-500/10 text-rose-400 px-3 py-1.5 rounded-lg text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl border border-rose-500/20 pointer-events-none">
+                Sign Out
               </span>
             </motion.button>
-            <Settings className="w-6 h-6 text-cyan-500/20 hover:text-cyan-400 cursor-pointer" />
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="p-3 text-zinc-600 hover:text-zinc-200 hover:bg-white/5 rounded-xl transition-all">
+              <Settings className="w-6 h-6" />
+            </motion.button>
           </div>
         </aside>
 
         {/* Center Interface */}
         <section className="col-span-8 flex flex-col items-center justify-center relative">
-          <div className="absolute top-0 left-0 w-full flex justify-between px-10 text-[10px] uppercase tracking-[0.5em] text-cyan-500/20">
-            <span>Primary Interface Alpha</span>
-            <span>Neural Link: 98%</span>
-          </div>
 
-          {activeModule === 'email' ? (
+          {activeModule === 'email' && (
             <EmailModule onClose={() => setActiveModule(null)} initialView={emailView} />
-          ) : activeModule === 'whatsapp' ? (
+          )}
+          {activeModule === 'whatsapp' && (
             <WhatsAppModule onClose={() => setActiveModule(null)} />
-          ) : activeModule === 'calendar' ? (
+          )}
+          {activeModule === 'calendar' && (
             <CalendarModule onClose={() => setActiveModule(null)} />
-          ) : activeModule === 'maps' ? (
+          )}
+          {activeModule === 'maps' && (
             <MapsModule />
-          ) : activeModule === 'drive' ? (
+          )}
+          {activeModule === 'drive' && (
             <DriveModule />
-          ) : activeModule === 'youtube' ? (
+          )}
+          {activeModule === 'youtube' && (
             <YouTubeModule />
-          ) : (
-            <>
-              <VoiceOrb isListening={voiceState.isListening} isSpeaking={voiceState.isSpeaking} />
+          )}
 
-              <div className="mt-8 w-full flex justify-center">
-                <ChatPanel 
-                  onVoiceStateChange={setVoiceState} 
-                  context={`User: Ankan. Current Date & Time: ${time.toString()}. Live Location: (LAT: ${location.lat}, LONG: ${location.long}). Status: ${location.city}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Live Upcoming Calendar Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ')}. Unread Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
+          {/* Always mounted to keep background tasks active, hidden when module is active */}
+          <div className={activeModule ? "hidden" : "w-full flex flex-col items-center justify-center relative"}>
+            <VoiceOrb isListening={voiceState.isListening} isSpeaking={voiceState.isSpeaking} />
+
+            <div className="mt-8 w-full flex justify-center">
+              <ChatPanel 
+                onVoiceStateChange={setVoiceState} 
+                context={`User: Ankan. Current Date & Time: ${time.toString()}. Live Location: (LAT: ${location.lat}, LONG: ${location.long}). Status: ${location.city}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Live Upcoming Calendar Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ')}. Unread Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
+              />
+            </div>
+
+            <div className="mt-8 text-center max-w-md">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-zinc-500 font-medium text-sm mb-4"
+              >
+                Listening for commands...
+              </motion.div>
+              <div className="h-1 w-32 mx-auto bg-zinc-800 rounded-full overflow-hidden">
+                <motion.div 
+                  animate={{ x: [-50, 150] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  className="w-1/2 h-full bg-indigo-500/50 rounded-full"
                 />
               </div>
-
-              <div className="mt-8 text-center max-w-md">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-cyan-400/60 font-mono text-sm mb-4"
-                >
-                  Systems online. Awaiting command, Sir.
-                </motion.div>
-                <div className="h-1 w-64 mx-auto bg-cyan-900/30 rounded-full overflow-hidden">
-                  <motion.div 
-                    animate={{ x: [-100, 300] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                    className="w-1/3 h-full bg-cyan-500/40"
-                  />
-                </div>
-              </div>
-            </>
-          )}
+            </div>
+          </div>
         </section>
 
         {/* Right Status Panel */}
         <aside className="col-span-3 flex flex-col gap-6">
-          <HUDCard title="System Resources">
-            <div className="space-y-4">
+          <HUDCard title="System Metrics">
+            <div className="space-y-5">
               <div className="space-y-2">
-                <div className="flex justify-between text-[10px] uppercase">
-                  <span>CPU Load</span>
+                <div className="flex justify-between text-xs font-medium text-zinc-400">
+                  <span>CPU Usage</span>
                   <span>{stats.cpu}%</span>
                 </div>
-                <div className="h-1 bg-cyan-900/30 rounded-full">
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                   <motion.div 
                     animate={{ width: `${stats.cpu}%` }}
-                    className="h-full bg-cyan-500" 
+                    className="h-full bg-indigo-500" 
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between text-[10px] uppercase">
-                  <span>System Memory</span>
+                <div className="flex justify-between text-xs font-medium text-zinc-400">
+                  <span>Memory Allocation</span>
                   <span>{stats.ram} GB</span>
                 </div>
-                <div className="h-1 bg-cyan-900/30 rounded-full">
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                   <motion.div 
-                    animate={{ width: `${(stats.ram/32)*100}%` }} // Adjusted for 32GB max visual
-                    className="h-full bg-cyan-500/60" 
+                    animate={{ width: `${(stats.ram/32)*100}%` }} 
+                    className="h-full bg-indigo-400" 
                   />
                 </div>
               </div>
@@ -345,40 +349,48 @@ export default function DashboardPage() {
             </div>
           </HUDCard>
 
-          <HUDCard title="Upcoming Events" className="flex-1">
+          <HUDCard title="Schedule" className="flex-1">
             <div className="space-y-4">
               {events.length === 0 ? (
-                <div className="text-[10px] text-cyan-500/30 uppercase tracking-widest text-center py-4">
-                  No active events, Sir.
+                <div className="text-sm text-zinc-500 text-center py-6">
+                  No upcoming events today.
                 </div>
               ) : (
                 events.map((ev, i) => (
-                  <div key={i} className="flex gap-4 items-start border-l border-cyan-500/20 pl-4 py-1">
-                    <span className="text-[10px] font-mono text-cyan-500/60">{ev.time}</span>
-                    <span className="text-xs uppercase tracking-wider">{ev.title}</span>
+                  <div key={i} className="flex gap-4 items-center group">
+                    <div className="w-1 h-8 bg-indigo-500/50 rounded-full transition-all group-hover:bg-indigo-400" />
+                    <div>
+                      <div className="text-xs font-medium text-zinc-400 mb-0.5">{ev.time}</div>
+                      <div className="text-sm font-semibold text-zinc-200">{ev.title}</div>
+                    </div>
                   </div>
                 ))
               )}
             </div>
           </HUDCard>
 
-          <div className="bg-cyan-500/5 border border-cyan-500/20 p-3 rounded-lg flex items-center gap-3">
-             <Activity className="w-4 h-4 animate-pulse" />
-             <span className="text-[10px] uppercase tracking-[0.2em]">All Systems Nominal</span>
+          <div className="glass-card p-4 rounded-2xl flex items-center gap-4">
+             <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+               <Activity className="w-4 h-4 text-emerald-400" />
+             </div>
+             <div>
+               <div className="text-sm font-semibold text-zinc-200">System Nominal</div>
+               <div className="text-xs text-zinc-500">All services operational</div>
+             </div>
           </div>
         </aside>
 
       </div>
 
       {/* Bottom Status Bar */}
-      <footer className="relative z-10 mt-8 flex justify-between items-center text-[9px] uppercase tracking-[0.3em] text-cyan-500/30 border-t border-cyan-500/10 pt-4">
+      <footer className="relative z-10 mt-6 flex justify-between items-center text-xs font-medium text-zinc-600">
         <div className="flex gap-6">
-          <span>LAT: {location.lat}</span>
-          <span>LONG: {location.long}</span>
+          <span>{location.city}</span>
+          <span>LAT: {location.lat} • LONG: {location.long}</span>
         </div>
         <div className="flex gap-6">
-          <span className="flex items-center gap-2"><Cpu className="w-3 h-3" /> Core: i9-12900K</span>
-          <span>Uptime: 04:12:33</span>
+          <span className="flex items-center gap-2"><Cpu className="w-4 h-4" /> i9-12900K</span>
+          <span>v2.0.0</span>
         </div>
       </footer>
     </main>

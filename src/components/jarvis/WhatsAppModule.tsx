@@ -71,64 +71,64 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
         {showPairing ? (
           <WhatsAppLink key="pairing" onClose={() => setShowPairing(false)} />
         ) : (
-          <HUDCard key="messaging" title="Secure Messaging Uplink">
-            <div className="space-y-6 p-2">
+          <HUDCard key="messaging" title="WhatsApp Messaging">
+            <div className="space-y-6 p-4">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-[10px] text-cyan-500/40 uppercase tracking-widest">Neural Link Ready</span>
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs text-emerald-500 font-medium">Session Active</span>
                   </div>
                   <button 
                     onClick={() => setShowPairing(true)}
-                    className="flex items-center gap-1 text-[9px] uppercase tracking-tighter text-cyan-400 bg-cyan-400/10 px-2 py-0.5 rounded border border-cyan-400/30 hover:bg-cyan-400/20 transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-xl transition-all hover:bg-indigo-500/20"
                   >
-                    <Link2 className="w-3 h-3" /> Authorize Session
+                    <Link2 className="w-3.5 h-3.5" /> Link Device
                   </button>
                 </div>
                 {onClose && (
-                  <button onClick={onClose} className="text-cyan-500/40 hover:text-cyan-400">
+                  <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 hover:bg-white/10 p-2 rounded-full transition-all">
                     <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase text-cyan-500/60 flex items-center gap-2 font-mono">
-                    <Phone className="w-3 h-3" /> Secure Line
+                  <label className="text-xs font-semibold text-zinc-400 ml-1 flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5" /> Mobile Number
                   </label>
                   <Input 
                     value={to}
                     onChange={(e) => setTo(e.target.value)}
-                    placeholder="+919876543210"
-                    className="bg-black/40 border-cyan-500/20 text-cyan-300 focus:border-cyan-400 font-mono"
+                    placeholder="+1 234 567 8900"
+                    className="glass-input h-12 px-4 text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-indigo-500"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase text-cyan-500/60 flex items-center gap-2 font-mono">
-                    <User className="w-3 h-3" /> Encrypted Contacts
+                  <label className="text-xs font-semibold text-zinc-400 ml-1 flex items-center gap-2">
+                    <User className="w-3.5 h-3.5" /> Contacts Directory
                   </label>
                   <select 
                     onChange={(e) => setTo(e.target.value)}
-                    className="w-full bg-black/40 border border-cyan-500/20 rounded-md p-2 text-xs text-cyan-300 focus:border-cyan-400 outline-none font-mono"
+                    className="w-full glass-input h-12 px-4 rounded-xl text-zinc-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none cursor-pointer"
                   >
-                    <option value="">{isLoadingContacts ? 'Syncing...' : 'Select Contact'}</option>
+                    <option value="" className="bg-zinc-900 text-zinc-300">{isLoadingContacts ? 'Loading contacts...' : 'Select Contact'}</option>
                     {contacts.map(c => (
-                      <option key={c.id} value={c.phone}>{c.name} ({c.relationship})</option>
+                      <option key={c.id} value={c.phone} className="bg-zinc-900 text-zinc-300">{c.name} ({c.relationship})</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] uppercase text-cyan-500/60 font-mono">Mission Templates</label>
+                <label className="text-xs font-semibold text-zinc-400 ml-1">Quick Replies</label>
                 <div className="flex flex-wrap gap-2">
                   {quickTemplates.map((t, i) => (
                     <button
                       key={i}
                       onClick={() => setMessage(t)}
-                      className="text-[10px] bg-cyan-500/5 border border-cyan-500/20 px-2 py-1 rounded hover:bg-cyan-500/20 transition-all text-cyan-400 font-mono"
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/10 text-zinc-300 bg-white/5 hover:bg-white/10 transition-all"
                     >
                       {t}
                     </button>
@@ -137,28 +137,27 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] uppercase text-cyan-500/60 font-mono">Command String</label>
+                <label className="text-xs font-semibold text-zinc-400 ml-1">Message</label>
                 <textarea 
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={4}
-                  className="w-full bg-black/40 border border-cyan-500/20 rounded-md p-3 text-cyan-300 text-sm focus:outline-none focus:border-cyan-400 scrollbar-thin font-mono"
-                  placeholder="Enter message text, Sir..."
+                  className="w-full glass-input rounded-xl p-4 text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 scrollbar-thin scrollbar-thumb-white/10 placeholder:text-zinc-600"
+                  placeholder="Type your message..."
                 />
               </div>
 
               <div className="flex justify-between items-center pt-2">
-                <div className="flex gap-4 text-[9px] uppercase tracking-widest text-cyan-500/20 font-mono">
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> E2E Encrypted</span>
-                  <span>Priority: Alpha</span>
+                <div className="flex gap-4 text-xs font-medium text-zinc-500">
+                  <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> End-to-End Encrypted</span>
                 </div>
                 <Button 
                   onClick={handleSend}
                   disabled={isSending}
-                  className="bg-green-500/20 border border-green-500/50 hover:bg-green-500/40 text-green-400 flex gap-2 uppercase tracking-widest text-xs py-6 px-8 glow-border"
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold flex gap-2 text-sm py-6 px-8 rounded-xl shadow-lg transition-all"
                 >
                   <Send className="w-4 h-4" />
-                  Transmit
+                  Send Message
                 </Button>
               </div>
             </div>

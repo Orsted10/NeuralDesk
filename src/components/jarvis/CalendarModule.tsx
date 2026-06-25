@@ -33,7 +33,8 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
       start.setHours(0, 0, 0, 0)
       const end = new Date(viewDate)
       end.setHours(23, 59, 59, 999)
-      const res = await fetch(`/api/calendar?timeMin=${encodeURIComponent(start.toISOString())}&timeMax=${encodeURIComponent(end.toISOString())}`)
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      const res = await fetch(`/api/calendar?timeMin=${encodeURIComponent(start.toISOString())}&timeMax=${encodeURIComponent(end.toISOString())}&timeZone=${encodeURIComponent(tz)}`)
       const data = await res.json()
       if (res.ok) {
         setEvents(data.events || [])
@@ -135,34 +136,34 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
       <HUDCard title="Temporal Logistics (Calendar)">
         <div className="space-y-6 p-4">
           {/* Header */}
-          <div className="flex justify-between items-center mb-2 border-b border-cyan-500/30 pb-4">
+          <div className="flex justify-between items-center mb-2 border-b border-white/5 pb-4">
             <div className="flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5 text-cyan-400" />
-              <span className="text-xs text-cyan-500/80 uppercase tracking-[0.2em] font-semibold">
+              <CalendarIcon className="w-5 h-5 text-indigo-400" />
+              <span className="text-sm text-zinc-300 font-semibold tracking-wide">
                 Schedule View
               </span>
             </div>
             <div className="flex items-center gap-4">
               <Popover>
-                <PopoverTrigger className="flex items-center rounded-md border h-8 w-40 justify-start text-left font-medium bg-black/50 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-400 text-[11px] tracking-widest px-3 transition-all shadow-[0_0_10px_rgba(0,242,255,0.1)]">
-                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                <PopoverTrigger className="flex items-center rounded-xl border border-white/10 h-9 w-40 justify-start text-left font-medium bg-white/5 text-zinc-200 hover:bg-white/10 hover:text-zinc-100 text-xs px-3 transition-all">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
                   {viewDate ? format(viewDate, "PPP") : <span>Pick a date</span>}
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-black/90 border border-cyan-500/30 text-cyan-300" align="end">
+                <PopoverContent className="w-auto p-0 glass-card text-zinc-200 border-white/10 rounded-2xl shadow-xl" align="end">
                   <CalendarUI
                     mode="single"
                     selected={viewDate}
                     onSelect={(day) => day && setViewDate(day)}
-                    className="bg-black/90 text-cyan-300 rounded-md shadow-[0_0_15px_rgba(0,242,255,0.2)]"
+                    className="glass-card text-zinc-200 rounded-2xl"
                   />
                 </PopoverContent>
               </Popover>
 
-              <button onClick={fetchEvents} className="text-cyan-500/40 hover:text-cyan-400 transition-colors" disabled={isLoading}>
+              <button onClick={fetchEvents} className="text-zinc-400 hover:text-zinc-200 hover:bg-white/5 p-2 rounded-lg transition-all" disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
               {onClose && (
-                <button onClick={onClose} className="text-cyan-500/40 hover:text-cyan-400">
+                <button onClick={onClose} className="text-zinc-400 hover:text-zinc-200 hover:bg-white/5 p-2 rounded-lg transition-all">
                   <X className="w-4 h-4" />
                 </button>
               )}
@@ -170,36 +171,36 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
           </div>
 
           {/* Timeline View */}
-          <div className="bg-black/40 border border-cyan-500/20 rounded-lg p-6 h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-cyan-500/30 shadow-[inset_0_0_20px_rgba(0,242,255,0.05)]">
+          <div className="glass-card rounded-2xl p-6 h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
             {isLoading ? (
-              <div className="h-full flex items-center justify-center text-xs uppercase tracking-widest text-cyan-500/50 animate-pulse">
+              <div className="h-full flex items-center justify-center text-sm font-medium text-zinc-500 animate-pulse">
                 Syncing with Google...
               </div>
             ) : events.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-xs uppercase tracking-widest text-cyan-500/50">
-                No active events for selected date, Sir.
+              <div className="h-full flex items-center justify-center text-sm font-medium text-zinc-500">
+                No active events for selected date.
               </div>
             ) : (
               <div className="space-y-6">
                 {events.map((ev, i) => (
-                  <div key={ev.id || i} className="flex gap-6 items-start relative before:absolute before:left-[4rem] before:top-5 before:bottom-[-2.5rem] before:w-[2px] before:bg-cyan-500/20 last:before:hidden">
+                  <div key={ev.id || i} className="flex gap-6 items-start relative before:absolute before:left-[4rem] before:top-5 before:bottom-[-2.5rem] before:w-[2px] before:bg-white/5 last:before:hidden">
                     <div className="w-14 flex-shrink-0 text-right pt-1">
-                      <div className="text-xs text-cyan-400 font-mono font-medium">
+                      <div className="text-xs text-indigo-400 font-semibold">
                         {ev.start?.dateTime ? formatTime(ev.start.dateTime) : 'All Day'}
                       </div>
                     </div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 mt-2 shadow-[0_0_12px_rgba(0,242,255,1)] z-10 relative"></div>
-                    <div className="flex-1 bg-cyan-500/10 border border-cyan-500/30 p-4 rounded-lg hover:bg-cyan-500/20 hover:shadow-[0_0_15px_rgba(0,242,255,0.15)] transition-all flex justify-between items-start group">
+                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 mt-2 z-10 relative shadow-md shadow-indigo-500/30"></div>
+                    <div className="flex-1 glass-input border border-white/5 p-4 rounded-xl hover:bg-white/[0.03] transition-all flex justify-between items-start group">
                       <div>
-                        <div className="text-sm text-cyan-100 font-bold tracking-wide">{ev.summary}</div>
+                        <div className="text-sm text-zinc-100 font-semibold">{ev.summary}</div>
                         {ev.description && (
-                          <div className="text-xs text-cyan-500/80 mt-2 leading-relaxed">{ev.description}</div>
+                          <div className="text-xs text-zinc-400 mt-2 leading-relaxed">{ev.description}</div>
                         )}
                       </div>
                       {ev.id && (
                         <button 
                           onClick={() => handleDeleteEvent(ev.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-cyan-500/40 hover:text-red-400 hover:bg-red-500/10 rounded-md"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -212,30 +213,30 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
           </div>
 
           {/* New Event Form */}
-          <div className="mt-6 border-t border-cyan-500/30 pt-6 space-y-4">
-            <span className="text-xs font-bold uppercase tracking-widest text-cyan-500/80 block mb-2">Schedule New Event</span>
+          <div className="mt-6 border-t border-white/5 pt-6 space-y-4">
+            <span className="text-sm font-semibold tracking-wide text-zinc-300 block mb-2">Schedule New Event</span>
             
             <div className="grid grid-cols-4 gap-4">
               <div className="col-span-4 space-y-1">
                 <Input 
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Mission Objective / Event Title"
-                  className="bg-black/50 border-cyan-500/30 text-cyan-100 text-sm h-10 px-4 focus:border-cyan-400 focus:shadow-[0_0_10px_rgba(0,242,255,0.2)] transition-all"
+                  placeholder="Meeting details / Event Title"
+                  className="glass-input h-10 px-4 text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-indigo-500"
                 />
               </div>
               <div className="col-span-2 space-y-1">
                 <Popover>
-                  <PopoverTrigger className="flex items-center rounded-md border h-10 w-full justify-start text-left font-medium bg-black/50 border-cyan-500/30 text-cyan-100 hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-400 text-sm px-4 transition-all">
+                  <PopoverTrigger className="flex items-center rounded-xl border border-white/10 h-10 w-full justify-start text-left font-medium bg-white/5 text-zinc-200 hover:bg-white/10 text-sm px-4 transition-all">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-black/90 border border-cyan-500/30 text-cyan-300" align="start">
+                  <PopoverContent className="w-auto p-0 glass-card text-zinc-200 border-white/10 rounded-2xl shadow-xl" align="start">
                     <CalendarUI
                       mode="single"
                       selected={eventDate}
                       onSelect={(day) => day && setEventDate(day)}
-                      className="bg-black/90 text-cyan-300 rounded-md shadow-[0_0_15px_rgba(0,242,255,0.2)]"
+                      className="glass-card text-zinc-200 rounded-2xl"
                     />
                   </PopoverContent>
                 </Popover>
@@ -245,7 +246,7 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="bg-black/50 border-cyan-500/30 text-cyan-100 text-sm h-10 w-full px-3 focus:border-cyan-400 transition-all [color-scheme:dark]"
+                  className="glass-input h-10 w-full px-3 text-zinc-200 focus-visible:ring-1 focus-visible:ring-indigo-500 [color-scheme:dark]"
                 />
               </div>
               <div className="col-span-1 space-y-1">
@@ -253,16 +254,16 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="bg-black/50 border-cyan-500/30 text-cyan-100 text-sm h-10 w-full px-3 focus:border-cyan-400 transition-all [color-scheme:dark]"
+                  className="glass-input h-10 w-full px-3 text-zinc-200 focus-visible:ring-1 focus-visible:ring-indigo-500 [color-scheme:dark]"
                 />
               </div>
               <div className="col-span-4 mt-4">
                 <Button 
                   onClick={handleCreateEvent}
                   disabled={isCreating}
-                  className="w-full h-10 bg-cyan-500/10 border border-cyan-500/40 hover:bg-cyan-500/30 text-cyan-400 text-xs font-bold tracking-widest uppercase flex gap-2 transition-all hover:shadow-[0_0_15px_rgba(0,242,255,0.3)]"
+                  className="w-full h-10 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold flex gap-2 transition-all rounded-xl shadow-lg"
                 >
-                  <Plus className="w-4 h-4" /> {isCreating ? 'Adding Protocol...' : 'Add Event'}
+                  <Plus className="w-4 h-4" /> {isCreating ? 'Adding Event...' : 'Add Event'}
                 </Button>
               </div>
             </div>

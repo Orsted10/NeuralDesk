@@ -75,17 +75,17 @@ export default function WhatsAppLink({ onClose }: { onClose?: () => void }) {
   }
 
   return (
-    <HUDCard title="Neural Link: Private Relay">
-      <div className="p-6 flex flex-col items-center justify-center space-y-6 min-h-[300px]">
-        <div className="flex justify-between w-full items-center mb-2">
-           <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${status === 'connected' ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`} />
-              <span className="text-[10px] text-cyan-500/60 uppercase tracking-widest font-mono">
-                {status === 'connected' ? 'Secure Link Active' : 'Uplink Authorization Required'}
+    <HUDCard title="WhatsApp Secure Link">
+      <div className="p-8 flex flex-col items-center justify-center space-y-8 min-h-[350px]">
+        <div className="flex justify-between w-full items-center mb-4">
+           <div className="flex items-center gap-2.5">
+              <div className={`w-2 h-2 rounded-full ${status === 'connected' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`} />
+              <span className="text-xs font-semibold tracking-wide text-zinc-400">
+                {status === 'connected' ? 'Secure Link Active' : 'Device Link Required'}
               </span>
            </div>
            {onClose && (
-             <button onClick={onClose} className="text-cyan-500/40 hover:text-cyan-400 p-1">
+             <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 hover:bg-white/10 p-2 rounded-full transition-all">
                <X className="w-4 h-4" />
              </button>
            )}
@@ -96,19 +96,21 @@ export default function WhatsAppLink({ onClose }: { onClose?: () => void }) {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center space-y-4"
+              className="text-center space-y-6 w-full max-w-sm"
             >
-              <div className="p-6 border border-cyan-500/10 bg-cyan-500/5 rounded-2xl">
-                <Wifi className="w-12 h-12 text-cyan-500/40 mx-auto mb-2" />
-                <p className="text-[11px] text-cyan-400/80 max-w-[200px] font-mono leading-relaxed">
-                  Establish a private encrypted bridge to your WhatsApp account.
+              <div className="p-8 border border-white/5 bg-white/[0.02] rounded-3xl shadow-inner">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center mx-auto mb-4">
+                  <Wifi className="w-8 h-8 text-indigo-400" />
+                </div>
+                <p className="text-sm text-zinc-400 font-medium leading-relaxed px-4">
+                  Establish a secure, end-to-end encrypted connection with your device.
                 </p>
               </div>
               <button
                 onClick={startPairing}
-                className="w-full py-3 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] uppercase tracking-[0.2em] hover:bg-cyan-500/20 transition-all font-bold rounded-lg"
+                className="w-full py-4 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold transition-all rounded-xl shadow-lg active:scale-95"
               >
-                Initialize Neural Handshake
+                Initialize Connection
               </button>
             </motion.div>
           )}
@@ -117,13 +119,14 @@ export default function WhatsAppLink({ onClose }: { onClose?: () => void }) {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="relative flex flex-col items-center gap-4"
+              className="relative flex flex-col items-center gap-6"
             >
-              <div className="p-3 bg-white rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-                <img src={qrCode} alt="Scan QR" className="w-44 h-44" />
+              <div className="p-4 bg-white rounded-3xl shadow-2xl">
+                <img src={qrCode} alt="Scan QR" className="w-48 h-48 rounded-xl" />
               </div>
-              <div className="text-[10px] uppercase text-cyan-400 font-mono animate-pulse">
-                Scan with your device to sync identity
+              <div className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
+                Waiting for scan...
               </div>
             </motion.div>
           )}
@@ -132,29 +135,33 @@ export default function WhatsAppLink({ onClose }: { onClose?: () => void }) {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="text-center space-y-4"
+              className="text-center space-y-6 w-full max-w-sm"
             >
-              <div className="relative inline-block">
-                <div className="absolute inset-0 bg-green-500/20 blur-xl rounded-full" />
-                <ShieldCheck className="w-20 h-20 text-green-500 relative z-10" />
+              <div className="relative inline-block mt-4">
+                <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full" />
+                <ShieldCheck className="w-24 h-24 text-emerald-400 relative z-10" />
               </div>
-              <div className="space-y-1">
-                <div className="text-green-400 font-mono text-sm uppercase tracking-tighter">Identity Verified</div>
-                <div className="text-cyan-500/40 font-mono text-[9px] uppercase tracking-widest">Encrypted Tunnel: {instanceName}</div>
+              <div className="space-y-2">
+                <div className="text-emerald-400 font-semibold text-lg tracking-tight">Device Linked Successfully</div>
+                <div className="text-zinc-500 text-xs font-mono bg-black/20 py-2 px-4 rounded-lg inline-block border border-white/5">
+                  ID: {instanceName}
+                </div>
               </div>
               <button
                 onClick={onClose}
-                className="px-6 py-2 border border-green-500/30 text-green-500 text-[9px] uppercase tracking-widest hover:bg-green-500/10 transition-all rounded-full"
+                className="mt-4 px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 text-sm font-semibold transition-all rounded-xl active:scale-95"
               >
-                Return to Command Center
+                Return to Dashboard
               </button>
             </motion.div>
           )}
 
           {status === 'pairing' && !qrCode && (
-            <motion.div className="flex flex-col items-center gap-4">
-               <RefreshCcw className="w-10 h-10 text-cyan-500 animate-spin" />
-               <span className="text-[10px] text-cyan-500/60 uppercase font-mono">Generating Secure Key...</span>
+            <motion.div className="flex flex-col items-center gap-4 py-12">
+               <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center">
+                 <RefreshCcw className="w-6 h-6 text-indigo-400 animate-spin" />
+               </div>
+               <span className="text-sm font-medium text-zinc-400">Generating secure key...</span>
             </motion.div>
           )}
         </AnimatePresence>

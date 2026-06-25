@@ -14,7 +14,8 @@ export function useEventNotifier(handleSend: (msg: string) => void) {
       start.setHours(0, 0, 0, 0)
       const end = new Date()
       end.setHours(23, 59, 59, 999)
-      const res = await fetch(`/api/calendar?timeMin=${encodeURIComponent(start.toISOString())}&timeMax=${encodeURIComponent(end.toISOString())}`)
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      const res = await fetch(`/api/calendar?timeMin=${encodeURIComponent(start.toISOString())}&timeMax=${encodeURIComponent(end.toISOString())}&timeZone=${encodeURIComponent(tz)}`)
       if (res.ok) {
         const data = await res.json()
         setEvents(data.events || [])

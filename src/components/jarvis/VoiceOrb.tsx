@@ -94,8 +94,8 @@ export default function VoiceOrb({ isListening = false, isSpeaking = false, onCl
       {/* Outer Rotating Ring */}
       <motion.div
         animate={{ rotate: 360 }}
-        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        className="absolute w-full h-full border-2 border-cyan-500/20 rounded-full border-dashed"
+        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+        className="absolute w-full h-full border-[1px] border-indigo-500/10 rounded-full border-dashed"
       />
 
       {/* Middle Pulsing Ring */}
@@ -104,7 +104,7 @@ export default function VoiceOrb({ isListening = false, isSpeaking = false, onCl
           scale: isListening ? 1.2 + (micVolume / 100) : 1,
           opacity: isListening ? 0.6 : 0.3
         }}
-        className="absolute w-48 h-48 border-[1px] border-cyan-400/30 rounded-full transition-all duration-75"
+        className="absolute w-48 h-48 border border-indigo-400/20 rounded-full transition-all duration-75"
       />
 
       {/* Inner Glow Orb */}
@@ -112,19 +112,19 @@ export default function VoiceOrb({ isListening = false, isSpeaking = false, onCl
         animate={{
           scale: isSpeaking ? [1, 1.1, 1] : 1,
           boxShadow: isListening 
-            ? `0 0 ${40 + micVolume}px rgba(0, 242, 255, ${0.6 + (micVolume / 60)})` 
-            : "0 0 20px rgba(0, 242, 255, 0.2)"
+            ? `0 0 ${40 + micVolume}px rgba(99, 102, 241, ${0.4 + (micVolume / 60)})` 
+            : "0 0 20px rgba(99, 102, 241, 0.15)"
         }}
-        className="relative w-32 h-32 bg-gradient-to-br from-cyan-500/40 to-blue-600/20 rounded-full flex items-center justify-center backdrop-blur-xl border border-cyan-400/50 transition-all duration-75"
+        className="relative w-32 h-32 bg-gradient-to-br from-indigo-500/30 to-violet-600/20 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/10 transition-all duration-75 shadow-inner"
       >
-        <div className="w-24 h-24 rounded-full bg-cyan-900/20 border border-cyan-400/20 flex items-center justify-center overflow-hidden">
+        <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
           {/* Real Animated Waveform Driven by Physical Mic */}
-          <div className="flex gap-1 items-center">
+          <div className="flex gap-1.5 items-center">
             {waveHeights.map((h, i) => (
               <motion.div
                 key={i}
                 animate={{ height: h }}
-                className="w-1 bg-cyan-400 rounded-full transition-all duration-75"
+                className="w-1.5 bg-indigo-400 rounded-full transition-all duration-75 shadow-[0_0_8px_rgba(99,102,241,0.5)]"
               />
             ))}
           </div>
@@ -138,7 +138,7 @@ export default function VoiceOrb({ isListening = false, isSpeaking = false, onCl
           style={{ transform: `rotate(${angle}deg)` }}
           className="absolute inset-0 flex flex-col items-center justify-start py-2"
         >
-          <div className="w-1 h-4 bg-cyan-500/40 rounded-full" />
+          <div className="w-1 h-3 bg-indigo-500/20 rounded-full" />
         </div>
       ))}
     </div>

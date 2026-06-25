@@ -146,92 +146,92 @@ export default function EmailModule({ onClose, initialView = 'compose' }: { onCl
     >
       <HUDCard title="Email Dispatch System">
         <div className="space-y-4 p-2">
-           <div className="flex justify-between items-center mb-2 border-b border-cyan-500/20 pb-2">
+           <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-3">
              <div className="flex gap-4">
                <button 
                  onClick={() => setView('compose')} 
-                 className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded transition-colors ${view === 'compose' ? 'bg-cyan-500/20 text-cyan-300' : 'text-cyan-500/40 hover:text-cyan-400'}`}
+                 className={`text-xs font-semibold px-4 py-2 rounded-xl transition-all ${view === 'compose' ? 'bg-indigo-500 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}
                >
                  Compose
                </button>
                <button 
                  onClick={() => setView('inbox')} 
-                 className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded transition-colors ${view === 'inbox' ? 'bg-cyan-500/20 text-cyan-300' : 'text-cyan-500/40 hover:text-cyan-400'}`}
+                 className={`text-xs font-semibold px-4 py-2 rounded-xl transition-all ${view === 'inbox' ? 'bg-indigo-500 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}
                >
                  Inbox (Unread)
                </button>
              </div>
              {onClose && (
-               <button onClick={onClose} className="text-cyan-500/40 hover:text-cyan-400">
+               <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 hover:bg-white/10 p-2 rounded-full transition-all">
                  <X className="w-4 h-4" />
                </button>
              )}
           </div>
 
           {view === 'inbox' ? (
-            <div className="space-y-4 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-cyan-500/20 pr-2">
+            <div className="space-y-4 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-2">
               {isLoadingEmails ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-cyan-500/50" />
+                  <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
                 </div>
               ) : emails.length === 0 ? (
-                <div className="text-center text-xs uppercase tracking-widest text-cyan-500/40 py-8">
-                  Inbox is clear, Sir.
+                <div className="text-center text-sm text-zinc-500 font-medium py-8">
+                  Inbox is clear.
                 </div>
               ) : (
                 emails.map((email) => (
                   <div 
                     key={email.id} 
                     onClick={() => setExpandedEmailId(expandedEmailId === email.id ? null : email.id)}
-                    className="bg-black/40 border border-cyan-500/20 p-3 rounded-md hover:border-cyan-500/50 transition-colors cursor-pointer"
+                    className="glass-card p-4 rounded-xl cursor-pointer"
                   >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-[10px] text-cyan-500/60 uppercase truncate max-w-[200px]">{email.from}</span>
-                      <span className="text-[9px] text-cyan-500/40">{email.date.substring(0, 16)}</span>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs text-zinc-400 font-medium truncate max-w-[200px]">{email.from}</span>
+                      <span className="text-[10px] text-zinc-500 font-medium">{email.date.substring(0, 16)}</span>
                     </div>
-                    <div className="text-xs text-cyan-300 font-bold mb-1 truncate">{email.subject}</div>
+                    <div className="text-sm text-zinc-200 font-semibold mb-1 truncate">{email.subject}</div>
                     {expandedEmailId === email.id ? (
-                      <div className="text-xs text-cyan-100 mt-2 whitespace-pre-wrap leading-relaxed border-t border-cyan-500/20 pt-2">
+                      <div className="text-sm text-zinc-400 mt-3 whitespace-pre-wrap leading-relaxed border-t border-white/5 pt-3">
                         {email.body || email.snippet}
                       </div>
                     ) : (
-                      <div className="text-[10px] text-cyan-500/50 line-clamp-2">{email.snippet}</div>
+                      <div className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{email.snippet}</div>
                     )}
                   </div>
                 ))
               )}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="space-y-2">
-            <label className="text-[10px] uppercase text-cyan-500/60">Recipient</label>
+            <label className="text-xs font-semibold text-zinc-400 ml-1">Recipient</label>
             <Input 
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              placeholder="sir.recipient@example.com"
-              className="bg-black/40 border-cyan-500/20 text-cyan-300 focus:border-cyan-400"
+              placeholder="recipient@example.com"
+              className="glass-input h-12 px-4 text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-indigo-500"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] uppercase text-cyan-500/60">Subject</label>
+            <label className="text-xs font-semibold text-zinc-400 ml-1">Subject</label>
             <Input 
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Mission Objective"
-              className="bg-black/40 border-cyan-500/20 text-cyan-300 focus:border-cyan-400"
+              placeholder="Meeting details"
+              className="glass-input h-12 px-4 text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-indigo-500"
             />
           </div>
 
           <div className="space-y-2 relative">
-            <label className="text-[10px] uppercase text-cyan-500/60 flex justify-between">
+            <label className="text-xs font-semibold text-zinc-400 ml-1 flex justify-between">
               Body
               <button 
                 onClick={generateDraft}
                 disabled={isDrafting}
-                className="flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors"
+                className="flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 transition-colors"
               >
-                {isDrafting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                {isDrafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                 <span>AI Draft</span>
               </button>
             </label>
@@ -239,16 +239,16 @@ export default function EmailModule({ onClose, initialView = 'compose' }: { onCl
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={6}
-              className="w-full bg-black/40 border border-cyan-500/20 rounded-md p-3 text-cyan-300 text-sm focus:outline-none focus:border-cyan-400 scrollbar-thin scrollbar-thumb-cyan-500/20"
-              placeholder="Compose your message here, Sir..."
+              className="w-full glass-input rounded-xl p-4 text-zinc-200 text-sm focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-indigo-500 scrollbar-thin scrollbar-thumb-white/10 placeholder:text-zinc-600"
+              placeholder="Compose your message here..."
             />
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end pt-4">
             <Button 
               onClick={handleSend}
               disabled={isSending}
-              className="bg-cyan-500/20 border border-cyan-500/50 hover:bg-cyan-500/40 text-cyan-400 flex gap-2 uppercase tracking-widest text-xs py-6 px-8 glow-border"
+              className="bg-indigo-500 hover:bg-indigo-600 text-white flex gap-2 font-semibold text-sm py-6 px-8 rounded-xl shadow-lg transition-all"
             >
               {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               Dispatch

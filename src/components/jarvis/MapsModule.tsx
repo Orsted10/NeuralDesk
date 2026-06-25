@@ -17,70 +17,70 @@ export default function MapsModule() {
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null)
   const [marker, setMarker] = useState<google.maps.Marker | null>(null)
 
-  // Custom Graphite & Obsidian High-Tech Map Theme
+  // Premium Slate/Zinc Map Theme
   const darkMapStyle = [
-    { elementType: 'geometry', stylers: [{ color: '#090e14' }] },
-    { elementType: 'labels.text.stroke', stylers: [{ color: '#090e14' }] },
-    { elementType: 'labels.text.fill', stylers: [{ color: '#00f2ff' }] },
+    { elementType: 'geometry', stylers: [{ color: '#18181b' }] }, // zinc-900
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#18181b' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#a1a1aa' }] }, // zinc-400
     {
       featureType: 'administrative.locality',
       elementType: 'labels.text.fill',
-      stylers: [{ color: '#00f2ff' }]
+      stylers: [{ color: '#d4d4d8' }] // zinc-300
     },
     {
       featureType: 'poi',
       elementType: 'labels.text.fill',
-      stylers: [{ color: '#00f2ff', opacity: 0.5 }]
+      stylers: [{ color: '#71717a' }] // zinc-500
     },
     {
       featureType: 'poi.park',
       elementType: 'geometry',
-      stylers: [{ color: '#0d1622' }]
+      stylers: [{ color: '#27272a' }] // zinc-800
     },
     {
       featureType: 'poi.park',
       elementType: 'labels.text.fill',
-      stylers: [{ color: '#00c3ff' }]
+      stylers: [{ color: '#52525b' }] // zinc-600
     },
     {
       featureType: 'road',
       elementType: 'geometry',
-      stylers: [{ color: '#131d2b' }]
+      stylers: [{ color: '#27272a' }] // zinc-800
     },
     {
       featureType: 'road',
       elementType: 'geometry.stroke',
-      stylers: [{ color: '#1a2b3e' }]
+      stylers: [{ color: '#3f3f46' }] // zinc-700
     },
     {
       featureType: 'road',
       elementType: 'labels.text.fill',
-      stylers: [{ color: '#a0aec0' }]
+      stylers: [{ color: '#a1a1aa' }] // zinc-400
     },
     {
       featureType: 'road.highway',
       elementType: 'geometry',
-      stylers: [{ color: '#1b2c40' }]
+      stylers: [{ color: '#3f3f46' }] // zinc-700
     },
     {
       featureType: 'road.highway',
       elementType: 'geometry.stroke',
-      stylers: [{ color: '#2b3f57' }]
+      stylers: [{ color: '#52525b' }] // zinc-600
     },
     {
       featureType: 'road.highway',
       elementType: 'labels.text.fill',
-      stylers: [{ color: '#00f2ff' }]
+      stylers: [{ color: '#f4f4f5' }] // zinc-100
     },
     {
       featureType: 'water',
       elementType: 'geometry',
-      stylers: [{ color: '#050a10' }]
+      stylers: [{ color: '#09090b' }] // zinc-950
     },
     {
       featureType: 'water',
       elementType: 'labels.text.fill',
-      stylers: [{ color: '#00c3ff' }]
+      stylers: [{ color: '#52525b' }] // zinc-600
     }
   ]
 
@@ -131,11 +131,11 @@ export default function MapsModule() {
     const initialMarker = new google.maps.Marker({
       position: defaultCoords,
       map: map,
-      title: 'Default Target: India Node',
+      title: 'Target Location',
       icon: {
         path: google.maps.SymbolPath.CIRCLE,
         scale: 8,
-        fillColor: '#00f2ff',
+        fillColor: '#6366f1', // indigo-500
         fillOpacity: 1,
         strokeColor: '#ffffff',
         strokeWeight: 2
@@ -145,7 +145,7 @@ export default function MapsModule() {
     const directionsRenderer = new google.maps.DirectionsRenderer({
       map: map,
       suppressMarkers: false,
-      polylineOptions: { strokeColor: '#00f2ff', strokeWeight: 4 }
+      polylineOptions: { strokeColor: '#6366f1', strokeWeight: 4 }
     })
 
     setMapInstance(map)
@@ -310,17 +310,19 @@ export default function MapsModule() {
   }, [])
 
   return (
-    <div className="w-full flex flex-col h-full bg-black/40 border border-cyan-500/20 backdrop-blur-md rounded-lg overflow-hidden glow-border p-4">
+    <div className="w-full flex flex-col h-full glass-panel rounded-3xl overflow-hidden shadow-2xl p-6">
       {/* Header bar */}
-      <div className="flex justify-between items-center mb-4 border-b border-cyan-500/10 pb-3">
-        <div className="flex gap-2 items-center">
-          <Navigation className="w-4 h-4 text-cyan-400 animate-pulse" />
-          <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-cyan-400 font-mono">Geospatial Telemetry</span>
+      <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+        <div className="flex gap-3 items-center">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+             <Navigation className="w-5 h-5 text-indigo-400" />
+          </div>
+          <span className="text-lg font-semibold tracking-tight text-zinc-200">Maps & Navigation</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex gap-1 items-center bg-black/50 border border-cyan-500/20 px-2 py-1 rounded text-[9px] font-mono text-cyan-300">
-            <Compass className="w-3 h-3 text-cyan-400" />
-            <span>GRID: LAT/LNG ACTIVE</span>
+          <div className="flex gap-2 items-center bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300">
+            <Compass className="w-4 h-4 text-zinc-400" />
+            <span>GPS Active</span>
           </div>
         </div>
       </div>
@@ -331,51 +333,48 @@ export default function MapsModule() {
           e.preventDefault()
           handleSearch()
         }}
-        className="flex gap-2 mb-4"
+        className="flex gap-3 mb-6"
       >
         <div className="flex-1 relative">
           <input
             type="text"
-            placeholder="Specify geographical coordinates or location name, Sir..."
+            placeholder="Search for a location or address..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-black/60 border border-cyan-500/30 text-cyan-300 text-xs px-3 py-2 pl-9 rounded focus:outline-none focus:border-cyan-400 transition-all font-mono placeholder-cyan-700 glow-input"
+            className="w-full glass-input text-zinc-200 text-sm px-4 py-3 pl-11 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all placeholder-zinc-500"
           />
-          <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-cyan-500/50" />
+          <Search className="absolute left-4 top-3.5 w-4 h-4 text-zinc-400" />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-400 text-cyan-400 uppercase tracking-widest text-[10px] px-4 rounded transition-all font-mono flex items-center justify-center gap-2 active:scale-95 duration-100 disabled:opacity-50"
+          className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-sm px-6 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
         >
           {loading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            'Locate'
+            'Search'
           )}
         </button>
       </form>
 
       {/* Map Embed Div */}
-      <div className="flex-1 relative rounded border border-cyan-500/20 overflow-hidden bg-black/80">
+      <div className="flex-1 relative rounded-2xl overflow-hidden border border-white/10 shadow-inner">
         <div ref={mapRef} className="w-full h-full" style={{ minHeight: '350px' }} />
         
-        {/* Cinematic HUD Grid Overlay */}
-        <div className="absolute inset-0 pointer-events-none border border-cyan-500/10 bg-scanlines opacity-20" />
-
         {/* Floating Glassmorphic Locate Me Button */}
         <button
           onClick={handleLocateMe}
           disabled={locating}
-          className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-md hover:bg-black/90 border border-cyan-500/30 hover:border-cyan-400 text-cyan-400 px-3 py-2 rounded shadow-[0_0_15px_rgba(0,242,255,0.2)] hover:shadow-[0_0_20px_rgba(0,242,255,0.4)] transition-all font-mono text-[9px] uppercase tracking-widest flex items-center gap-1.5 active:scale-95 duration-100 disabled:opacity-50 pointer-events-auto"
-          title="Track Live Node Coordinates"
+          className="absolute bottom-6 right-6 glass-card hover:bg-white/10 border border-white/10 text-zinc-200 px-4 py-2.5 rounded-xl shadow-xl transition-all text-xs font-semibold flex items-center gap-2 active:scale-95 disabled:opacity-50 pointer-events-auto"
+          title="Track Live Location"
         >
           {locating ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
           ) : (
-            <MapPin className="w-3 h-3 animate-pulse" />
+            <MapPin className="w-4 h-4 text-indigo-400" />
           )}
-          <span>{locating ? 'Aligning Grid...' : 'Locate Me'}</span>
+          <span>{locating ? 'Locating...' : 'Current Location'}</span>
         </button>
       </div>
     </div>

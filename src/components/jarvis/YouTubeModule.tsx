@@ -80,20 +80,22 @@ export default function YouTubeModule() {
   }
 
   return (
-    <div className="w-full flex flex-col h-full bg-black/40 border border-cyan-500/20 backdrop-blur-md rounded-lg overflow-hidden glow-border p-4">
+    <div className="w-full flex flex-col h-full glass-panel rounded-3xl overflow-hidden shadow-2xl p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-4 border-b border-cyan-500/10 pb-3">
-        <div className="flex gap-2 items-center">
-          <Tv className="w-4 h-4 text-cyan-400 animate-pulse" />
-          <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-cyan-400 font-mono">Cinematic Telemetry (YouTube)</span>
+      <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+        <div className="flex gap-3 items-center">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+             <Tv className="w-5 h-5 text-indigo-400" />
+          </div>
+          <span className="text-lg font-semibold tracking-tight text-zinc-200">YouTube Stream</span>
         </div>
         {selectedVideoId && (
           <button
             onClick={() => setSelectedVideoId(null)}
-            className="flex items-center gap-1 text-[9px] uppercase tracking-wider font-mono border border-cyan-500/30 text-cyan-400 px-2 py-0.5 rounded bg-cyan-500/5 hover:bg-cyan-500/10 active:scale-95 transition-all"
+            className="flex items-center gap-2 text-xs font-semibold text-zinc-300 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl transition-all border border-white/5 shadow-sm active:scale-95"
           >
-            <ArrowLeft className="w-3 h-3" />
-            <span>Search Feed</span>
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Search</span>
           </button>
         )}
       </div>
@@ -108,7 +110,7 @@ export default function YouTubeModule() {
             exit={{ opacity: 0, scale: 0.98 }}
             className="flex-1 flex flex-col justify-between h-full"
           >
-            <div className="flex-1 relative rounded border border-cyan-500/20 overflow-hidden bg-black aspect-video w-full h-[400px] mb-3">
+            <div className="flex-1 relative rounded-2xl border border-white/10 overflow-hidden bg-black aspect-video w-full h-[400px] mb-4 shadow-xl">
               <iframe
                 title="Cinematic Screen"
                 src={`https://www.youtube.com/embed/${selectedVideoId}?autoplay=1&rel=0`}
@@ -116,14 +118,12 @@ export default function YouTubeModule() {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
-              {/* Scanline overlay */}
-              <div className="absolute inset-0 pointer-events-none border border-cyan-500/10 bg-scanlines opacity-10" />
             </div>
 
-            <div className="bg-cyan-500/5 border border-cyan-500/25 p-3 rounded flex items-center gap-2">
-              <Tv className="w-4 h-4 text-cyan-400 shrink-0" />
-              <div className="text-[10px] font-mono text-cyan-300 truncate">
-                <span className="text-cyan-500 font-bold uppercase tracking-wider block text-[8px] mb-0.5">CURRENT STREAM</span>
+            <div className="glass-card border border-white/5 p-4 rounded-xl flex items-center gap-3">
+              <Tv className="w-5 h-5 text-indigo-400 shrink-0" />
+              <div className="text-sm font-medium text-zinc-200 truncate">
+                <span className="text-xs font-semibold tracking-wide text-zinc-500 block mb-0.5">NOW PLAYING</span>
                 {decodeHtml(selectedVideoTitle)}
               </div>
             </div>
@@ -143,43 +143,43 @@ export default function YouTubeModule() {
                 e.preventDefault()
                 handleSearch()
               }}
-              className="flex gap-2 mb-4"
+              className="flex gap-3 mb-6"
             >
               <div className="flex-1 relative">
                 <input
                   type="text"
-                  placeholder="Specify video search query or lo-fi stream link, Sir..."
+                  placeholder="Search for videos or paste a link..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-black/60 border border-cyan-500/30 text-cyan-300 text-xs px-3 py-2 pl-9 rounded focus:outline-none focus:border-cyan-400 transition-all font-mono placeholder-cyan-700 glow-input"
+                  className="w-full glass-input text-zinc-200 text-sm px-4 py-3 pl-11 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all placeholder-zinc-500"
                 />
-                <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-cyan-500/50" />
+                <Search className="absolute left-4 top-3.5 w-4 h-4 text-zinc-400" />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-400 text-cyan-400 uppercase tracking-widest text-[10px] px-4 rounded transition-all font-mono flex items-center justify-center gap-2 active:scale-95 duration-100 disabled:opacity-50"
+                className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-sm px-6 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
               >
                 {loading ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  'Query'
+                  'Search'
                 )}
               </button>
             </form>
 
             {/* Video Search Grid */}
-            <div className="flex-1 overflow-y-auto pr-1 space-y-3 scrollbar-thin scrollbar-thumb-cyan-500/20 h-full">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-white/10 h-full">
               {loading && videos.length === 0 ? (
                 <div className="h-full flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 text-cyan-400 animate-spin mt-12" />
+                  <Loader2 className="w-6 h-6 text-indigo-400 animate-spin mt-12" />
                 </div>
               ) : videos.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-cyan-700 font-mono text-[10px] text-center uppercase tracking-widest mt-16">
-                  Ready to query video streams, Sir.
+                <div className="h-full flex items-center justify-center text-zinc-500 font-medium text-sm mt-16">
+                  Ready to search for videos.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
                   {videos.map((vid) => (
                     <motion.div
                       key={vid.id}
@@ -189,27 +189,28 @@ export default function YouTubeModule() {
                         setSelectedVideoId(vid.id)
                         setSelectedVideoTitle(vid.title)
                       }}
-                      className="flex flex-col bg-cyan-500/5 hover:bg-cyan-500/10 border border-cyan-500/15 hover:border-cyan-500/40 rounded overflow-hidden cursor-pointer group transition-all duration-200"
+                      className="flex flex-col glass-card border border-white/5 hover:border-white/10 hover:bg-white/[0.04] rounded-2xl overflow-hidden cursor-pointer group transition-all duration-200 shadow-md hover:shadow-xl"
                     >
-                      <div className="relative aspect-video w-full overflow-hidden bg-black border-b border-cyan-500/10">
+                      <div className="relative aspect-video w-full overflow-hidden bg-zinc-900 border-b border-white/5">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={vid.thumbnail}
                           alt={vid.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-                          <div className="p-2.5 bg-cyan-500 text-black rounded-full shadow-[0_0_15px_rgba(0,242,255,0.7)] active:scale-90 transition-transform">
-                            <Play className="w-4 h-4 fill-black" />
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px]">
+                          <div className="p-3 bg-white text-black rounded-full shadow-xl transform scale-90 group-hover:scale-100 transition-all duration-300">
+                            <Play className="w-5 h-5 fill-black" />
                           </div>
                         </div>
                       </div>
 
-                      <div className="p-2.5">
-                        <div className="text-[10px] font-mono text-cyan-300 font-bold truncate">
+                      <div className="p-4">
+                        <div className="text-sm font-semibold text-zinc-200 line-clamp-2 leading-snug">
                           {decodeHtml(vid.title)}
                         </div>
-                        <div className="text-[8px] font-mono text-cyan-600 uppercase tracking-widest mt-0.5 truncate">
+                        <div className="text-xs font-medium text-zinc-500 mt-2 truncate flex items-center gap-1.5">
+                          <Tv className="w-3 h-3" />
                           {vid.channelTitle}
                         </div>
                       </div>

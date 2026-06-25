@@ -22,6 +22,7 @@ export async function GET(req: Request) {
     const dateParam = searchParams.get('date')
     const timeMinParam = searchParams.get('timeMin')
     const timeMaxParam = searchParams.get('timeMax')
+    const timeZoneParam = searchParams.get('timeZone')
     
     let timeMinStr, timeMaxStr;
 
@@ -44,6 +45,7 @@ export async function GET(req: Request) {
       calendarId: 'primary',
       timeMin: timeMinStr,
       timeMax: timeMaxStr,
+      timeZone: timeZoneParam || undefined,
       maxResults: 10,
       singleEvents: true,
       orderBy: 'startTime',
