@@ -34,41 +34,19 @@ export async function GET(req: Request) {
       return NextResponse.json({ items: results })
     }
 
-    // Fallback: DuckDuckGo Lite Scraper (Much more resilient to serverless blocking)
-    const ddgRes = await fetch(`https://lite.duckduckgo.com/lite/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      },
-      body: `q=${encodeURIComponent(query)}`
-    })
+    // Fallback: Wikipedia API (Free, JSON, No Rate Limits, No IP Blocks)
+    const wikiRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json`)
     
-    if (!ddgRes.ok) {
-      throw new Error(`DuckDuckGo responded with status: ${ddgRes.status}`)
+    if (!wikiRes.ok) {
+      throw new Error(`Wikipedia responded with status: ${wikiRes.status}`)
     }
 
-    const html = await ddgRes.text()
-    
-    const results: any[] = []
-    const linkRegex = /<a[^>]+class=['"]result-link['"][^>]*>([\s\S]*?)<\/a>/gi;
-    const snippetRegex = /class=['"]result-snippet['"][^>]*>([\s\S]*?)<\/td>/gi;
-    
-    const linkMatches = [...html.matchAll(linkRegex)];
-    const snippetMatches = [...html.matchAll(snippetRegex)];
-    
-    for (let i = 0; i < Math.min(linkMatches.length, 5); i++) {
-        const aTagMatch = linkMatches[i][0].match(/href=['"]([^'"]+)['"]/i);
-        const link = aTagMatch ? aTagMatch[1] : '';
-        const title = linkMatches[i][1].replace(/<\/?[^>]+(>|$)/g, "").trim();
-        const snippet = snippetMatches[i] ? snippetMatches[i][1].replace(/<\/?[^>]+(>|$)/g, "").trim() : '';
-        
-        results.push({
-          title,
-          snippet,
-          link: link.startsWith('//') ? 'https:' + link : link
-        });
-    }
+    const json = await wikiRes.json()
+    const results = json.query?.search?.slice(0, 5).map((r: any) => ({
+      title: r.title,
+      snippet: r.snippet.replace(/<\/?[^>]+(>|$)/g, ""), // Clean HTML tags
+      link: `https://en.wikipedia.org/wiki/${encodeURIComponent(r.title)}`
+    })) || []
 
     return NextResponse.json({ items: results })
   } catch (error: any) {

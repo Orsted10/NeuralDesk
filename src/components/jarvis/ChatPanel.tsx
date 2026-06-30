@@ -26,6 +26,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [provider, setProvider] = useState<'openrouter' | 'groq'>('openrouter')
+  const [latency, setLatency] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
 
@@ -58,6 +59,24 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         }
       }
     }
+  }, [])
+
+  // Dynamic Ping Latency Checker
+  useEffect(() => {
+    const checkLatency = async () => {
+      try {
+        const start = performance.now()
+        await fetch('/api/ping')
+        const end = performance.now()
+        setLatency(Math.round(end - start))
+      } catch (e) {
+        setLatency(0)
+      }
+    }
+    
+    checkLatency()
+    const interval = setInterval(checkLatency, 10000)
+    return () => clearInterval(interval)
   }, [])
 
   // Load history when active session changes
@@ -702,7 +721,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
               <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
               SYSTEM ONLINE
             </span>
-            <span className="text-[9px] text-zinc-500 font-mono tracking-widest">LATENCY: 12ms</span>
+            <span className="text-[9px] text-zinc-500 font-mono tracking-widest">
+              LATENCY: {latency > 0 ? `${latency}ms` : '--'}
+            </span>
           </div>
 
           <div className="flex gap-1 bg-black/20 p-1 rounded-xl border border-white/5">
