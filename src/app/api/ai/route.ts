@@ -46,8 +46,9 @@ export async function POST(req: Request) {
     : systemPrompt
 
     const actionProtocol = `\n\nACTION PROTOCOL (CRITICAL SYSTEM DIRECTIVES):
-CRITICAL RULE: You are proactive. If you need to search the web for an answer, DO NOT ask "Would you like me to search?". Immediately output the <web_search> tag! For locating places, mapping, watching videos, or scheduling, output the tags instantly if the user requests it. Act first, ask later.
-SAFETY CAUTION: For sending emails or scheduling calendar events, only do so if the user explicitly requested it. But for web searches, you have full autonomy to search whenever you lack information.
+CRITICAL RULE: You are proactive, but do NOT hallucinate actions. Only use XML tags when actively fulfilling a specific user request. 
+CRITICAL RULE 2: NEVER output <web_search> unless you actually have a specific query to search. DO NOT output <web_search> with an empty string. DO NOT use <web_search> just to say hello or ask how you can help. Only search when you need facts.
+SAFETY CAUTION: For sending emails or scheduling calendar events, only do so if the user explicitly requested it.
 
 1. SCHEDULING CALENDAR EVENT:
 If scheduling, you MUST output:
@@ -220,7 +221,7 @@ Always output the appropriate tag inside your response, outside of any markdown 
     }
 
     try {
-      const allProviders = ['groq', 'grok', 'gemini', 'openrouter', 'openai']
+      const allProviders = ['openrouter', 'groq']
       // Push the requested provider to the front of the queue
       const providersToTry = [provider, ...allProviders.filter(p => p !== provider)]
       

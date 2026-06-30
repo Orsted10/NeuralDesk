@@ -22,10 +22,9 @@ interface ChatPanelProps {
 export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProps) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [provider, setProvider] = useState<'openrouter' | 'gemini' | 'grok' | 'groq'>('groq')
+  const [provider, setProvider] = useState<'openrouter' | 'groq'>('openrouter')
   const scrollRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
 
@@ -248,79 +247,35 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       .trim()
   }
 
-  const currentAudioRef = useRef<HTMLAudioElement | null>(null)
-
-  async function speak(text: string) {
-    if (typeof window === 'undefined') return
-    
-    // Stop any ongoing speech
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause()
-      currentAudioRef.current = null
-    }
-    window.speechSynthesis.cancel()
-    
-    const cleanAudioText = stripMarkdownForSpeech(text)
-    if (!cleanAudioText) return
-    
-    try {
-      setIsSpeaking(true)
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: cleanAudioText })
-      })
-
-      if (!res.ok) {
-        throw new Error('TTS API failed')
-      }
-
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const audio = new Audio(url)
-      currentAudioRef.current = audio
-      
-      audio.onended = () => {
-        setIsSpeaking(false)
-        URL.revokeObjectURL(url)
-        currentAudioRef.current = null
-      }
-      audio.onerror = () => {
-        setIsSpeaking(false)
-        fallbackSpeak(cleanAudioText)
-        currentAudioRef.current = null
-      }
-      
-      await audio.play()
-    } catch (err) {
-      console.warn("OpenAI TTS Failed, falling back to Web Speech API", err)
-      fallbackSpeak(cleanAudioText)
-    }
-  }
-
-  function fallbackSpeak(text: string) {
+  function speak(text: string) {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      const utterance = new SpeechSynthesisUtterance(text)
+      window.speechSynthesis.cancel() // Stop any ongoing speech
+      const cleanAudioText = stripMarkdownForSpeech(text)
+      if (!cleanAudioText) return
       
+      const utterance = new SpeechSynthesisUtterance(cleanAudioText)
       const voices = window.speechSynthesis.getVoices()
-      const jarvisVoice = 
+      
+      // Extremely aggressive ranking for the most "soothing, smooth, and human" female voices
+      const premiumVoice = 
+        voices.find(v => v.name.toLowerCase().includes('jenny') && v.name.toLowerCase().includes('natural')) ||
+        voices.find(v => v.name.toLowerCase().includes('aria') && v.name.toLowerCase().includes('natural')) ||
+        voices.find(v => v.name.toLowerCase().includes('uk english female')) ||
+        voices.find(v => v.name.toLowerCase().includes('google uk english female')) ||
+        voices.find(v => v.name.toLowerCase().includes('samantha')) ||
         voices.find(v => v.name.toLowerCase().includes('natural') && v.lang.startsWith('en')) ||
-        voices.find(v => v.name.toLowerCase().includes('google') && v.name.toLowerCase().includes('male')) ||
-        voices.find(v => v.name.toLowerCase().includes('google') && v.lang.startsWith('en')) ||
-        voices.find(v => v.name.toLowerCase().includes('en-gb') && v.name.toLowerCase().includes('male')) ||
-        voices.find(v => v.name.toLowerCase().includes('en-us') && v.name.toLowerCase().includes('male')) ||
-        voices.find(v => v.name.toLowerCase().includes('guyonline')) ||
-        voices.find(v => v.name.toLowerCase().includes('aria')) ||
-        voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('male')) ||
+        voices.find(v => v.name.toLowerCase().includes('google us english')) ||
+        voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('female')) ||
         voices.find(v => v.lang.startsWith('en')) ||
         voices[0]
       
-      if (jarvisVoice) {
-        utterance.voice = jarvisVoice
+      if (premiumVoice) {
+        utterance.voice = premiumVoice
       }
       
-      utterance.pitch = 1.0
-      utterance.rate = 1.05
+      // Fine-tuned settings for a smoother, sexier cadence
+      utterance.pitch = 1.05
+      utterance.rate = 0.98
 
       utterance.onstart = () => setIsSpeaking(true)
       utterance.onend = () => setIsSpeaking(false)
@@ -742,7 +697,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           </button>
 
           <div className="flex gap-1 bg-black/20 p-1 rounded-xl border border-white/5">
-            {(['openrouter', 'gemini', 'grok', 'groq'] as const).map((p) => (
+            {(['openrouter', 'groq'] as const).map((p) => (
               <button
                 key={p}
                 onClick={() => setProvider(p)}
