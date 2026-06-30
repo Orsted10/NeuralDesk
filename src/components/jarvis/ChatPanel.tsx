@@ -22,6 +22,7 @@ interface ChatPanelProps {
 export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProps) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [provider, setProvider] = useState<'openrouter' | 'groq'>('openrouter')
