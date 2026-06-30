@@ -34,50 +34,54 @@ export async function GET(req: Request) {
       return NextResponse.json({ items: results })
     }
 
-    // Fallback: Yahoo Web Search (Real Web Search, Free, Unlimited, lenient IP blocks)
-    const yahooRes = await fetch(`https://search.yahoo.com/search?p=${encodeURIComponent(query)}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    })
-    
-    if (!yahooRes.ok) {
-      throw new Error(`Search engine responded with status: ${yahooRes.status}`)
-    }
-
-    const html = await yahooRes.text()
-    
-    const results: any[] = []
-    const resultBlocks = html.split('<div class="compTitle')
-    
-    for (let i = 1; i < resultBlocks.length; i++) {
-      if (results.length >= 5) break
-      const block = resultBlocks[i]
+    // Fallback: SearxNG Scatter-Gather Web Search (Real, Free, Unlimited, IP-block resistant)
+    try {
+      const spaceRes = await fetch('https://searx.space/data/instances.json', { next: { revalidate: 3600 } })
+      const data = await spaceRes.json()
       
-      const titleMatch = block.match(/<h3[^>]*>[\s\S]*?<a[^>]*href=['"]([^'"]+)['"][^>]*>([\s\S]*?)<\/a>/i)
-      const snippetMatch = block.match(/<div class="compText[^>]*>([\s\S]*?)<\/div>/i)
+      // Get 25 random instances to scatter requests across
+      const instances = Object.keys(data.instances).sort(() => 0.5 - Math.random()).slice(0, 25)
       
-      if (titleMatch) {
-        const link = titleMatch[1]
-        let title = titleMatch[2].replace(/<\/?[^>]+(>|$)/g, "").trim()
-        let snippet = snippetMatch ? snippetMatch[1].replace(/<\/?[^>]+(>|$)/g, "").trim() : ''
-        
-        // Skip junk results
-        if (title.toLowerCase().includes('yahoo') && snippet.toLowerCase().includes('summary generated')) continue;
-        if (!title || !snippet) continue;
-        
-        // Some Yahoo links are redirect links, extract the real RU= url
-        let finalLink = link
-        const ruMatch = link.match(/\/RU=([^/]+)\//)
-        if (ruMatch) {
-          finalLink = decodeURIComponent(ruMatch[1])
-        }
-        
-        results.push({ title, snippet, link: finalLink })
-      }
+      const fetchPromises = instances.map(url => {
+        return new Promise<any>(async (resolve, reject) => {
+          try {
+            const controller = new AbortController()
+            const id = setTimeout(() => controller.abort(), 8000)
+            
+            const res = await fetch(`${url}search?q=${encodeURIComponent(query)}&format=json`, {
+              signal: controller.signal,
+              headers: {
+                'Accept': 'application/json'
+              }
+            })
+            clearTimeout(id)
+            
+            if (res.ok) {
+              const json = await res.json()
+              if (json.results && json.results.length > 0) {
+                const searchResults = json.results.slice(0, 5).map((r: any) => ({
+                  title: r.title,
+                  snippet: r.content || r.snippet || '',
+                  link: r.url
+                }))
+                resolve(searchResults)
+                return
+              }
+            }
+            reject('No results')
+          } catch (e) {
+            reject(e)
+          }
+        })
+      })
+      
+      // Promise.any returns the FIRST successful result and cancels the rest
+      const results = await Promise.any(fetchPromises)
+      return NextResponse.json({ items: results })
+    } catch (e) {
+      console.error("SearxNG parallel search failed", e)
+      return NextResponse.json({ items: [] })
     }
-
-    return NextResponse.json({ items: results })
   } catch (error: any) {
     console.error('Search API error:', error)
     return NextResponse.json({ error: error.message || 'Failed to execute search' }, { status: 500 })
