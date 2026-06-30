@@ -34,52 +34,45 @@ export async function GET(req: Request) {
       return NextResponse.json({ items: results })
     }
 
-    // Fallback: SearxNG Scatter-Gather Web Search (Real, Free, Unlimited, IP-block resistant)
+    // Fallback: Google News RSS (Real Web Search, Free, Unlimited, 0 IP blocks)
     try {
-      const spaceRes = await fetch('https://searx.space/data/instances.json', { next: { revalidate: 3600 } })
-      const data = await spaceRes.json()
-      
-      // Get 25 random instances to scatter requests across
-      const instances = Object.keys(data.instances).sort(() => 0.5 - Math.random()).slice(0, 25)
-      
-      const fetchPromises = instances.map(url => {
-        return new Promise<any>(async (resolve, reject) => {
-          try {
-            const controller = new AbortController()
-            const id = setTimeout(() => controller.abort(), 8000)
-            
-            const res = await fetch(`${url}search?q=${encodeURIComponent(query)}&format=json`, {
-              signal: controller.signal,
-              headers: {
-                'Accept': 'application/json'
-              }
-            })
-            clearTimeout(id)
-            
-            if (res.ok) {
-              const json = await res.json()
-              if (json.results && json.results.length > 0) {
-                const searchResults = json.results.slice(0, 5).map((r: any) => ({
-                  title: r.title,
-                  snippet: r.content || r.snippet || '',
-                  link: r.url
-                }))
-                resolve(searchResults)
-                return
-              }
-            }
-            reject('No results')
-          } catch (e) {
-            reject(e)
-          }
-        })
+      const rssRes = await fetch(`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        }
       })
       
-      // Promise.any returns the FIRST successful result and cancels the rest
-      const results = await Promise.any(fetchPromises)
+      if (!rssRes.ok) throw new Error("RSS failed")
+      
+      const xml = await rssRes.text()
+      const items = xml.split('<item>')
+      const results = []
+      
+      for (let i = 1; i < Math.min(items.length, 6); i++) {
+        const item = items[i]
+        const titleMatch = item.match(/<title>(.*?)<\/title>/)
+        const linkMatch = item.match(/<link>(.*?)<\/link>/)
+        const descMatch = item.match(/<description>(.*?)<\/description>/)
+        
+        if (titleMatch && linkMatch) {
+          let snippet = 'Latest updates regarding this search.'
+          if (descMatch) {
+            // Strip HTML from description
+            snippet = descMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').replace(/<\/?[^>]+(>|$)/g, "").trim()
+            if (snippet.length > 200) snippet = snippet.substring(0, 200) + '...'
+          }
+          
+          results.push({
+            title: titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1'),
+            link: linkMatch[1],
+            snippet: snippet
+          })
+        }
+      }
+      
       return NextResponse.json({ items: results })
     } catch (e) {
-      console.error("SearxNG parallel search failed", e)
+      console.error("News RSS search failed", e)
       return NextResponse.json({ items: [] })
     }
   } catch (error: any) {
