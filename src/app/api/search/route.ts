@@ -34,19 +34,48 @@ export async function GET(req: Request) {
       return NextResponse.json({ items: results })
     }
 
-    // Fallback: Wikipedia API (Free, JSON, No Rate Limits, No IP Blocks)
-    const wikiRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json`)
+    // Fallback: Yahoo Web Search (Real Web Search, Free, Unlimited, lenient IP blocks)
+    const yahooRes = await fetch(`https://search.yahoo.com/search?p=${encodeURIComponent(query)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    })
     
-    if (!wikiRes.ok) {
-      throw new Error(`Wikipedia responded with status: ${wikiRes.status}`)
+    if (!yahooRes.ok) {
+      throw new Error(`Search engine responded with status: ${yahooRes.status}`)
     }
 
-    const json = await wikiRes.json()
-    const results = json.query?.search?.slice(0, 5).map((r: any) => ({
-      title: r.title,
-      snippet: r.snippet.replace(/<\/?[^>]+(>|$)/g, ""), // Clean HTML tags
-      link: `https://en.wikipedia.org/wiki/${encodeURIComponent(r.title)}`
-    })) || []
+    const html = await yahooRes.text()
+    
+    const results: any[] = []
+    const resultBlocks = html.split('<div class="compTitle')
+    
+    for (let i = 1; i < resultBlocks.length; i++) {
+      if (results.length >= 5) break
+      const block = resultBlocks[i]
+      
+      const titleMatch = block.match(/<h3[^>]*>[\s\S]*?<a[^>]*href=['"]([^'"]+)['"][^>]*>([\s\S]*?)<\/a>/i)
+      const snippetMatch = block.match(/<div class="compText[^>]*>([\s\S]*?)<\/div>/i)
+      
+      if (titleMatch) {
+        const link = titleMatch[1]
+        let title = titleMatch[2].replace(/<\/?[^>]+(>|$)/g, "").trim()
+        let snippet = snippetMatch ? snippetMatch[1].replace(/<\/?[^>]+(>|$)/g, "").trim() : ''
+        
+        // Skip junk results
+        if (title.toLowerCase().includes('yahoo') && snippet.toLowerCase().includes('summary generated')) continue;
+        if (!title || !snippet) continue;
+        
+        // Some Yahoo links are redirect links, extract the real RU= url
+        let finalLink = link
+        const ruMatch = link.match(/\/RU=([^/]+)\//)
+        if (ruMatch) {
+          finalLink = decodeURIComponent(ruMatch[1])
+        }
+        
+        results.push({ title, snippet, link: finalLink })
+      }
+    }
 
     return NextResponse.json({ items: results })
   } catch (error: any) {
