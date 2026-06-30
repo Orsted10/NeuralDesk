@@ -248,20 +248,61 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       .trim()
   }
 
-  function speak(text: string) {
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  async function speak(text: string) {
+    if (typeof window === 'undefined') return
+    
+    // Stop any ongoing speech
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause()
+      currentAudioRef.current = null
+    }
+    window.speechSynthesis.cancel()
+    
+    const cleanAudioText = stripMarkdownForSpeech(text)
+    if (!cleanAudioText) return
+    
+    try {
+      setIsSpeaking(true)
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: cleanAudioText })
+      })
+
+      if (!res.ok) {
+        throw new Error('TTS API failed')
+      }
+
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      currentAudioRef.current = audio
+      
+      audio.onended = () => {
+        setIsSpeaking(false)
+        URL.revokeObjectURL(url)
+        currentAudioRef.current = null
+      }
+      audio.onerror = () => {
+        setIsSpeaking(false)
+        fallbackSpeak(cleanAudioText)
+        currentAudioRef.current = null
+      }
+      
+      await audio.play()
+    } catch (err) {
+      console.warn("OpenAI TTS Failed, falling back to Web Speech API", err)
+      fallbackSpeak(cleanAudioText)
+    }
+  }
+
+  function fallbackSpeak(text: string) {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel() // Stop any ongoing speech
-      const cleanAudioText = stripMarkdownForSpeech(text)
-      const utterance = new SpeechSynthesisUtterance(cleanAudioText)
+      const utterance = new SpeechSynthesisUtterance(text)
       
-      // Grab all available system speech engines
       const voices = window.speechSynthesis.getVoices()
-      
-      // Rank and find the absolute highest fidelity, most natural human voice available:
-      // Priority 1: Microsoft Natural Online voices (incredibly fluent, human assistant level on Edge/Windows)
-      // Priority 2: Google Premium voices (highly fluent human narration on Chrome)
-      // Priority 3: Apple Samantha/Daniel Premium voices (high fidelity on Safari/macOS)
-      // Priority 4: Male/English fallbacks
       const jarvisVoice = 
         voices.find(v => v.name.toLowerCase().includes('natural') && v.lang.startsWith('en')) ||
         voices.find(v => v.name.toLowerCase().includes('google') && v.name.toLowerCase().includes('male')) ||
@@ -278,7 +319,6 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         utterance.voice = jarvisVoice
       }
       
-      // Adjust pitch and rate to sound natural, rhythmic, and fluent (crisp conversational pace)
       utterance.pitch = 1.0
       utterance.rate = 1.05
 
