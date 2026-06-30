@@ -1,14 +1,11 @@
 const query = 'elon musk net worth';
-const targetUrl = `https://search.yahoo.com/search?p=${encodeURIComponent(query)}`;
-const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-
-fetch(proxyUrl)
-  .then(res => {
-    console.log('Status:', res.status);
-    return res.text();
-  })
-  .then(html => {
-    console.log('Length:', html.length);
-    if (html.includes('compTitle')) console.log('Yahoo HTML found!');
+fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://search.yahoo.com/search?p=' + query)}`)
+  .then(res => res.json())
+  .then(data => {
+    if (data.contents) {
+      console.log('Success, HTML length:', data.contents.length);
+    } else {
+      console.log('Failed:', data);
+    }
   })
   .catch(console.error);
