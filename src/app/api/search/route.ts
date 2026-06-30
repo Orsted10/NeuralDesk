@@ -47,7 +47,7 @@ export async function GET(req: Request) {
     
     // Parse DDG HTML manually (avoiding heavy DOM libraries for Edge compatibility)
     const results: any[] = []
-    const resultBlocks = html.split('class="result__body"').slice(1)
+    const resultBlocks = html.split('result__body').slice(1)
     
     for (const block of resultBlocks) {
       if (results.length >= 5) break
