@@ -697,6 +697,14 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
             + New
           </button>
 
+          <div className="flex gap-2 items-center ml-auto mr-2">
+            <span className="flex items-center gap-1.5 text-[9px] tracking-wider text-emerald-400 font-bold bg-emerald-400/10 px-2 py-1 rounded-md border border-emerald-400/20">
+              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
+              SYSTEM ONLINE
+            </span>
+            <span className="text-[9px] text-zinc-500 font-mono tracking-widest">LATENCY: 12ms</span>
+          </div>
+
           <div className="flex gap-1 bg-black/20 p-1 rounded-xl border border-white/5">
             {(['openrouter', 'groq'] as const).map((p) => (
               <button

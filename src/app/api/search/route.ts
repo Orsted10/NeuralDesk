@@ -34,11 +34,14 @@ export async function GET(req: Request) {
       return NextResponse.json({ items: results })
     }
 
-    // Fallback: DuckDuckGo HTML Scraper (No API keys required)
-    const ddgRes = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
+    // Fallback: DuckDuckGo Lite Scraper (Much more resilient to serverless blocking)
+    const ddgRes = await fetch(`https://lite.duckduckgo.com/lite/`, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+      },
+      body: `q=${encodeURIComponent(query)}`
     })
     
     if (!ddgRes.ok) {
@@ -47,29 +50,24 @@ export async function GET(req: Request) {
 
     const html = await ddgRes.text()
     
-    // Parse DDG HTML manually (avoiding heavy DOM libraries for Edge compatibility)
     const results: any[] = []
-    const resultBlocks = html.split('result__body').slice(1)
+    const linkRegex = /<a[^>]+class=['"]result-link['"][^>]*>([\s\S]*?)<\/a>/gi;
+    const snippetRegex = /class=['"]result-snippet['"][^>]*>([\s\S]*?)<\/td>/gi;
     
-    for (const block of resultBlocks) {
-      if (results.length >= 5) break
-      
-      const titleMatch = block.match(/class="result__title"[^>]*>[\s\S]*?<a[^>]*>(.*?)<\/a>/i)
-      const snippetMatch = block.match(/class="result__snippet[^>]*>(.*?)<\/a>/i)
-      const linkMatch = block.match(/href="([^"]+)"/i)
-      
-      if (titleMatch && snippetMatch) {
-        // Clean up bold tags and HTML entities
-        const cleanTitle = titleMatch[1].replace(/<\/?[^>]+(>|$)/g, "").trim()
-        const cleanSnippet = snippetMatch[1].replace(/<\/?[^>]+(>|$)/g, "").trim()
-        const link = linkMatch ? linkMatch[1] : ''
+    const linkMatches = [...html.matchAll(linkRegex)];
+    const snippetMatches = [...html.matchAll(snippetRegex)];
+    
+    for (let i = 0; i < Math.min(linkMatches.length, 5); i++) {
+        const aTagMatch = linkMatches[i][0].match(/href=['"]([^'"]+)['"]/i);
+        const link = aTagMatch ? aTagMatch[1] : '';
+        const title = linkMatches[i][1].replace(/<\/?[^>]+(>|$)/g, "").trim();
+        const snippet = snippetMatches[i] ? snippetMatches[i][1].replace(/<\/?[^>]+(>|$)/g, "").trim() : '';
         
         results.push({
-          title: cleanTitle,
-          snippet: cleanSnippet,
+          title,
+          snippet,
           link: link.startsWith('//') ? 'https:' + link : link
-        })
-      }
+        });
     }
 
     return NextResponse.json({ items: results })
