@@ -15,23 +15,29 @@ export async function GET(req: Request) {
     const cx = process.env.GOOGLE_SEARCH_ENGINE_ID
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || process.env.GEMINI_API_KEY
 
-    // If Google API is available, use it
+    // 1. If Google Custom Search API is available, use it first
     if (cx && apiKey) {
-      const customsearch = google.customsearch('v1')
-      const res = await customsearch.cse.list({
-        cx: cx,
-        q: query,
-        auth: apiKey,
-        num: 5,
-      })
+      try {
+        const customsearch = google.customsearch('v1')
+        const res = await customsearch.cse.list({
+          cx: cx,
+          q: query,
+          auth: apiKey,
+          num: 5,
+        })
 
-      const results = res.data.items?.map(item => ({
-        title: item.title,
-        link: item.link,
-        snippet: item.snippet
-      })) || []
+        const results = res.data.items?.map(item => ({
+          title: item.title,
+          link: item.link,
+          snippet: item.snippet
+        })) || []
 
-      return NextResponse.json({ items: results })
+        if (results.length > 0) {
+          return NextResponse.json({ items: results })
+        }
+      } catch (e) {
+        console.error("Google Custom Search failed", e)
+      }
     }
 
     // Try Tavily API if available
