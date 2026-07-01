@@ -699,7 +699,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   }
 
   return (
-    <div className="w-full max-w-2xl flex flex-col h-[400px] glass-panel rounded-3xl overflow-hidden shadow-2xl">
+    <div className="w-full max-w-2xl flex flex-col h-[80vh] max-h-[800px] min-h-[500px] glass-panel rounded-3xl overflow-hidden shadow-2xl transition-all duration-500">
       {/* Header */}
       <div className="p-4 border-b border-white/[0.05] flex justify-between items-center bg-white/[0.02]">
         <div className="flex gap-4 items-center flex-1">
@@ -788,7 +788,18 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
                   {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
                   <span className="text-[11px] font-semibold tracking-wide">{msg.role === 'user' ? 'Ankan' : 'JARVIS'}</span>
                 </div>
-                <div className="leading-relaxed whitespace-pre-wrap font-medium prose prose-invert max-w-none prose-sm prose-p:leading-relaxed prose-pre:bg-black/20">
+                <div className="leading-relaxed font-medium prose prose-invert max-w-none prose-sm 
+                  prose-p:leading-relaxed prose-p:mb-3 last:prose-p:mb-0
+                  prose-a:text-indigo-400 hover:prose-a:text-indigo-300 prose-a:no-underline hover:prose-a:underline prose-a:transition-all
+                  prose-strong:text-indigo-100 prose-strong:font-semibold
+                  prose-ul:list-disc prose-ul:pl-5 prose-ul:mb-4
+                  prose-ol:list-decimal prose-ol:pl-5 prose-ol:mb-4
+                  prose-li:my-1 prose-li:text-zinc-200 prose-li:marker:text-indigo-500/70
+                  prose-pre:bg-black/30 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-xl
+                  prose-code:text-emerald-400 prose-code:bg-emerald-400/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-[11px] prose-code:before:content-none prose-code:after:content-none
+                  prose-headings:text-zinc-100 prose-headings:font-semibold prose-headings:mb-3 prose-headings:mt-4
+                  prose-blockquote:border-l-indigo-500 prose-blockquote:bg-indigo-500/5 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:text-zinc-300 prose-blockquote:italic
+                ">
                   <ReactMarkdown>{formatMessageDisplay(msg.content)}</ReactMarkdown>
                 </div>
               </div>
