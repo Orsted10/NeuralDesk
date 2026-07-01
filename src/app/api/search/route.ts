@@ -69,7 +69,66 @@ export async function GET(req: Request) {
       }
     }
 
-    // Fallback: Google News RSS (Real Web Search, Free, Unlimited, 0 IP blocks)
+    // 2. Try Exa API
+    const exaKey = process.env.EXA_API_KEY
+    if (exaKey) {
+      try {
+        const exaRes = await fetch('https://api.exa.ai/search', {
+          method: 'POST',
+          headers: { 'x-api-key': exaKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: query, numResults: 5, useAutoprompt: true })
+        })
+        if (exaRes.ok) {
+          const data = await exaRes.json()
+          const results = data.results?.map((item: any) => ({
+            title: item.title,
+            link: item.url,
+            snippet: item.text || item.title
+          })) || []
+          if (results.length > 0) return NextResponse.json({ items: results })
+        }
+      } catch (e) { console.error("Exa search failed", e) }
+    }
+
+    // 3. Try Firecrawl API
+    const firecrawlKey = process.env.FIRECRAWL_API_KEY
+    if (firecrawlKey) {
+      try {
+        const firecrawlRes = await fetch('https://api.firecrawl.dev/v1/search', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${firecrawlKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: query })
+        })
+        if (firecrawlRes.ok) {
+          const data = await firecrawlRes.json()
+          const results = data.data?.map((item: any) => ({
+            title: item.title,
+            link: item.url,
+            snippet: item.description || item.title
+          })) || []
+          if (results.length > 0) return NextResponse.json({ items: results })
+        }
+      } catch (e) { console.error("Firecrawl search failed", e) }
+    }
+
+    // 4. Try Zenserp API
+    const zenserpKey = process.env.ZENSERP_API_KEY
+    if (zenserpKey) {
+      try {
+        const zenserpRes = await fetch(`https://app.zenserp.com/api/v2/search?apikey=${zenserpKey}&q=${encodeURIComponent(query)}`)
+        if (zenserpRes.ok) {
+          const data = await zenserpRes.json()
+          const results = data.organic?.map((item: any) => ({
+            title: item.title,
+            link: item.url,
+            snippet: item.description
+          })) || []
+          if (results.length > 0) return NextResponse.json({ items: results })
+        }
+      } catch (e) { console.error("Zenserp search failed", e) }
+    }
+
+    // 5. Fallback: Google News RSS (Real Web Search, Free, Unlimited, 0 IP blocks)
     try {
       const rssRes = await fetch(`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`, {
         headers: {
