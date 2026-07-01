@@ -34,6 +34,41 @@ export async function GET(req: Request) {
       return NextResponse.json({ items: results })
     }
 
+    // Try Tavily API if available
+    const tavilyKey = process.env.TAVILY_API_KEY
+    if (tavilyKey) {
+      try {
+        const tavilyRes = await fetch('https://api.tavily.com/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            api_key: tavilyKey,
+            query: query,
+            search_depth: "basic",
+            include_answer: false,
+            max_results: 5
+          })
+        })
+        
+        if (tavilyRes.ok) {
+          const data = await tavilyRes.json()
+          const results = data.results?.map((item: any) => ({
+            title: item.title,
+            link: item.url,
+            snippet: item.content
+          })) || []
+          
+          if (results.length > 0) {
+            return NextResponse.json({ items: results })
+          }
+        }
+      } catch (e) {
+        console.error("Tavily search failed", e)
+      }
+    }
+
     // Fallback: Google News RSS (Real Web Search, Free, Unlimited, 0 IP blocks)
     try {
       const rssRes = await fetch(`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`, {
