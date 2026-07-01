@@ -435,47 +435,22 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         const query = finalSearch[1].trim()
         toast.success(`Protocol Complete: Searching the web for "${query}".`, { icon: '🔍' })
         
-        // Client-side Web Search (bypasses server IP blocks, acts like a background tab)
-        fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://search.yahoo.com/search?p=' + query)}`)
+        // Fetch web search results via our backend (which uses unblockable Google News RSS)
+        fetch(`/api/search?q=${encodeURIComponent(query)}`)
           .then(res => res.json())
           .then(data => {
             let injection = ''
-            if (!data.contents) {
+            if (!data.items || data.items.length === 0) {
               injection = `<system>Web Search Results for "${query}":\nNo results found.</system>\nDo NOT attempt to search again. Tell me you couldn't find the answer.`
             } else {
-              const html = data.contents;
-              const results: any[] = []
-              const resultBlocks = html.split('<div class="compTitle')
-              
-              for (let i = 1; i < resultBlocks.length; i++) {
-                if (results.length >= 4) break
-                const block = resultBlocks[i]
-                
-                const titleMatch = block.match(/<h3[^>]*>[\s\S]*?<a[^>]*href=['"]([^'"]+)['"][^>]*>([\s\S]*?)<\/a>/i)
-                const snippetMatch = block.match(/<div class="compText[^>]*>([\s\S]*?)<\/div>/i)
-                
-                if (titleMatch) {
-                  let title = titleMatch[2].replace(/<\/?[^>]+(>|$)/g, "").trim()
-                  let snippet = snippetMatch ? snippetMatch[1].replace(/<\/?[^>]+(>|$)/g, "").trim() : ''
-                  
-                  if (!title.toLowerCase().includes('yahoo') && title && snippet) {
-                    results.push({ title, snippet })
-                  }
-                }
-              }
-              
-              if (results.length === 0) {
-                 injection = `<system>Web Search Results for "${query}":\nNo results found.</system>\nDo NOT attempt to search again. Tell me you couldn't find the answer.`
-              } else {
-                 const formatted = results.map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n')
-                 injection = `<system>Web Search Results for "${query}":\n${formatted}</system>\nAnalyze these search results and answer my previous question.`
-              }
+              const results = data.items.slice(0, 4).map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n')
+              injection = `<system>Web Search Results for "${query}":\n${results}</system>\nAnalyze these search results and answer my previous question.`
             }
             
             // Automatically trigger the next turn so JARVIS can analyze the results!
             handleSend(injection)
           })
-          .catch(err => console.error("Client side search failed", err))
+          .catch(err => console.error("Search failed", err))
       }
 
       if (finalDirections) {
