@@ -120,7 +120,7 @@ CRITICAL: NEVER ask the user for a phone number! If they give you a name (e.g. "
 
 If the user asks you to READ or check the latest messages from a specific person on WhatsApp, output:
 <read_whatsapp>Contact Name</read_whatsapp>
-CRITICAL: NEVER ask for a phone number. Use the name they provided.\`
+CRITICAL: NEVER ask for a phone number. Use the name they provided.`
   }
 
   actionProtocol += `\n\nAlways output the appropriate tag inside your response, outside of any markdown code blocks. Guess coordinates/dates based on context if not explicitly provided.`
