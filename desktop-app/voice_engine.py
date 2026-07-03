@@ -52,7 +52,7 @@ def listen_loop():
         # This will run in a background thread and automatically handle speech/silence detection
         while True:
             try:
-                audio = r.listen(source, timeout=None, phrase_time_limit=15)
+                audio = r.listen(source, timeout=None, phrase_time_limit=None)
                 # Process in a separate thread so we don't block listening
                 threading.Thread(target=process_audio, args=(r, audio)).start()
             except Exception as e:

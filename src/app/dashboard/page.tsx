@@ -309,7 +309,7 @@ export default function DashboardPage() {
             <div className="mt-8 w-full flex justify-center">
               <ChatPanel 
                 onVoiceStateChange={setVoiceState} 
-                context={`User: Ankan. User Email (for sending to myself): ${userEmail || 'Unknown'}. WhatsApp Self Contact Name: "Ankan". Current Date & Time: ${time.toString()}. Live Location: (LAT: ${location.lat}, LONG: ${location.long}). Status: ${location.city}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Live Upcoming Calendar Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ')}. Unread Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
+                context={`User: Ankan. User Email (for sending to myself): ${userEmail || 'Unknown'}. WhatsApp Self Contact Name: "Ankan (You)". Current Date & Time: ${time.toString()}. Live Location: (LAT: ${location.lat}, LONG: ${location.long}). Status: ${location.city}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Live Upcoming Calendar Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ')}. Unread Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
               />
             </div>
 
