@@ -141,7 +141,7 @@ ipcMain.handle('whatsapp-read', async (event, contactName) => {
     const messages = await targetChat.fetchMessages({ limit: 5 });
     const formattedMessages = messages.map(m => ({
       sender: m.fromMe ? 'Me' : (targetChat.name || 'Them'),
-      body: m.body,
+      body: m.body ? m.body : (m.hasMedia ? '[Media Attached]' : '[System/Empty Message]'),
       timestamp: new Date(m.timestamp * 1000).toLocaleString()
     }));
 

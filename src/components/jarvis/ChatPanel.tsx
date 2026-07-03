@@ -148,80 +148,73 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     }
   }, [])
 
-  // Initialize Speech Recognition
-  useEffect(() => {
-    let rec: any = null
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      if (SpeechRecognition) {
-        rec = new SpeechRecognition()
-        recognitionRef.current = rec
-        rec.continuous = false
-        rec.interimResults = true // Enable real-time interim results
-        rec.lang = 'en-US'
+  // Whisper Speech Recognition
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
 
-        rec.onstart = () => {
-          try {
-            console.log("Speech recognition started")
-          } catch (e) {}
-        }
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
 
-        rec.onresult = (event: any) => {
-          let interimTranscript = ''
-          let finalTranscript = ''
-
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-              finalTranscript += event.results[i][0].transcript
-            } else {
-              interimTranscript += event.results[i][0].transcript
-            }
-          }
-
-          if (finalTranscript) {
-            setInput(finalTranscript)
-            handleSendRef.current?.(finalTranscript)
-          } else if (interimTranscript) {
-            setInput(interimTranscript)
-          }
-        }
-
-        rec.onend = () => {
-          setIsListening(false)
-          // Fallback sending: if we have typed/spoken text and no active API call is running, send it
-          setTimeout(() => {
-            if (inputRef.current.trim() && !isLoadingRef.current) {
-              const text = inputRef.current.trim()
-              setInput('') // clear it
-              handleSendRef.current?.(text)
-            }
-          }, 300)
-        }
-
-        rec.onerror = (event: any) => {
-          console.error('Speech recognition error', event.error)
-          setIsListening(false)
-          if (event.error === 'not-allowed') {
-            toast.error("Microphone access denied, Sir. Please allow permission in your browser settings.")
-          } else if (event.error === 'no-speech') {
-            console.log("No speech detected.")
-          } else {
-            toast.error(`Speech recognition error: ${event.error}`)
-          }
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
         }
       }
-    }
 
-    return () => {
-      if (rec) {
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        setIsListening(false)
+        setIsLoading(true)
+
+        // Send to our whisper endpoint
+        const formData = new FormData()
+        formData.append('file', audioBlob, 'audio.webm')
+
         try {
-          rec.abort()
+          const res = await fetch('/api/transcribe', {
+            method: 'POST',
+            body: formData
+          })
+          const data = await res.json()
+          if (data.text) {
+            setInput(data.text)
+            handleSend(data.text)
+          } else {
+            toast.error('Could not transcribe audio.')
+          }
         } catch (e) {
           console.error(e)
+          toast.error('Voice processing failed.')
+        } finally {
+          setIsLoading(false)
+          stream.getTracks().forEach(track => track.stop())
         }
       }
+
+      mediaRecorder.start()
+      setIsListening(true)
+    } catch (e) {
+      console.error(e)
+      toast.error('Microphone access denied or unavailable.')
     }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isListening) {
+      mediaRecorderRef.current.stop()
+    }
+  }
+
+  // Remove old SpeechRecognition effect
+  useEffect(() => {
+    // Kept empty to satisfy hooks but removed old logic
   }, [])
+
+
 
   // Listen to visual Orb clicks to trigger Voice
   useEffect(() => {
@@ -712,25 +705,10 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   }
 
   const toggleListening = () => {
-    if (!recognitionRef.current) {
-      toast.error("Speech Recognition is not supported in this browser environment, Sir. Chrome is recommended.")
-      return
-    }
     if (isListening) {
-      try {
-        recognitionRef.current.stop()
-      } catch (e) {
-        console.error(e)
-      }
+      stopRecording()
     } else {
-      try {
-        setIsListening(true)
-        recognitionRef.current.start()
-      } catch (e) {
-        console.error(e)
-        setIsListening(false)
-        toast.error("Could not activate voice link, Sir.")
-      }
+      startRecording()
     }
   }
 
