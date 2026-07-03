@@ -235,11 +235,46 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       isAwakeRef.current = true
       setIsListening(true)
       playWakeBeep()
+
+      // Web Fallback: If not on desktop, use browser's SpeechRecognition
+      if (typeof window !== 'undefined' && !(window as any).jarvisDesktop) {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        if (SpeechRecognition) {
+          const recognition = new SpeechRecognition()
+          recognition.continuous = false
+          recognition.interimResults = false
+          recognitionRef.current = recognition
+          
+          recognition.onresult = (event: any) => {
+            const transcript = Array.from(event.results)
+              .map((res: any) => res[0].transcript)
+              .join('')
+            setInput(transcript)
+            handleSendRef.current?.(transcript)
+          }
+          
+          recognition.onend = () => {
+            setIsAwake(false)
+            isAwakeRef.current = false
+            setIsListening(false)
+          }
+          
+          recognition.start()
+        } else {
+          toast.error("Your browser does not support Voice Recognition.")
+          setIsAwake(false)
+          isAwakeRef.current = false
+          setIsListening(false)
+        }
+      }
     } else {
       // Manual turn off
       setIsAwake(false)
       isAwakeRef.current = false
       setIsListening(false)
+      if (recognitionRef.current) {
+        recognitionRef.current.stop()
+      }
     }
   }
 
