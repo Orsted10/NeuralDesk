@@ -36,6 +36,26 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   
   // Desktop-specific state
   const [whatsappQr, setWhatsappQr] = useState<string | null>(null)
+  const [isAwake, setIsAwake] = useState(false)
+  const isAwakeRef = useRef(false)
+  
+  const playWakeBeep = () => {
+    try {
+      window.speechSynthesis.cancel() // Stop AI from speaking if interrupted
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+      const ctx = new AudioContext()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(880, ctx.currentTime)
+      gain.gain.setValueAtTime(0.1, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
+      osc.start(ctx.currentTime)
+      osc.stop(ctx.currentTime + 0.1)
+    } catch (e) {}
+  }
 
   // Load sessions first
   useEffect(() => {
@@ -148,71 +168,80 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     }
   }, [])
 
-  // Whisper Speech Recognition
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const audioChunksRef = useRef<Blob[]>([])
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream)
-      mediaRecorderRef.current = mediaRecorder
-      audioChunksRef.current = []
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data)
-        }
-      }
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
-        setIsListening(false)
-        setIsLoading(true)
-
-        // Send to our whisper endpoint
-        const formData = new FormData()
-        formData.append('file', audioBlob, 'audio.webm')
-
+  // Python Voice Engine (WebSocket)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    let ws: WebSocket | null = null
+    const connectWs = () => {
+      ws = new WebSocket('ws://localhost:8765')
+      
+      ws.onmessage = (event) => {
         try {
-          const res = await fetch('/api/transcribe', {
-            method: 'POST',
-            body: formData
-          })
-          const data = await res.json()
-          if (data.text) {
-            setInput(data.text)
-            handleSend(data.text)
-          } else {
-            toast.error('Could not transcribe audio.')
+          const data = JSON.parse(event.data)
+          if (data.type === 'transcript') {
+            const text = data.text.trim()
+            if (!text) return
+
+            if (isAwakeRef.current) {
+              // If the mic is currently active (either by manual click or previous wake word), 
+              // treat this transcript as a command and send it immediately.
+              setIsAwake(false)
+              isAwakeRef.current = false
+              setIsListening(false)
+              setInput(text)
+              handleSendRef.current?.(text)
+            } else {
+              // The mic is NOT active. Check if they said the wake word.
+              if (text.toLowerCase().includes('jarvis')) {
+                const parts = text.toLowerCase().split('jarvis')
+                const command = parts.slice(1).join('jarvis').trim()
+                
+                if (command.length > 0) {
+                  // They said "Jarvis do X" in one breath
+                  window.speechSynthesis.cancel() // Interrupt
+                  setInput(command)
+                  handleSendRef.current?.(command)
+                } else {
+                  // They just said "Jarvis", trigger wake word UI and wait for next phrase
+                  setIsAwake(true)
+                  isAwakeRef.current = true
+                  setIsListening(true)
+                  playWakeBeep()
+                }
+              }
+            }
           }
         } catch (e) {
-          console.error(e)
-          toast.error('Voice processing failed.')
-        } finally {
-          setIsLoading(false)
-          stream.getTracks().forEach(track => track.stop())
+          console.error('WS Parse Error', e)
         }
       }
 
-      mediaRecorder.start()
-      setIsListening(true)
-    } catch (e) {
-      console.error(e)
-      toast.error('Microphone access denied or unavailable.')
+      ws.onclose = () => {
+        setTimeout(connectWs, 3000) // Reconnect on close
+      }
     }
-  }
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isListening) {
-      mediaRecorderRef.current.stop()
+    
+    connectWs()
+    return () => {
+      if (ws) ws.close()
     }
-  }
-
-  // Remove old SpeechRecognition effect
-  useEffect(() => {
-    // Kept empty to satisfy hooks but removed old logic
   }, [])
+
+  const toggleListening = () => {
+    if (!isListening) {
+      // Manual trigger: act exactly like the wake word was spoken
+      setIsAwake(true)
+      isAwakeRef.current = true
+      setIsListening(true)
+      playWakeBeep()
+    } else {
+      // Manual turn off
+      setIsAwake(false)
+      isAwakeRef.current = false
+      setIsListening(false)
+    }
+  }
 
 
 
@@ -314,6 +343,12 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     setIsLoading(true)
 
     try {
+      // Inject OS Context
+      let osContext = null
+      if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+        osContext = await (window as any).jarvisDesktop.getOsContext()
+      }
+
       const response = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -322,6 +357,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           history: messages.slice(-5),
           provider,
           context,
+          osContext,
           isDesktop: typeof window !== 'undefined' && !!(window as any).jarvisDesktop,
         }),
       })
@@ -704,13 +740,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     }
   }
 
-  const toggleListening = () => {
-    if (isListening) {
-      stopRecording()
-    } else {
-      startRecording()
-    }
-  }
+    // replaced toggles
 
   return (
     <div className="w-full max-w-2xl flex flex-col h-[65vh] max-h-[600px] min-h-[400px] glass-panel rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 relative">

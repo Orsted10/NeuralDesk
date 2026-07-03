@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('jarvisDesktop', {
   // Execute a command on the local OS
   executeCommand: (command) => ipcRenderer.invoke('execute-command', command),
+  getOsContext: () => ipcRenderer.invoke('get-os-context'),
   
   // WhatsApp automation
   whatsappReady: () => ipcRenderer.invoke('whatsapp-ready'),

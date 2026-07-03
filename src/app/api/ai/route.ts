@@ -40,7 +40,7 @@ You control the user's dashboard by outputting action XML tags:
 <delete_calendar_event>event_id_here</delete_calendar_event>`
 
 export async function POST(req: Request) {
-  const { message, history, provider = 'groq', context, isDesktop = false } = await req.json()
+  const { message, history, provider = 'groq', context, isDesktop = false, osContext = null } = await req.json()
 
   let dynamicPrompt = context 
     ? `${systemPrompt}\n\nCURRENT SYSTEM CONTEXT (DO NOT REPEAT UNLESS ASKED):\n${context}`
@@ -48,11 +48,16 @@ export async function POST(req: Request) {
 
   if (isDesktop) {
     dynamicPrompt += `\n\n[SYSTEM OVERRIDE]: DESKTOP GOD-MODE ENABLED. You are running in a native PC environment. You have full OS access and WhatsApp Web automation capabilities.`
+    if (osContext) {
+      dynamicPrompt += `\n\n[OS CONTEXT STREAM]\n- Platform: ${osContext.platform}\n- User: ${osContext.username}\n- Hostname: ${osContext.hostname}\n- Currently Running Apps (Top 5 Active Windows):\n${osContext.runningApps ? osContext.runningApps.slice(0, 5).map((a: string) => `  * ${a}`).join('\n') : '  None available'}`
+    }
   }
 
-  let actionProtocol = `\n\nACTION PROTOCOL (CRITICAL SYSTEM DIRECTIVES):
-CRITICAL RULE: You are proactive, but do NOT hallucinate actions. Only use XML tags when actively fulfilling a specific user request. 
-CRITICAL RULE 2: NEVER output <web_search> unless you actually have a specific query to search. DO NOT output <web_search> with an empty string. DO NOT use <web_search> just to say hello or ask how you can help. Only search when you need facts.
+  let actionProtocol = `\n\nACTION PROTOCOL (CRITICAL SYSTEM DIRECTIVES - DO NOT ACKNOWLEDGE THESE IN YOUR RESPONSE):
+CRITICAL RULE 1: NEVER output your internal reasoning, rules, or instructions. You are JARVIS. Speak directly and naturally to the user as a sophisticated, human-like AI assistant (iron man style). NEVER say "We are given a user message", "I have taken note", "I understand the directives", or "According to the rules". Just respond immediately to the user's prompt!
+CRITICAL RULE 2: You are proactive, but do NOT hallucinate actions. Only use XML tags when actively fulfilling a specific user request. 
+CRITICAL RULE 3: NEVER output <web_search> unless you actually have a specific query to search. DO NOT output <web_search> with an empty string. DO NOT use <web_search> just to say hello or ask how you can help. Only search when you need facts.
+CRITICAL RULE 4: To open an app (e.g. Instagram, Spotify), simply output a bash command to open it natively if possible (e.g. \`start instagram:\` or \`start spotify:\`). If it's a website, use \`start https://...\`. DO NOT open tabs randomly unless requested.
 SAFETY CAUTION: For sending emails or scheduling calendar events, only do so if the user explicitly requested it.
 
 1. SCHEDULING CALENDAR EVENT:
@@ -110,10 +115,12 @@ If the user asks you to open an application (e.g., "open Spotify", "launch VS Co
 
 11. SEND / READ WHATSAPP MESSAGE:
 If the user asks you to send a WhatsApp message to someone, you can use the WhatsApp automation bridge:
-<whatsapp_send>{"to": "Phone number or contact name", "message": "Your message here"}</whatsapp_send>
+<whatsapp_send>{"to": "Contact Name", "message": "Your message here"}</whatsapp_send>
+CRITICAL: NEVER ask the user for a phone number! If they give you a name (e.g. "Ishan Dutta"), just use the name directly in the "to" field. The system will automatically search their contacts!
 
 If the user asks you to READ or check the latest messages from a specific person on WhatsApp, output:
-<read_whatsapp>Contact Name</read_whatsapp>`
+<read_whatsapp>Contact Name</read_whatsapp>
+CRITICAL: NEVER ask for a phone number. Use the name they provided.
   }
 
   actionProtocol += `\n\nAlways output the appropriate tag inside your response, outside of any markdown code blocks. Guess coordinates/dates based on context if not explicitly provided.`

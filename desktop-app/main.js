@@ -1,10 +1,12 @@
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const { Client, LocalAuth } = require('whatsapp-web.js');
+const os = require('os');
 
 let mainWindow;
 let whatsappClient;
+let voiceEngineProcess;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -65,6 +67,20 @@ function initializeWhatsApp() {
   whatsappClient.initialize();
 }
 
+function startVoiceEngine() {
+  console.log("Starting Python Voice Engine...");
+  // Assuming python is in PATH
+  voiceEngineProcess = spawn('python', [path.join(__dirname, 'voice_engine.py')]);
+  
+  voiceEngineProcess.stdout.on('data', (data) => {
+    console.log(`VoiceEngine: ${data}`);
+  });
+  
+  voiceEngineProcess.stderr.on('data', (data) => {
+    console.error(`VoiceEngine Error: ${data}`);
+  });
+}
+
 app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
     if (permission === 'media') {
@@ -76,6 +92,7 @@ app.whenReady().then(() => {
 
   createWindow();
   initializeWhatsApp();
+  startVoiceEngine();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -85,6 +102,9 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
+  if (voiceEngineProcess) {
+    voiceEngineProcess.kill();
+  }
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -119,8 +139,21 @@ ipcMain.handle('whatsapp-ready', async () => {
 
 ipcMain.handle('whatsapp-send', async (event, { to, message }) => {
   try {
-    const formattedNumber = to.includes('@c.us') ? to : `${to.replace(/\D/g, '')}@c.us`;
-    await whatsappClient.sendMessage(formattedNumber, message);
+    let targetId = to;
+    
+    // If it doesn't look like a phone number, search contacts
+    if (!/^\+?\d+$/.test(to.replace(/[-\s()]/g, ''))) {
+      const chats = await whatsappClient.getChats();
+      const targetChat = chats.find(c => c.name && c.name.toLowerCase().includes(to.toLowerCase()));
+      if (!targetChat) {
+        return { success: false, error: `Could not find a contact named "${to}".` };
+      }
+      targetId = targetChat.id._serialized;
+    } else {
+      targetId = to.includes('@c.us') ? to : `${to.replace(/\D/g, '')}@c.us`;
+    }
+    
+    await whatsappClient.sendMessage(targetId, message);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -138,15 +171,44 @@ ipcMain.handle('whatsapp-read', async (event, contactName) => {
     }
 
     // Fetch the last 5 messages
-    const messages = await targetChat.fetchMessages({ limit: 5 });
-    const formattedMessages = messages.map(m => ({
-      sender: m.fromMe ? 'Me' : (targetChat.name || 'Them'),
-      body: m.body ? m.body : (m.hasMedia ? '[Media Attached]' : '[System/Empty Message]'),
-      timestamp: new Date(m.timestamp * 1000).toLocaleString()
-    }));
+    const messages = await targetChat.fetchMessages({ limit: 10 });
+    const formattedMessages = messages.map(m => {
+      let extractedText = m.body || (m._data && m._data.body) || (m._data && m._data.caption);
+      if (!extractedText || extractedText.trim() === '') {
+        extractedText = m.hasMedia ? '[Media Attached]' : '[System/Empty Message]';
+      }
+      return {
+        sender: m.fromMe ? 'Me' : (targetChat.name || 'Them'),
+        body: extractedText,
+        timestamp: new Date(m.timestamp * 1000).toLocaleString()
+      };
+    });
 
     return { success: true, chatName: targetChat.name, messages: formattedMessages };
   } catch (error) {
     return { success: false, error: error.message };
   }
+});
+
+ipcMain.handle('get-os-context', async () => {
+  return new Promise((resolve) => {
+    const context = {
+      platform: os.platform(),
+      username: os.userInfo().username,
+      hostname: os.hostname(),
+      runningApps: []
+    };
+    
+    if (process.platform === 'win32') {
+      // Get a list of running apps with window titles
+      exec('powershell -command "Get-Process | Where-Object {$_.MainWindowTitle} | Select-Object -ExpandProperty MainWindowTitle"', (err, stdout) => {
+        if (!err && stdout) {
+          context.runningApps = stdout.split('\\n').map(s => s.trim()).filter(s => s.length > 0);
+        }
+        resolve(context);
+      });
+    } else {
+      resolve(context);
+    }
+  });
 });
