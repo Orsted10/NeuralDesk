@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, User, Bot, Loader2, Mic, MicOff, Volume2 } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import ReactMarkdown from 'react-markdown'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
 
   const [sessions, setSessions] = useState<any[]>([])
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+  
+  // Desktop-specific state
+  const [whatsappQr, setWhatsappQr] = useState<string | null>(null)
 
   // Load sessions first
   useEffect(() => {
@@ -131,6 +135,18 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       handleSendRef.current(msg)
     }
   })
+
+  // Desktop App Events (WhatsApp QR)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+      (window as any).jarvisDesktop.onWhatsappQr((qr: string) => {
+        setWhatsappQr(qr)
+      })
+      ;(window as any).jarvisDesktop.whatsappReady().then((ready: boolean) => {
+        if (ready) setWhatsappQr(null)
+      })
+    }
+  }, [])
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -742,7 +758,29 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   }
 
   return (
-    <div className="w-full max-w-2xl flex flex-col h-[80vh] max-h-[800px] min-h-[500px] glass-panel rounded-3xl overflow-hidden shadow-2xl transition-all duration-500">
+    <div className="w-full max-w-2xl flex flex-col h-[65vh] max-h-[600px] min-h-[400px] glass-panel rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 relative">
+      {/* WhatsApp QR Modal */}
+      <AnimatePresence>
+        {whatsappQr && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          >
+            <div className="bg-zinc-900 border border-white/10 p-8 rounded-2xl flex flex-col items-center gap-4 text-center max-w-sm">
+              <h3 className="text-xl font-semibold text-zinc-100">Link WhatsApp</h3>
+              <p className="text-sm text-zinc-400">Open WhatsApp on your phone, go to Linked Devices, and scan this QR code to grant JARVIS background access.</p>
+              <div className="bg-white p-4 rounded-xl mt-2">
+                <QRCodeSVG value={whatsappQr} size={200} />
+              </div>
+              <Button onClick={() => setWhatsappQr(null)} variant="ghost" className="mt-2 text-zinc-400 hover:text-white">
+                Dismiss
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Header */}
       <div className="p-4 border-b border-white/[0.05] flex justify-between items-center bg-white/[0.02]">
         <div className="flex gap-4 items-center flex-1">

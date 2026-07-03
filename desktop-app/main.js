@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 const { Client, LocalAuth } = require('whatsapp-web.js');
@@ -67,6 +67,14 @@ function initializeWhatsApp() {
 }
 
 app.whenReady().then(() => {
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'media') {
+      callback(true);
+    } else {
+      callback(false);
+    }
+  });
+
   createWindow();
   initializeWhatsApp();
 
@@ -87,8 +95,15 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('execute-command', async (event, command) => {
   return new Promise((resolve, reject) => {
-    console.log(`Executing OS command: ${command}`);
-    exec(command, (error, stdout, stderr) => {
+    // macOS 'open' vs Windows 'start' fix
+    let safeCommand = command;
+    if (process.platform === 'win32' && safeCommand.toLowerCase().startsWith('open ')) {
+      const target = safeCommand.substring(5).trim();
+      safeCommand = `start "" "${target}"`;
+    }
+
+    console.log(`Executing OS command: ${safeCommand}`);
+    exec(safeCommand, (error, stdout, stderr) => {
       if (error) {
         console.error(`Exec error: ${error}`);
         resolve({ success: false, error: error.message, stderr });
