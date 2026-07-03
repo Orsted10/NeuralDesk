@@ -40,13 +40,17 @@ You control the user's dashboard by outputting action XML tags:
 <delete_calendar_event>event_id_here</delete_calendar_event>`
 
 export async function POST(req: Request) {
-  const { message, history, provider = 'groq', context } = await req.json()
+  const { message, history, provider = 'groq', context, isDesktop = false } = await req.json()
 
-  const dynamicPrompt = context 
+  let dynamicPrompt = context 
     ? `${systemPrompt}\n\nCURRENT SYSTEM CONTEXT (DO NOT REPEAT UNLESS ASKED):\n${context}`
     : systemPrompt
 
-    const actionProtocol = `\n\nACTION PROTOCOL (CRITICAL SYSTEM DIRECTIVES):
+  if (isDesktop) {
+    dynamicPrompt += `\n\n[SYSTEM OVERRIDE]: DESKTOP GOD-MODE ENABLED. You are running in a native PC environment. You have full OS access and WhatsApp Web automation capabilities.`
+  }
+
+  let actionProtocol = `\n\nACTION PROTOCOL (CRITICAL SYSTEM DIRECTIVES):
 CRITICAL RULE: You are proactive, but do NOT hallucinate actions. Only use XML tags when actively fulfilling a specific user request. 
 CRITICAL RULE 2: NEVER output <web_search> unless you actually have a specific query to search. DO NOT output <web_search> with an empty string. DO NOT use <web_search> just to say hello or ask how you can help. Only search when you need facts.
 SAFETY CAUTION: For sending emails or scheduling calendar events, only do so if the user explicitly requested it.
@@ -92,11 +96,24 @@ Here is the email body content...
 If the user asks you to read, check, or open their emails/inbox, you MUST output:
 <read_emails>open</read_emails>
 
-7. DELETE CALENDAR EVENT:
+9. DELETE CALENDAR EVENT:
 If the user asks you to delete, cancel, or terminate an event (e.g. "delete my Gym Session"), read the event ID from the Live Upcoming Calendar Events context (e.g. "[ID: mock-gym] 16:30 - Gym Session" -> ID is "mock-gym") and output:
-<delete_calendar_event>event_id_here</delete_calendar_event>
+<delete_calendar_event>event_id_here</delete_calendar_event>`
 
-Always output the appropriate tag inside your response, outside of any markdown code blocks. Guess coordinates/dates based on context if not explicitly provided.`
+  if (isDesktop) {
+    actionProtocol += `
+
+10. EXECUTE NATIVE OS COMMAND:
+If the user asks you to open an application (e.g., "open Spotify", "launch VS Code"), or perform a system action on their PC, output a safe terminal command (Windows PowerShell format) inside this tag:
+<execute_pc_command>start spotify</execute_pc_command>
+<execute_pc_command>start chrome</execute_pc_command>
+
+11. SEND WHATSAPP MESSAGE:
+If the user asks you to send a WhatsApp message to someone, you can use the WhatsApp automation bridge.
+<whatsapp_send>{"to": "Phone number or contact name", "message": "Your message here"}</whatsapp_send>`
+  }
+
+  actionProtocol += `\n\nAlways output the appropriate tag inside your response, outside of any markdown code blocks. Guess coordinates/dates based on context if not explicitly provided.`
 
     const finalMessage = `${message}${actionProtocol}`
 

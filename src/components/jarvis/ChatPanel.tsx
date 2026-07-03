@@ -355,6 +355,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           history: messages.slice(-5),
           provider,
           context,
+          isDesktop: typeof window !== 'undefined' && !!(window as any).jarvisDesktop,
         }),
       })
 
@@ -386,6 +387,8 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         const emailMatch = assistantMessage.match(/<send_email>\s*(.*?)\s*<\/send_email>/is)
         const readEmailsMatch = assistantMessage.match(/<read_emails>.*?<\/read_emails>/is)
         const searchMatch = assistantMessage.match(/<web_search>\s*(.*?)\s*<\/web_search>/is)
+        const execPcMatch = assistantMessage.match(/<execute_pc_command>\s*(.*?)\s*<\/execute_pc_command>/is)
+        const waSendMatch = assistantMessage.match(/<whatsapp_send>\s*(.*?)\s*<\/whatsapp_send>/is)
 
         if (actionMatch) {
           displayMessage = displayMessage.replace(actionMatch[0], '[EXECUTING PROTOCOL: CALENDAR...]')
@@ -408,6 +411,12 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         if (searchMatch) {
           displayMessage = displayMessage.replace(searchMatch[0], '[EXECUTING PROTOCOL: WEB SEARCH...]')
         }
+        if (execPcMatch) {
+          displayMessage = displayMessage.replace(execPcMatch[0], '[EXECUTING PROTOCOL: OS COMMAND...]')
+        }
+        if (waSendMatch) {
+          displayMessage = displayMessage.replace(waSendMatch[0], '[EXECUTING PROTOCOL: WHATSAPP...]')
+        }
 
         setMessages((prev) => {
           const last = prev[prev.length - 1]
@@ -427,6 +436,8 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       const finalReadEmails = assistantMessage.match(/<read_emails>.*?<\/read_emails>/is)
       const finalDirections = assistantMessage.match(/<get_directions>\s*(.*?)\s*<\/get_directions>/is)
       const finalSearch = assistantMessage.match(/<web_search>\s*(.*?)\s*<\/web_search>/is)
+      const finalExecPc = assistantMessage.match(/<execute_pc_command>\s*(.*?)\s*<\/execute_pc_command>/is)
+      const finalWaSend = assistantMessage.match(/<whatsapp_send>\s*(.*?)\s*<\/whatsapp_send>/is)
 
       let cleanMessage = assistantMessage
 
@@ -451,6 +462,38 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
             handleSend(injection)
           })
           .catch(err => console.error("Search failed", err))
+      }
+
+      if (finalExecPc && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+        cleanMessage = cleanMessage.replace(finalExecPc[0], '').trim()
+        const command = finalExecPc[1].trim()
+        toast.success(`Protocol Complete: Executing OS Command.`, { icon: '💻' })
+        ;(window as any).jarvisDesktop.executeCommand(command).then((res: any) => {
+          if (res.success) {
+            handleSend(`<system>Command executed successfully. Output: ${res.stdout}</system>`)
+          } else {
+            handleSend(`<system>Command failed. Error: ${res.error}</system>`)
+          }
+        })
+      }
+
+      if (finalWaSend && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+        cleanMessage = cleanMessage.replace(finalWaSend[0], '').trim()
+        try {
+          const payload = JSON.parse(finalWaSend[1].trim())
+          if (payload.to && payload.message) {
+            toast.success(`Protocol Complete: Sending WhatsApp message.`, { icon: '💬' })
+            ;(window as any).jarvisDesktop.sendWhatsappMessage(payload.to, payload.message).then((res: any) => {
+              if (res.success) {
+                handleSend(`<system>WhatsApp message sent successfully to ${payload.to}.</system>`)
+              } else {
+                handleSend(`<system>Failed to send WhatsApp message. Error: ${res.error}</system>`)
+              }
+            })
+          }
+        } catch (e) {
+          console.error("Failed to parse whatsapp_send payload", e)
+        }
       }
 
       if (finalDirections) {
