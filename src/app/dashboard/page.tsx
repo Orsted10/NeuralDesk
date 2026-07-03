@@ -40,6 +40,7 @@ export default function DashboardPage() {
   const [activeModule, setActiveModule] = useState<string | null>(null)
   const [emailView, setEmailView] = useState<'compose' | 'inbox'>('compose')
   const [events, setEvents] = useState<any[]>([])
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -91,6 +92,11 @@ export default function DashboardPage() {
   useEffect(() => {
     setMounted(true)
     
+    // Fetch User Info
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.email) setUserEmail(data.user.email)
+    })
+
     // Track Time
     const timer = setInterval(() => setTime(new Date()), 1000)
     
@@ -303,7 +309,7 @@ export default function DashboardPage() {
             <div className="mt-8 w-full flex justify-center">
               <ChatPanel 
                 onVoiceStateChange={setVoiceState} 
-                context={`User: Ankan. Current Date & Time: ${time.toString()}. Live Location: (LAT: ${location.lat}, LONG: ${location.long}). Status: ${location.city}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Live Upcoming Calendar Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ')}. Unread Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
+                context={`User: Ankan. User Email (for sending to myself): ${userEmail || 'Unknown'}. WhatsApp Self Contact Name: "Ankan". Current Date & Time: ${time.toString()}. Live Location: (LAT: ${location.lat}, LONG: ${location.long}). Status: ${location.city}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Live Upcoming Calendar Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ')}. Unread Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
               />
             </div>
 

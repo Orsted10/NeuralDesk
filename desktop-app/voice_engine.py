@@ -42,7 +42,7 @@ def listen_loop():
     r = sr.Recognizer()
     r.energy_threshold = 300 # Dynamic energy threshold
     r.dynamic_energy_threshold = True
-    r.pause_threshold = 0.8 # Seconds of non-speaking audio before a phrase is considered complete
+    r.pause_threshold = 2.0 # Wait 2 seconds of silence before cutting off
 
     with sr.Microphone() as source:
         print("Adjusting for ambient noise... Please wait.")
