@@ -108,9 +108,12 @@ If the user asks you to open an application (e.g., "open Spotify", "launch VS Co
 <execute_pc_command>start spotify</execute_pc_command>
 <execute_pc_command>start chrome</execute_pc_command>
 
-11. SEND WHATSAPP MESSAGE:
-If the user asks you to send a WhatsApp message to someone, you can use the WhatsApp automation bridge.
-<whatsapp_send>{"to": "Phone number or contact name", "message": "Your message here"}</whatsapp_send>`
+11. SEND / READ WHATSAPP MESSAGE:
+If the user asks you to send a WhatsApp message to someone, you can use the WhatsApp automation bridge:
+<whatsapp_send>{"to": "Phone number or contact name", "message": "Your message here"}</whatsapp_send>
+
+If the user asks you to READ or check the latest messages from a specific person on WhatsApp, output:
+<read_whatsapp>Contact Name</read_whatsapp>`
   }
 
   actionProtocol += `\n\nAlways output the appropriate tag inside your response, outside of any markdown code blocks. Guess coordinates/dates based on context if not explicitly provided.`

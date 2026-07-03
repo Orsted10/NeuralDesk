@@ -162,21 +162,8 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
 
         rec.onstart = () => {
           try {
-            const AudioContext = window.AudioContext || (window as any).webkitAudioContext
-            const ctx = new AudioContext()
-            const osc = ctx.createOscillator()
-            const gain = ctx.createGain()
-            osc.connect(gain)
-            gain.connect(ctx.destination)
-            osc.type = 'sine'
-            osc.frequency.setValueAtTime(880, ctx.currentTime)
-            gain.gain.setValueAtTime(0.1, ctx.currentTime)
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
-            osc.start(ctx.currentTime)
-            osc.stop(ctx.currentTime + 0.1)
-          } catch (e) {
-            console.error("Failed to play mic beep", e)
-          }
+            console.log("Speech recognition started")
+          } catch (e) {}
         }
 
         rec.onresult = (event: any) => {
@@ -269,59 +256,30 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     return text.trim()
   }
 
-  function stripMarkdownForSpeech(text: string) {
-    let clean = text
-      .replace(/\*\*(.*?)\*\*/g, '$1')
-      .replace(/\*(.*?)\*/g, '$1')
-      .replace(/__(.*?)__/g, '$1')
-      .replace(/_(.*?)_/g, '$1')
-      .replace(/#(.*?)\n/g, '$1\n')
-      .replace(/`{3}([\s\S]*?)`{3}/g, 'code block omitted')
-      .replace(/`(.*?)`/g, '$1')
-      .replace(/^-\s+/gm, '')
-      .replace(/^\d+\.\s+/gm, '')
-      .trim()
-      
-    // Smart TTS: If the text is super long (like a big search result or long explanation),
-    // only read the first 2-3 sentences so it doesn't ramble forever.
-    if (clean.length > 300) {
-      const sentences = clean.match(/[^.!?]+[.!?]+/g)
-      if (sentences && sentences.length > 2) {
-        clean = sentences.slice(0, 2).join(' ') + ' I have displayed the full details for you on the screen.'
-      }
-    }
-    return clean;
-  }
-
   function speak(text: string) {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel() // Stop any ongoing speech
-      const cleanAudioText = stripMarkdownForSpeech(text)
-      if (!cleanAudioText) return
-      
-      const utterance = new SpeechSynthesisUtterance(cleanAudioText)
+      // Strip markdown tags and other xml tags before speaking
+      const plainText = text
+        .replace(/<\/?[^>]+(>|$)/g, "")
+        .replace(/[*_#]/g, "")
+        .trim();
+        
+      if (!plainText) return;
+
+      const utterance = new SpeechSynthesisUtterance(plainText)
+      utterance.rate = 1.05
+      utterance.pitch = 1.1
+
       const voices = window.speechSynthesis.getVoices()
-      
-      // Extremely aggressive ranking for the most "soothing, smooth, and human" female voices
-      const premiumVoice = 
-        voices.find(v => v.name.toLowerCase().includes('jenny') && v.name.toLowerCase().includes('natural')) ||
-        voices.find(v => v.name.toLowerCase().includes('aria') && v.name.toLowerCase().includes('natural')) ||
-        voices.find(v => v.name.toLowerCase().includes('uk english female')) ||
-        voices.find(v => v.name.toLowerCase().includes('google uk english female')) ||
-        voices.find(v => v.name.toLowerCase().includes('samantha')) ||
-        voices.find(v => v.name.toLowerCase().includes('natural') && v.lang.startsWith('en')) ||
-        voices.find(v => v.name.toLowerCase().includes('google us english')) ||
-        voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('female')) ||
-        voices.find(v => v.lang.startsWith('en')) ||
-        voices[0]
-      
-      if (premiumVoice) {
-        utterance.voice = premiumVoice
-      }
-      
-      // Fine-tuned settings for a smoother, sexier cadence
-      utterance.pitch = 1.05
-      utterance.rate = 0.98
+      // Look for a high quality female voice
+      const preferredVoice = voices.find(v => 
+        v.name.includes('Zira') || 
+        v.name.includes('Female') || 
+        (v.name.includes('Google UK English Female')) ||
+        v.name.includes('Samantha')
+      ) || voices.find(v => v.lang === 'en-US') || voices[0]
+
+      if (preferredVoice) utterance.voice = preferredVoice
 
       utterance.onstart = () => setIsSpeaking(true)
       utterance.onend = () => setIsSpeaking(false)
@@ -405,6 +363,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         const searchMatch = assistantMessage.match(/<web_search>\s*(.*?)\s*<\/web_search>/is)
         const execPcMatch = assistantMessage.match(/<execute_pc_command>\s*(.*?)\s*<\/execute_pc_command>/is)
         const waSendMatch = assistantMessage.match(/<whatsapp_send>\s*(.*?)\s*<\/whatsapp_send>/is)
+        const waReadMatch = assistantMessage.match(/<read_whatsapp>\s*(.*?)\s*<\/read_whatsapp>/is)
 
         if (actionMatch) {
           displayMessage = displayMessage.replace(actionMatch[0], '[EXECUTING PROTOCOL: CALENDAR...]')
@@ -433,6 +392,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         if (waSendMatch) {
           displayMessage = displayMessage.replace(waSendMatch[0], '[EXECUTING PROTOCOL: WHATSAPP...]')
         }
+        if (waReadMatch) {
+          displayMessage = displayMessage.replace(waReadMatch[0], '[EXECUTING PROTOCOL: WHATSAPP READ...]')
+        }
 
         setMessages((prev) => {
           const last = prev[prev.length - 1]
@@ -454,6 +416,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       const finalSearch = assistantMessage.match(/<web_search>\s*(.*?)\s*<\/web_search>/is)
       const finalExecPc = assistantMessage.match(/<execute_pc_command>\s*(.*?)\s*<\/execute_pc_command>/is)
       const finalWaSend = assistantMessage.match(/<whatsapp_send>\s*(.*?)\s*<\/whatsapp_send>/is)
+      const finalWaRead = assistantMessage.match(/<read_whatsapp>\s*(.*?)\s*<\/read_whatsapp>/is)
 
       let cleanMessage = assistantMessage
 
@@ -510,6 +473,20 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         } catch (e) {
           console.error("Failed to parse whatsapp_send payload", e)
         }
+      }
+
+      if (finalWaRead && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+        cleanMessage = cleanMessage.replace(finalWaRead[0], '').trim()
+        const contact = finalWaRead[1].trim()
+        toast.success(`Protocol Complete: Reading WhatsApp chat with ${contact}.`, { icon: '📖' })
+        ;(window as any).jarvisDesktop.readWhatsappMessages(contact).then((res: any) => {
+          if (res.success) {
+            const chatLog = res.messages.map((m: any) => `[${m.timestamp}] ${m.sender}: ${m.body}`).join('\n')
+            handleSend(`<system>Successfully fetched last 5 messages with ${res.chatName}:\n${chatLog}</system>\nPlease summarize the recent messages or answer my previous question based on them.`)
+          } else {
+            handleSend(`<system>Failed to read WhatsApp messages. Error: ${res.error}</system>`)
+          }
+        })
       }
 
       if (finalDirections) {

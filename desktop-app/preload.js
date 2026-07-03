@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('jarvisDesktop', {
   // WhatsApp automation
   whatsappReady: () => ipcRenderer.invoke('whatsapp-ready'),
   sendWhatsappMessage: (to, message) => ipcRenderer.invoke('whatsapp-send', { to, message }),
+  readWhatsappMessages: (contactName) => ipcRenderer.invoke('whatsapp-read', contactName),
   
   // Listen for WhatsApp messages coming from the background
   onWhatsappMessage: (callback) => ipcRenderer.on('whatsapp-message', (_event, value) => callback(value)),

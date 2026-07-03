@@ -52,8 +52,7 @@ function initializeWhatsApp() {
   });
 
   whatsappClient.on('message', message => {
-    console.log(`Received WhatsApp message from ${message.from}: ${message.body}`);
-    // Forward incoming message to the JARVIS frontend
+    // Forward incoming message to the JARVIS frontend silently
     if (mainWindow) {
       mainWindow.webContents.send('whatsapp-message', {
         from: message.from,
@@ -120,12 +119,34 @@ ipcMain.handle('whatsapp-ready', async () => {
 
 ipcMain.handle('whatsapp-send', async (event, { to, message }) => {
   try {
-    // Format the number correctly for whatsapp-web.js (e.g. 1234567890@c.us)
     const formattedNumber = to.includes('@c.us') ? to : `${to.replace(/\D/g, '')}@c.us`;
     await whatsappClient.sendMessage(formattedNumber, message);
     return { success: true };
   } catch (error) {
-    console.error('Failed to send WhatsApp message:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('whatsapp-read', async (event, contactName) => {
+  try {
+    const chats = await whatsappClient.getChats();
+    // Try to find a chat matching the name
+    const targetChat = chats.find(c => c.name && c.name.toLowerCase().includes(contactName.toLowerCase()));
+    
+    if (!targetChat) {
+      return { success: false, error: `Could not find a chat with the name "${contactName}".` };
+    }
+
+    // Fetch the last 5 messages
+    const messages = await targetChat.fetchMessages({ limit: 5 });
+    const formattedMessages = messages.map(m => ({
+      sender: m.fromMe ? 'Me' : (targetChat.name || 'Them'),
+      body: m.body,
+      timestamp: new Date(m.timestamp * 1000).toLocaleString()
+    }));
+
+    return { success: true, chatName: targetChat.name, messages: formattedMessages };
+  } catch (error) {
     return { success: false, error: error.message };
   }
 });
