@@ -485,7 +485,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       let cleanMessage = assistantMessage
 
       if (finalSearch) {
-        cleanMessage = cleanMessage.replace(finalSearch[0], '').trim()
+        cleanMessage = cleanMessage.replace(finalSearch[0], '[EXECUTING PROTOCOL: WEB SEARCH...]').trim()
         const query = finalSearch[1].trim()
         toast.success(`Protocol Complete: Searching the web for "${query}".`, { icon: '🔍' })
         
@@ -508,7 +508,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       }
 
       if (finalExecPc && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
-        cleanMessage = cleanMessage.replace(finalExecPc[0], '').trim()
+        cleanMessage = cleanMessage.replace(finalExecPc[0], '[EXECUTING PROTOCOL: OS COMMAND...]').trim()
         const command = finalExecPc[1].trim()
         toast.success(`Protocol Complete: Executing OS Command.`, { icon: '💻' })
         ;(window as any).jarvisDesktop.executeCommand(command).then((res: any) => {
@@ -521,7 +521,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       }
 
       if (finalWaSend && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
-        cleanMessage = cleanMessage.replace(finalWaSend[0], '').trim()
+        cleanMessage = cleanMessage.replace(finalWaSend[0], '[EXECUTING PROTOCOL: WHATSAPP...]').trim()
         try {
           const payload = JSON.parse(finalWaSend[1].trim())
           if (payload.to && payload.message) {
@@ -540,7 +540,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       }
 
       if (finalWaRead && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
-        cleanMessage = cleanMessage.replace(finalWaRead[0], '').trim()
+        cleanMessage = cleanMessage.replace(finalWaRead[0], '[EXECUTING PROTOCOL: WHATSAPP READ...]').trim()
         const contact = finalWaRead[1].trim()
         toast.success(`Protocol Complete: Reading WhatsApp chat with ${contact}.`, { icon: '📖' })
         ;(window as any).jarvisDesktop.readWhatsappMessages(contact).then((res: any) => {
@@ -554,7 +554,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       }
 
       if (finalDirections) {
-        cleanMessage = cleanMessage.replace(finalDirections[0], '').trim()
+        cleanMessage = cleanMessage.replace(finalDirections[0], '[EXECUTING PROTOCOL: MAPS DIRECTIONS...]').trim()
         try {
           const payload = JSON.parse(finalDirections[1].trim())
           if (payload.origin && payload.destination) {
@@ -567,7 +567,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       }
 
       if (finalReadEmails) {
-        cleanMessage = cleanMessage.replace(finalReadEmails[0], '').trim()
+        cleanMessage = cleanMessage.replace(finalReadEmails[0], '[EXECUTING PROTOCOL: INBOX...]').trim()
         try {
           toast.success('Protocol Complete: Accessing Inbox.', { icon: '📬' })
           window.dispatchEvent(new CustomEvent('read-emails'))
@@ -575,7 +575,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       }
 
       if (finalMatch) {
-        cleanMessage = cleanMessage.replace(finalMatch[0], '').trim()
+        cleanMessage = cleanMessage.replace(finalMatch[0], '[EXECUTING PROTOCOL: CALENDAR...]').trim()
         try {
           const payloadString = finalMatch[1].trim()
           const payload = JSON.parse(payloadString)
@@ -606,7 +606,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
 
       if (finalDeleteMatches.length > 0) {
         finalDeleteMatches.forEach(match => {
-          cleanMessage = cleanMessage.replace(match[0], '').trim()
+          cleanMessage = cleanMessage.replace(match[0], '[EXECUTING PROTOCOL: CALENDAR DELETE...]').trim()
           try {
             let eventId = match[1].trim()
             
@@ -636,7 +636,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       }
 
       if (finalMap) {
-        cleanMessage = cleanMessage.replace(finalMap[0], '').trim()
+        cleanMessage = cleanMessage.replace(finalMap[0], '[EXECUTING PROTOCOL: MAPS...]').trim()
         try {
           const content = finalMap[1].trim()
           let query = content
@@ -658,7 +658,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         const match = finalDoc || finalSheet || finalSlide
         const type = finalSheet ? 'sheet' : finalSlide ? 'slide' : 'doc'
         if (match) {
-          cleanMessage = cleanMessage.replace(match[0], '').trim()
+          cleanMessage = cleanMessage.replace(match[0], '[EXECUTING PROTOCOL: DRIVE...]').trim()
           try {
             const content = match[1].trim()
             let title = 'New File'
@@ -688,7 +688,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       }
 
       if (finalYoutube) {
-        cleanMessage = cleanMessage.replace(finalYoutube[0], '').trim()
+        cleanMessage = cleanMessage.replace(finalYoutube[0], '[EXECUTING PROTOCOL: YOUTUBE...]').trim()
         try {
           const content = finalYoutube[1].trim()
           let query = content
@@ -707,7 +707,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       }
 
       if (finalEmail) {
-        cleanMessage = cleanMessage.replace(finalEmail[0], '').trim()
+        cleanMessage = cleanMessage.replace(finalEmail[0], '[EXECUTING PROTOCOL: EMAIL...]').trim()
         try {
           const content = finalEmail[1].trim()
           let to = ''
