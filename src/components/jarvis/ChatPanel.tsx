@@ -498,7 +498,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
               injection = `<system>Web Search Results for "${query}":\nNo results found.</system>\nDo NOT attempt to search again. Tell me you couldn't find the answer.`
             } else {
               const results = data.items.slice(0, 4).map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n')
-              injection = `<system>Web Search Results for "${query}":\n${results}</system>\nAnalyze these search results and answer my previous question.`
+              injection = `<system>Web Search Results for "${query}":\n${results}</system>\nAnalyze these search results and answer my previous question. DO NOT output any XML action tags in your response.`
             }
             
             // Automatically trigger the next turn so JARVIS can analyze the results!
@@ -595,8 +595,12 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
             if (res.ok) {
               toast.success('Protocol Complete: Event scheduled.')
               window.dispatchEvent(new Event('calendar-updated'))
+              handleSend(`<system>Successfully scheduled calendar event.</system>`)
             }
-            else toast.error('Protocol Failed: Could not schedule event.')
+            else {
+              toast.error('Protocol Failed: Could not schedule event.')
+              handleSend(`<system>Failed to schedule calendar event.</system>`)
+            }
           })
         } catch (e) {
           console.error("Failed to parse AI action payload", e, "Payload was:", finalMatch[1])
@@ -625,8 +629,10 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
               if (res.ok) {
                 toast.success('Protocol Complete: Event terminated.', { icon: '🗑️' })
                 window.dispatchEvent(new Event('calendar-updated'))
+                handleSend(`<system>Successfully deleted calendar event.</system>`)
               } else {
                 toast.error('Protocol Failed: Could not terminate event.')
+                handleSend(`<system>Failed to delete calendar event. Ensure the event ID is correct.</system>`)
               }
             })
           } catch (e) {
