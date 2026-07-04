@@ -7,6 +7,7 @@ const os = require('os');
 let mainWindow;
 let whatsappClient;
 let voiceEngineProcess;
+let currentWhatsappQr = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -41,6 +42,7 @@ function initializeWhatsApp() {
   whatsappClient.on('qr', (qr) => {
     // Send QR code to the frontend renderer to display to the user for scanning
     console.log('QR Received. Forwarding to renderer...');
+    currentWhatsappQr = qr;
     if (mainWindow) {
       mainWindow.webContents.send('whatsapp-qr', qr);
     }
@@ -48,6 +50,7 @@ function initializeWhatsApp() {
 
   whatsappClient.on('ready', () => {
     console.log('WhatsApp Client is ready!');
+    currentWhatsappQr = null;
     if (mainWindow) {
       const myNumber = whatsappClient.info ? whatsappClient.info.wid.user : null;
       mainWindow.webContents.send('whatsapp-ready', { myNumber: myNumber });
@@ -141,6 +144,10 @@ ipcMain.handle('execute-command', async (event, command) => {
 
 ipcMain.handle('whatsapp-ready', async () => {
   return whatsappClient && whatsappClient.info !== undefined;
+});
+
+ipcMain.handle('whatsapp-get-qr', async () => {
+  return currentWhatsappQr;
 });
 
 ipcMain.handle('whatsapp-send', async (event, { to, message }) => {

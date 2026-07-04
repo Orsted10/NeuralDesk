@@ -169,6 +169,11 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           if (ready.myNumber) {
             (window as any).whatsappSelfNumber = ready.myNumber;
           }
+        } else {
+          // If not ready, ask for the current QR code immediately
+          ;(window as any).jarvisDesktop.getWhatsappQr().then((qr: string | null) => {
+             if (qr) setWhatsappQr(qr);
+          })
         }
       })
     }

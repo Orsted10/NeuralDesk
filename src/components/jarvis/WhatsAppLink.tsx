@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { QrCode, CheckCircle, RefreshCcw, Wifi, X, ShieldCheck } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import { HUDCard } from './HUD'
 
 export default function WhatsAppLink({ onClose }: { onClose?: () => void }) {
@@ -15,6 +16,10 @@ export default function WhatsAppLink({ onClose }: { onClose?: () => void }) {
 
   // Initialize or resume instance
   useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+       checkStatus('desktop')
+       return
+    }
     const savedInstance = localStorage.getItem('jarvis_wa_instance')
     if (savedInstance) {
       setInstanceName(savedInstance)
@@ -28,6 +33,16 @@ export default function WhatsAppLink({ onClose }: { onClose?: () => void }) {
 
   const checkStatus = async (name: string) => {
     try {
+      if (name === 'desktop' && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+         const ready = await (window as any).jarvisDesktop.whatsappReady()
+         if (ready) {
+           setStatus('connected')
+         } else {
+           setStatus('idle')
+         }
+         return
+      }
+
       const res = await fetch(`${API_URL}/instance/connectionState/${name}`, {
         headers: { 'apikey': API_KEY! }
       })
@@ -43,8 +58,26 @@ export default function WhatsAppLink({ onClose }: { onClose?: () => void }) {
   }
 
   const startPairing = async () => {
-    if (!instanceName) return
     setStatus('pairing')
+    if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+       // Desktop mode
+       const ready = await (window as any).jarvisDesktop.whatsappReady()
+       if (ready) {
+         setStatus('connected')
+         return
+       }
+       const qr = await (window as any).jarvisDesktop.getWhatsappQr()
+       if (qr) {
+         setQrCode(qr)
+       }
+       // Listen for updates
+       ;(window as any).jarvisDesktop.onWhatsappQr((newQr: string) => {
+         setQrCode(newQr)
+       })
+       return
+    }
+
+    if (!instanceName) return
     try {
       // 1. Create Instance
       await fetch(`${API_URL}/instance/create`, {
@@ -122,7 +155,11 @@ export default function WhatsAppLink({ onClose }: { onClose?: () => void }) {
               className="relative flex flex-col items-center gap-6"
             >
               <div className="p-4 bg-white rounded-3xl shadow-2xl">
-                <img src={qrCode} alt="Scan QR" className="w-48 h-48 rounded-xl" />
+                {qrCode.startsWith('data:image') ? (
+                  <img src={qrCode} alt="Scan QR" className="w-48 h-48 rounded-xl" />
+                ) : (
+                  <div className="flex justify-center p-2"><QRCodeSVG value={qrCode} size={180} /></div>
+                )}
               </div>
               <div className="text-sm font-medium text-zinc-400 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />

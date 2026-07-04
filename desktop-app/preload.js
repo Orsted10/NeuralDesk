@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('jarvisDesktop', {
   
   // WhatsApp automation
   whatsappReady: () => ipcRenderer.invoke('whatsapp-ready'),
+  getWhatsappQr: () => ipcRenderer.invoke('whatsapp-get-qr'),
   sendWhatsappMessage: (to, message) => ipcRenderer.invoke('whatsapp-send', { to, message }),
   readWhatsappMessages: (contactName) => ipcRenderer.invoke('whatsapp-read', contactName),
   

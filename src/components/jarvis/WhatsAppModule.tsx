@@ -43,14 +43,22 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
 
     setIsSending(true)
     try {
-      const instanceName = localStorage.getItem('jarvis_wa_instance')
-      const res = await fetch('/api/whatsapp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to, message, instanceName }),
-      })
-
-      if (!res.ok) throw new Error('Communication link failure.')
+      if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+        // Desktop native whatsapp
+        const result = await (window as any).jarvisDesktop.sendWhatsappMessage(to, message)
+        if (result && result.success === false) {
+           throw new Error(result.error)
+        }
+      } else {
+        // Web fallback (Evolution API)
+        const instanceName = localStorage.getItem('jarvis_wa_instance')
+        const res = await fetch('/api/whatsapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, message, instanceName }),
+        })
+        if (!res.ok) throw new Error('Communication link failure.')
+      }
 
       toast.success('WhatsApp dispatched, Sir.')
       setMessage('')
