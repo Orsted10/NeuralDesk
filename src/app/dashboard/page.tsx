@@ -41,6 +41,7 @@ export default function DashboardPage() {
   const [emailView, setEmailView] = useState<'compose' | 'inbox'>('compose')
   const [events, setEvents] = useState<any[]>([])
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string>('User')
   const router = useRouter()
   const supabase = createClient()
 
@@ -95,6 +96,9 @@ export default function DashboardPage() {
     // Fetch User Info
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user?.email) setUserEmail(data.user.email)
+      if (data?.user?.user_metadata?.name || data?.user?.user_metadata?.full_name) {
+        setUserName(data.user.user_metadata.name || data.user.user_metadata.full_name)
+      }
     })
 
     // Track Time
@@ -309,7 +313,7 @@ export default function DashboardPage() {
             <div className="mt-8 w-full flex justify-center">
               <ChatPanel 
                 onVoiceStateChange={setVoiceState} 
-                context={`User: Ankan. User Email (for sending to myself): ${userEmail || 'Unknown'}. WhatsApp Self Contact Name: "Ankan (You)". Current Date & Time: ${time.toString()}. Live Location: (LAT: ${location.lat}, LONG: ${location.long}). Status: ${location.city}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Live Upcoming Calendar Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ')}. Unread Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
+                context={`User: ${userName}. User Email (for sending to myself): ${userEmail || 'Unknown'}. WhatsApp Self Contact Name: "${userName} (You)". Current Date & Time: ${time.toString()}. Live Location: (LAT: ${location.lat}, LONG: ${location.long}). Status: ${location.city}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Live Upcoming Calendar Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ')}. Unread Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
               />
             </div>
 
