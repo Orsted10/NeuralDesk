@@ -49,7 +49,8 @@ function initializeWhatsApp() {
   whatsappClient.on('ready', () => {
     console.log('WhatsApp Client is ready!');
     if (mainWindow) {
-      mainWindow.webContents.send('whatsapp-ready');
+      const myNumber = whatsappClient.info ? whatsappClient.info.wid.user : null;
+      mainWindow.webContents.send('whatsapp-ready', { myNumber: myNumber });
     }
   });
 

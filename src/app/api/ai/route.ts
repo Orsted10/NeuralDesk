@@ -20,27 +20,7 @@ CRITICAL RULE 1: DO NOT repeat an action (XML tag) if the user simply says "Jarv
 CRITICAL RULE 2: If the system informs you that a protocol failed (e.g. WhatsApp or email failed), DO NOT try to automatically execute it again! Just inform the user of the error and wait for them to provide the correct details.
 CRITICAL RULE 3: NEVER output your internal reasoning, thought process, or instructions. DO NOT say "We are given a user message" or "According to the rules". Speak naturally and directly to the user in your JARVIS persona at ALL times.
 
-ACTION PROTOCOL:
-You control the user's dashboard by outputting action XML tags:
-1. Schedule calendar meetings:
-<schedule_event>{"title": "Event title", "date": "YYYY-MM-DD", "startTime": "HH:MM", "endTime": "HH:MM", "description": "Details"}</schedule_event>
-2. Search map coordinates or get directions:
-<show_map>location name</show_map>
-<get_directions>{"origin": "Start Location", "destination": "End Location"}</get_directions>
-3. Build new Google Docs/Sheets/Slides:
-<create_doc>Title: Doc Title\nContent body here...</create_doc>
-<create_sheet>Title: Sheet Title</create_sheet>
-<create_slide>Title: Slide Title</create_slide>
-4. Search the web for information:
-<web_search>query</web_search>
-5. Play YouTube streams:
-<play_video>song or video search query</play_video>
-6. Compose/Send Emails (Secure SMTP Link):
-<send_email>To: recipient@gmail.com\nSubject: Email Subject\nEmail body content here...</send_email>
-7. Read/Check Emails:
-<read_emails>open</read_emails>
-8. Delete calendar events:
-<delete_calendar_event>event_id_here</delete_calendar_event>`
+`
 
 export async function POST(req: Request) {
   const { message, history, provider = 'groq', context, isDesktop = false, osContext = null } = await req.json()

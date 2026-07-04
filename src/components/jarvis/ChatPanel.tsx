@@ -163,8 +163,13 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       (window as any).jarvisDesktop.onWhatsappQr((qr: string) => {
         setWhatsappQr(qr)
       })
-      ;(window as any).jarvisDesktop.whatsappReady().then((ready: boolean) => {
-        if (ready) setWhatsappQr(null)
+      ;(window as any).jarvisDesktop.whatsappReady().then((ready: any) => {
+        if (ready) {
+          setWhatsappQr(null)
+          if (ready.myNumber) {
+            (window as any).whatsappSelfNumber = ready.myNumber;
+          }
+        }
       })
     }
   }, [])
@@ -237,8 +242,8 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       setIsListening(true)
       playWakeBeep()
 
-      // Web Fallback: Try browser's SpeechRecognition always as fallback/primary for manual click
-      if (typeof window !== 'undefined') {
+      // Web Fallback: Try browser's SpeechRecognition only if not on Desktop (Desktop uses Python WS)
+      if (typeof window !== 'undefined' && !(window as any).jarvisDesktop) {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
         if (SpeechRecognition) {
           const recognition = new SpeechRecognition()
