@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, User, Bot, Loader2, Mic, MicOff, Volume2 } from 'lucide-react'
+import { Send, User, Bot, Loader2, Mic, MicOff, Volume2, VolumeX } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import ReactMarkdown from 'react-markdown'
 import { Input } from '@/components/ui/input'
@@ -21,6 +21,7 @@ interface ChatPanelProps {
 }
 
 export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProps) {
+  const [isMuted, setIsMuted] = useState(false)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -236,8 +237,8 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       setIsListening(true)
       playWakeBeep()
 
-      // Web Fallback: If not on desktop, use browser's SpeechRecognition
-      if (typeof window !== 'undefined' && !(window as any).jarvisDesktop) {
+      // Web Fallback: Try browser's SpeechRecognition always as fallback/primary for manual click
+      if (typeof window !== 'undefined') {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
         if (SpeechRecognition) {
           const recognition = new SpeechRecognition()
@@ -314,6 +315,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   }
 
   function speak(text: string) {
+    if (isMuted) return;
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       // Strip markdown tags and other xml tags before speaking
       const plainText = text
@@ -860,7 +862,12 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           </div>
         </div>
         <div className="flex gap-4 items-center">
-           {isSpeaking && <Volume2 className="w-4 h-4 text-indigo-400 animate-pulse" />}
+           <button onClick={() => {
+             setIsMuted(!isMuted);
+             if (!isMuted && typeof window !== 'undefined') window.speechSynthesis.cancel();
+           }} className="text-zinc-500 hover:text-white transition-all cursor-pointer">
+             {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-indigo-400 animate-pulse' : 'text-zinc-500'}`} />}
+           </button>
            <div className={`w-2 h-2 rounded-full ${isLoading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
         </div>
       </div>

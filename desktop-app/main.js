@@ -69,8 +69,13 @@ function initializeWhatsApp() {
 
 function startVoiceEngine() {
   console.log("Starting Python Voice Engine...");
+  
+  const voiceEnginePath = app.isPackaged 
+    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'voice_engine.py')
+    : path.join(__dirname, 'voice_engine.py');
+
   // Assuming python is in PATH
-  voiceEngineProcess = spawn('python', [path.join(__dirname, 'voice_engine.py')]);
+  voiceEngineProcess = spawn('python', [voiceEnginePath]);
   
   voiceEngineProcess.stdout.on('data', (data) => {
     console.log(`VoiceEngine: ${data}`);

@@ -18,7 +18,10 @@
     },
     "directories": {
       "output": "release"
-    }
+    },
+    "asarUnpack": [
+      "voice_engine.py"
+    ]
   },
   "devDependencies": {
     "electron": "^31.0.0",
