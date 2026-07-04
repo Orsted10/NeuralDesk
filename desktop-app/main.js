@@ -100,7 +100,7 @@ function startVoiceEngine() {
   console.log("Starting Python Voice Engine...");
   
   if (app.isPackaged) {
-    const voiceEnginePath = path.join(process.resourcesPath, 'app.asar.unpacked', 'dist', 'voice_engine.exe');
+    const voiceEnginePath = path.join(process.resourcesPath, 'app.asar.unpacked', 'bin', 'voice_engine.exe');
     console.log(`Launching packaged engine: ${voiceEnginePath}`);
     voiceEngineProcess = spawn(voiceEnginePath);
   } else {

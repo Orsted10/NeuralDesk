@@ -20,7 +20,7 @@
       "output": "release"
     },
     "asarUnpack": [
-      "dist/voice_engine.exe"
+      "bin/voice_engine.exe"
     ]
   },
   "devDependencies": {
