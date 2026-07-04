@@ -20,7 +20,7 @@
       "output": "release"
     },
     "asarUnpack": [
-      "voice_engine.py"
+      "dist/voice_engine.exe"
     ]
   },
   "devDependencies": {
