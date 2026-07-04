@@ -3,6 +3,21 @@ const path = require('path');
 const { exec, spawn } = require('child_process');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const os = require('os');
+const fs = require('fs');
+
+function getChromeExecutablePath() {
+  const paths = [
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+    process.env.LOCALAPPDATA + '\\Google\\Chrome\\Application\\chrome.exe'
+  ];
+  for (const p of paths) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
 
 let mainWindow;
 let whatsappClient;
@@ -31,12 +46,22 @@ function createWindow() {
 }
 
 function initializeWhatsApp() {
+  const executablePath = getChromeExecutablePath();
+  const puppeteerOptions = {
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  };
+  
+  if (executablePath) {
+    console.log(`Found browser at: ${executablePath}`);
+    puppeteerOptions.executablePath = executablePath;
+  } else {
+    console.warn("Could not find Chrome/Edge installation. Puppeteer will attempt to use its bundled Chromium.");
+  }
+
   whatsappClient = new Client({
     authStrategy: new LocalAuth(),
-    puppeteer: {
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    }
+    puppeteer: puppeteerOptions
   });
 
   whatsappClient.on('qr', (qr) => {
