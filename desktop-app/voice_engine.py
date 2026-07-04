@@ -44,20 +44,29 @@ def listen_loop():
     r.dynamic_energy_threshold = True
     r.pause_threshold = 2.0 # Wait 2 seconds of silence before cutting off
 
-    with sr.Microphone() as source:
-        print("Adjusting for ambient noise... Please wait.")
-        r.adjust_for_ambient_noise(source, duration=1)
-        print("Listening started.")
-        
-        # This will run in a background thread and automatically handle speech/silence detection
-        while True:
-            try:
-                audio = r.listen(source, timeout=None, phrase_time_limit=None)
-                # Process in a separate thread so we don't block listening
-                threading.Thread(target=process_audio, args=(r, audio)).start()
-            except Exception as e:
-                print(f"Listen error: {e}")
-
+    while True:
+        try:
+            with sr.Microphone() as source:
+                print("Adjusting for ambient noise... Please wait.")
+                r.adjust_for_ambient_noise(source, duration=1)
+                print("Listening started.")
+                
+                # This will run in a background thread and automatically handle speech/silence detection
+                while True:
+                    try:
+                        audio = r.listen(source, timeout=None, phrase_time_limit=None)
+                        # Process in a separate thread so we don't block listening
+                        threading.Thread(target=process_audio, args=(r, audio)).start()
+                    except Exception as e:
+                        print(f"Listen error: {e}")
+                        # Break inner loop to recreate microphone
+                        break
+        except Exception as outer_e:
+            print(f"Microphone init error: {outer_e}")
+            
+        # Wait a bit before trying to reconnect the microphone
+        import time
+        time.sleep(2)
 async def main():
     global main_loop
     main_loop = asyncio.get_running_loop()
