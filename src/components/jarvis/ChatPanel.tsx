@@ -443,6 +443,13 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     const textToSend = overrideInput || input
     if (!textToSend.trim() || isLoading) return
 
+    const getApiUrl = (path: string) => {
+      if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+        return `https://neural-desk-three.vercel.app${path}`
+      }
+      return path
+    }
+
     // Unlock Persistent Web Audio Element to bypass Chrome Autoplay blocks
     if (audioRef.current) {
       // 10ms of silent WAV audio to unlock the media context
@@ -460,7 +467,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     let currentSessionId = activeSessionId
     if (!currentSessionId) {
       try {
-        const res = await fetch('/api/chat/sessions', {
+        const res = await fetch(getApiUrl('/api/chat/sessions'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title: textToSend.slice(0, 30) + '...' })
@@ -491,7 +498,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         osContext = await (window as any).jarvisDesktop.getOsContext()
       }
 
-      const response = await fetch('/api/ai', {
+      const response = await fetch(getApiUrl('/api/ai'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -876,7 +883,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       })
 
       // Save to persistent history
-      fetch('/api/chat/history', {
+      fetch(getApiUrl('/api/chat/history'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
