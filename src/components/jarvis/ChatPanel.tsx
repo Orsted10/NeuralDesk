@@ -357,39 +357,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       return;
     }
 
-    // If no local WebSocket (e.g. running on the web), fallback to Hugging Face API
-    const hfToken = process.env.NEXT_PUBLIC_HF_TOKEN;
-    if (hfToken) {
-      setIsSpeaking(true);
-      try {
-        const response = await fetch(
-          "https://api-inference.huggingface.co/models/espnet/kan-bayashi_ljspeech_vits",
-          {
-            headers: {
-              Authorization: `Bearer ${hfToken}`,
-              "Content-Type": "application/json",
-            },
-            method: "POST",
-            body: JSON.stringify({ inputs: plainText }),
-          }
-        );
-        
-        if (response.ok) {
-          const blob = await response.blob();
-          const audioUrl = URL.createObjectURL(blob);
-          const audio = new Audio(audioUrl);
-          audio.onended = () => setIsSpeaking(false);
-          audio.onerror = () => setIsSpeaking(false);
-          audio.play();
-          return;
-        } else {
-          console.error("HF TTS Error:", await response.text());
-        }
-      } catch (err) {
-        console.error("HF TTS Fetch Error:", err);
-      }
-      setIsSpeaking(false);
-    }
+    // If no local WebSocket (e.g. running on the web), fallback directly to Browser Web Speech API
+    // We do NOT use Hugging Face API here because the async fetch causes the browser to revoke the user-gesture token,
+    // which blocks autoplay and permanently breaks all audio playback on the web!
 
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       const utterance = new SpeechSynthesisUtterance(plainText)
