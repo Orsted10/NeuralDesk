@@ -138,6 +138,14 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   const inputRef = useRef<string>('')
   const isLoadingRef = useRef<boolean>(false)
   const wsRef = useRef<WebSocket | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      audioRef.current = new Audio()
+    }
+  }, [])
+
   const [downloadStatus, setDownloadStatus] = useState<{filename: string, percent: number} | null>(null)
 
   useEffect(() => {
@@ -357,10 +365,56 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       return;
     }
 
-    // If no local WebSocket (e.g. running on the web), fallback directly to Browser Web Speech API
-    // We do NOT use Hugging Face API here because the async fetch causes the browser to revoke the user-gesture token,
-    // which blocks autoplay and permanently breaks all audio playback on the web!
+    // Cloud TTS Fallback via Hugging Face API
+    const hfToken = process.env.NEXT_PUBLIC_HF_TOKEN;
+    if (hfToken && audioRef.current) {
+      setIsSpeaking(true);
+      let retries = 5;
+      while (retries > 0) {
+        try {
+          const response = await fetch(
+            "https://api-inference.huggingface.co/models/espnet/kan-bayashi_ljspeech_vits",
+            {
+              headers: {
+                Authorization: `Bearer ${hfToken}`,
+                "Content-Type": "application/json",
+              },
+              method: "POST",
+              body: JSON.stringify({ inputs: plainText }),
+            }
+          );
+          
+          if (response.ok) {
+            const blob = await response.blob();
+            const audioUrl = URL.createObjectURL(blob);
+            audioRef.current.src = audioUrl;
+            audioRef.current.onended = () => setIsSpeaking(false);
+            audioRef.current.onerror = () => setIsSpeaking(false);
+            try {
+              await audioRef.current.play();
+            } catch(e) {
+               console.error("Autoplay failed:", e)
+               setIsSpeaking(false);
+            }
+            return;
+          } else if (response.status === 503) {
+            // Model is cold loading, wait 3 seconds and retry
+            await new Promise(r => setTimeout(r, 3000));
+            retries--;
+            continue;
+          } else {
+            console.error("HF TTS Error:", await response.text());
+            break;
+          }
+        } catch (err) {
+          console.error("HF TTS Fetch Error:", err);
+          break;
+        }
+      }
+      setIsSpeaking(false);
+    }
 
+    // Final Fallback: Web Speech API
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       const utterance = new SpeechSynthesisUtterance(plainText)
       utterance.rate = 1.05
@@ -389,7 +443,14 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     const textToSend = overrideInput || input
     if (!textToSend.trim() || isLoading) return
 
-    // Unlock Web Speech API immediately on user interaction to bypass async autoplay blocking
+    // Unlock Persistent Web Audio Element to bypass Chrome Autoplay blocks
+    if (audioRef.current) {
+      // 10ms of silent WAV audio to unlock the media context
+      audioRef.current.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"
+      audioRef.current.play().catch(e => console.error("Unlock failed", e))
+    }
+
+    // Unlock Web Speech API immediately
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       const dummy = new SpeechSynthesisUtterance('')
       dummy.volume = 0
