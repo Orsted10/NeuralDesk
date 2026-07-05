@@ -19,17 +19,23 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
 
   // Dynamic templates based on context
   const quickTemplates = [
-    "Mission accomplished. Heading back to base.",
-    "Status report: All systems nominal.",
-    "Emergency protocol initiated. Please advise."
+    "Sounds good, see you soon!",
+    "I'm on my way.",
+    "Give me 5 minutes.",
+    "Can't talk right now, I'll call you later."
   ]
 
   useEffect(() => {
     async function fetchContacts() {
-      const { createClient } = await import('@/lib/supabase/client')
-      const supabase = createClient()
-      const { data } = await supabase.from('contacts').select('*').order('name')
-      if (data) setContacts(data)
+      if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+        const desktopContacts = await (window as any).jarvisDesktop.getWhatsappContacts()
+        setContacts(desktopContacts)
+      } else {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        const { data } = await supabase.from('contacts').select('*').order('name')
+        if (data) setContacts(data)
+      }
       setIsLoadingContacts(false)
     }
     fetchContacts()
@@ -123,7 +129,7 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                   >
                     <option value="" className="bg-zinc-900 text-zinc-300">{isLoadingContacts ? 'Loading contacts...' : 'Select Contact'}</option>
                     {contacts.map(c => (
-                      <option key={c.id} value={c.phone} className="bg-zinc-900 text-zinc-300">{c.name} ({c.relationship})</option>
+                      <option key={c.id || c.number} value={c.number || c.phone} className="bg-zinc-900 text-zinc-300">{c.name} {c.relationship ? `(${c.relationship})` : ''}</option>
                     ))}
                   </select>
                 </div>

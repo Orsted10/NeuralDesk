@@ -137,6 +137,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   const handleSendRef = useRef<any>(null)
   const inputRef = useRef<string>('')
   const isLoadingRef = useRef<boolean>(false)
+  const wsRef = useRef<WebSocket | null>(null)
 
   useEffect(() => {
     handleSendRef.current = handleSend
@@ -150,10 +151,15 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     isLoadingRef.current = isLoading
   }, [isLoading])
 
+  const speakRef = useRef<any>(null)
+  useEffect(() => {
+    speakRef.current = speak
+  }, [speak])
+
   // Start the background event notifier hook
   useEventNotifier((msg: string) => {
-    if (handleSendRef.current) {
-      handleSendRef.current(msg)
+    if (speakRef.current) {
+      speakRef.current(msg)
     }
   })
 
@@ -186,6 +192,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     let ws: WebSocket | null = null
     const connectWs = () => {
       ws = new WebSocket('ws://localhost:8765')
+      wsRef.current = ws
       
       ws.onmessage = (event) => {
         try {
@@ -222,6 +229,10 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
                 }
               }
             }
+          } else if (data.type === 'speech_started') {
+            setIsSpeaking(true)
+          } else if (data.type === 'speech_ended') {
+            setIsSpeaking(false)
           }
         } catch (e) {
           console.error('WS Parse Error', e)
@@ -324,17 +335,58 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     return text.trim()
   }
 
-  function speak(text: string) {
+  async function speak(text: string) {
     if (isMuted) return;
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      // Strip markdown tags and other xml tags before speaking
-      const plainText = text
-        .replace(/<\/?[^>]+(>|$)/g, "")
-        .replace(/[*_#]/g, "")
-        .trim();
-        
-      if (!plainText) return;
+    
+    // Strip markdown tags and other xml tags before speaking
+    const plainText = text
+      .replace(/<\/?[^>]+(>|$)/g, "")
+      .replace(/[*_#]/g, "")
+      .trim();
+      
+    if (!plainText) return;
 
+    // Route TTS to Local Python WebSocket if available
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'speak', text: plainText }))
+      return;
+    }
+
+    // If no local WebSocket (e.g. running on the web), fallback to Hugging Face API
+    const hfToken = process.env.NEXT_PUBLIC_HF_TOKEN;
+    if (hfToken) {
+      setIsSpeaking(true);
+      try {
+        const response = await fetch(
+          "https://api-inference.huggingface.co/models/hexgrad/Kokoro-82M",
+          {
+            headers: {
+              Authorization: `Bearer ${hfToken}`,
+              "Content-Type": "application/json",
+            },
+            method: "POST",
+            body: JSON.stringify({ inputs: plainText }),
+          }
+        );
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          audio.onended = () => setIsSpeaking(false);
+          audio.onerror = () => setIsSpeaking(false);
+          audio.play();
+          return;
+        } else {
+          console.error("HF TTS Error:", await response.text());
+        }
+      } catch (err) {
+        console.error("HF TTS Fetch Error:", err);
+      }
+      setIsSpeaking(false);
+    }
+
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
       const utterance = new SpeechSynthesisUtterance(plainText)
       utterance.rate = 1.05
       utterance.pitch = 1.1
@@ -535,16 +587,22 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       if (finalWaSend && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
         cleanMessage = cleanMessage.replace(finalWaSend[0], '[EXECUTING PROTOCOL: WHATSAPP...]').trim()
         try {
-          const payload = JSON.parse(finalWaSend[1].trim())
-          if (payload.to && payload.message) {
-            toast.success(`Protocol Complete: Sending WhatsApp message.`, { icon: '💬' })
-            ;(window as any).jarvisDesktop.sendWhatsappMessage(payload.to, payload.message).then((res: any) => {
-              if (res.success) {
-                handleSend(`<system>WhatsApp message sent successfully to ${payload.to}.</system>`)
-              } else {
-                handleSend(`<system>Failed to send WhatsApp message. Error: ${res.error}</system>`)
-              }
-            })
+          const content = finalWaSend[1].trim()
+          const pipeIndex = content.indexOf('|')
+          if (pipeIndex !== -1) {
+            const to = content.substring(0, pipeIndex).trim()
+            const message = content.substring(pipeIndex + 1).trim()
+            
+            if (to && message) {
+              toast.success(`Protocol Complete: Sending WhatsApp message.`, { icon: '💬' })
+              ;(window as any).jarvisDesktop.sendWhatsappMessage(to, message).then((res: any) => {
+                if (res.success) {
+                  handleSend(`<system>WhatsApp message sent successfully to ${to}.</system>`)
+                } else {
+                  handleSend(`<system>Failed to send WhatsApp message. Error: ${res.error}</system>`)
+                }
+              })
+            }
           }
         } catch (e) {
           console.error("Failed to parse whatsapp_send payload", e)
@@ -582,8 +640,15 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         cleanMessage = cleanMessage.replace(finalReadEmails[0], '[EXECUTING PROTOCOL: INBOX...]').trim()
         try {
           toast.success('Protocol Complete: Accessing Inbox.', { icon: '📬' })
-          window.dispatchEvent(new CustomEvent('read-emails'))
+          window.dispatchEvent(new CustomEvent('open-module', { detail: 'email' }))
         } catch (e) {}
+      }
+
+      const finalOpenModule = assistantMessage.match(/<open_module>\s*(.*?)\s*<\/open_module>/is)
+      if (finalOpenModule) {
+        cleanMessage = cleanMessage.replace(finalOpenModule[0], '[EXECUTING PROTOCOL: INTERFACE NAVIGATION...]').trim()
+        const moduleName = finalOpenModule[1].trim().toLowerCase()
+        window.dispatchEvent(new CustomEvent('open-module', { detail: moduleName }))
       }
 
       if (finalMatch) {

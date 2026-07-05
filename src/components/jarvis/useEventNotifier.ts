@@ -42,9 +42,9 @@ export function useEventNotifier(handleSend: (msg: string) => void) {
     }
   }, [])
 
-  const handleSendRef = useRef(handleSend)
+  const speakRef = useRef(handleSend)
   useEffect(() => {
-    handleSendRef.current = handleSend
+    speakRef.current = handleSend
   }, [handleSend])
 
   // 2. 10-Second Polling for Thresholds
@@ -54,6 +54,9 @@ export function useEventNotifier(handleSend: (msg: string) => void) {
     const checkInterval = setInterval(() => {
       const now = new Date()
       
+      // Group events by diffMins
+      const groupedEvents: Record<number, any[]> = {}
+      
       events.forEach(event => {
         if (!event.start?.dateTime) return // skip all-day events
 
@@ -61,28 +64,46 @@ export function useEventNotifier(handleSend: (msg: string) => void) {
         const diffMs = eventTime.getTime() - now.getTime()
         const diffMins = Math.round(diffMs / 60000)
 
-        // Thresholds we want to alert on: 5 mins, 3 mins, 2 mins, 1 min
-        const alertThresholds = [5, 3, 2, 1]
+        // Thresholds we want to alert on: 5 mins, 2 mins, and 0 mins
+        const alertThresholds = [5, 2, 0]
 
         if (alertThresholds.includes(diffMins)) {
-          const id = event.id
-          if (!notifiedRef.current[id]) {
-            notifiedRef.current[id] = []
-          }
-
-          // If we haven't notified for this specific threshold yet
-          if (!notifiedRef.current[id].includes(diffMins)) {
-            notifiedRef.current[id].push(diffMins)
-
-            // Trigger AI!
-            const prompt = `<system>ALARM: The scheduled event "${event.summary}" starts in ${diffMins} minute${diffMins > 1 ? 's' : ''}. Autonomously inform the user right now in a brief, urgent JARVIS-style voice announcement without asking for commands.</system>`
-            
-            if (handleSendRef.current) {
-              handleSendRef.current(prompt)
-            }
-          }
+          if (!groupedEvents[diffMins]) groupedEvents[diffMins] = []
+          groupedEvents[diffMins].push(event)
         }
       })
+
+      // Process grouped alerts
+      for (const [minsStr, evs] of Object.entries(groupedEvents)) {
+        const diffMins = parseInt(minsStr, 10)
+        
+        // Filter out events that were already notified for this threshold
+        const newEvs = evs.filter(ev => {
+          const id = ev.id
+          if (!notifiedRef.current[id]) notifiedRef.current[id] = []
+          if (!notifiedRef.current[id].includes(diffMins)) {
+            notifiedRef.current[id].push(diffMins)
+            return true
+          }
+          return false
+        })
+
+        if (newEvs.length > 0) {
+          const timeWord = diffMins === 0 ? "right now" : `in ${diffMins} minute${diffMins > 1 ? 's' : ''}`
+          
+          let announcement = ""
+          if (newEvs.length === 1) {
+            announcement = `Sir, your scheduled event, ${newEvs[0].summary}, starts ${timeWord}.`
+          } else {
+            const summaries = newEvs.map(e => e.summary).join(" and ")
+            announcement = `Sir, you have ${newEvs.length} events starting ${timeWord}: ${summaries}.`
+          }
+
+          if (speakRef.current) {
+            speakRef.current(announcement)
+          }
+        }
+      }
     }, 10000)
 
     return () => clearInterval(checkInterval)

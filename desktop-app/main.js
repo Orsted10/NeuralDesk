@@ -178,18 +178,47 @@ ipcMain.handle('whatsapp-get-qr', async () => {
   return currentWhatsappQr;
 });
 
+ipcMain.handle('whatsapp-get-contacts', async () => {
+  if (!whatsappClient) return [];
+  try {
+    const contacts = await whatsappClient.getContacts();
+    return contacts
+      .filter(c => c.name || c.pushname)
+      .map(c => ({
+        id: c.id._serialized,
+        name: c.name || c.pushname,
+        number: c.number
+      }));
+  } catch (error) {
+    return [];
+  }
+});
+
 ipcMain.handle('whatsapp-send', async (event, { to, message }) => {
   try {
     let targetId = to;
     
     // If it doesn't look like a phone number, search contacts
     if (!/^\+?\d+$/.test(to.replace(/[-\s()]/g, ''))) {
-      const chats = await whatsappClient.getChats();
-      const targetChat = chats.find(c => c.name && c.name.toLowerCase().includes(to.toLowerCase()));
-      if (!targetChat) {
-        return { success: false, error: `Could not find a contact named "${to}".` };
+      const searchStr = to.toLowerCase();
+      // Handle "text myself"
+      if (searchStr.includes('myself') || searchStr === 'me' || searchStr.includes('my number')) {
+        targetId = whatsappClient.info.wid._serialized;
+      } else {
+        const contacts = await whatsappClient.getContacts();
+        
+        // Find best match: check if name matches or partial match
+        const targetContact = contacts.find(c => {
+          if (!c.name && !c.pushname) return false;
+          const name = (c.name || c.pushname).toLowerCase();
+          return name.includes(searchStr) || searchStr.includes(name.split(' ')[0]);
+        });
+        
+        if (!targetContact) {
+          return { success: false, error: `Could not find a contact named "${to}".` };
+        }
+        targetId = targetContact.id._serialized;
       }
-      targetId = targetChat.id._serialized;
     } else {
       targetId = to.includes('@c.us') ? to : `${to.replace(/\D/g, '')}@c.us`;
     }

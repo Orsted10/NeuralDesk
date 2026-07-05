@@ -177,6 +177,7 @@ export default function DashboardPage() {
       setActiveModule('email')
     }
     const handleCalendarUpdate = () => loadCalendarEvents()
+    const handleOpenModule = (e: any) => setActiveModule(e.detail)
 
     window.addEventListener('show-map', handleMapSwitch)
     window.addEventListener('create-doc', handleDriveSwitch)
@@ -184,6 +185,7 @@ export default function DashboardPage() {
     window.addEventListener('send-email', handleEmailCompose)
     window.addEventListener('read-emails', handleEmailInbox)
     window.addEventListener('calendar-updated', handleCalendarUpdate)
+    window.addEventListener('open-module', handleOpenModule)
 
     return () => {
       clearInterval(timer)
@@ -193,6 +195,7 @@ export default function DashboardPage() {
       window.removeEventListener('play-video', handleYoutubeSwitch)
       window.removeEventListener('send-email', handleEmailCompose)
       window.removeEventListener('read-emails', handleEmailInbox)
+      window.removeEventListener('open-module', handleOpenModule)
       window.removeEventListener('calendar-updated', handleCalendarUpdate)
     }
   }, [])
@@ -304,6 +307,16 @@ export default function DashboardPage() {
           )}
           {activeModule === 'youtube' && (
             <YouTubeModule />
+          )}
+
+          {activeModule && (
+            <div className="fixed bottom-8 right-8 z-50 transform scale-75 hover:scale-100 transition-all cursor-pointer group">
+              <div className="absolute inset-0 bg-black/50 rounded-full blur-xl -z-10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <VoiceOrb isListening={voiceState.isListening} isSpeaking={voiceState.isSpeaking} onClick={() => setActiveModule(null)} />
+              <div className="absolute top-0 right-0 -mt-2 -mr-2 bg-indigo-500 text-white text-[10px] px-2 py-1 rounded-full font-bold shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                Close Module
+              </div>
+            </div>
           )}
 
           {/* Always mounted to keep background tasks active, hidden when module is active */}

@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Desktop App Build Files
+desktop-app/build/
+desktop-app/dist/
+desktop-app/release/
+desktop-app/*.spec
+desktop-app/models/
+
+
+desktop-app/bin/
+
