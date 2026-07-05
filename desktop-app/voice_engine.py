@@ -23,9 +23,33 @@ kokoro_model = None
 is_speaking = False
 
 def download_file(url, dest):
-    print(f"Downloading {os.path.basename(dest)}... (Offline Model)")
-    urllib.request.urlretrieve(url, dest)
-    print(f"Downloaded {os.path.basename(dest)}!")
+    filename = os.path.basename(dest)
+    print(f"Downloading {filename}... (Offline Model)")
+    
+    def reporthook(blocknum, blocksize, totalsize):
+        if totalsize > 0 and main_loop:
+            percent = (blocknum * blocksize * 100) / totalsize
+            if percent > 100: percent = 100
+            if not hasattr(reporthook, "last_percent") or (percent - reporthook.last_percent) >= 2 or percent == 100:
+                reporthook.last_percent = percent
+                try:
+                    asyncio.run_coroutine_threadsafe(
+                        notify_clients({"type": "download_progress", "filename": filename, "percent": int(percent)}),
+                        main_loop
+                    )
+                except Exception:
+                    pass
+
+    urllib.request.urlretrieve(url, dest, reporthook=reporthook)
+    if main_loop:
+        try:
+            asyncio.run_coroutine_threadsafe(
+                notify_clients({"type": "download_complete", "filename": filename}),
+                main_loop
+            )
+        except Exception:
+            pass
+    print(f"Downloaded {filename}!")
 
 def init_tts():
     global kokoro_model

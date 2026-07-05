@@ -138,6 +138,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   const inputRef = useRef<string>('')
   const isLoadingRef = useRef<boolean>(false)
   const wsRef = useRef<WebSocket | null>(null)
+  const [downloadStatus, setDownloadStatus] = useState<{filename: string, percent: number} | null>(null)
 
   useEffect(() => {
     handleSendRef.current = handleSend
@@ -233,6 +234,10 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
             setIsSpeaking(true)
           } else if (data.type === 'speech_ended') {
             setIsSpeaking(false)
+          } else if (data.type === 'download_progress') {
+            setDownloadStatus({ filename: data.filename, percent: data.percent })
+          } else if (data.type === 'download_complete') {
+            setDownloadStatus(null)
           }
         } catch (e) {
           console.error('WS Parse Error', e)
@@ -880,6 +885,32 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
               <Button onClick={() => setWhatsappQr(null)} variant="ghost" className="mt-2 text-zinc-400 hover:text-white">
                 Dismiss
               </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Download Progress Overlay */}
+      <AnimatePresence>
+        {downloadStatus && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-16 left-0 right-0 z-40 p-4 pointer-events-none"
+          >
+            <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-5 border border-indigo-500/40 shadow-[0_0_40px_rgba(99,102,241,0.2)]">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-semibold text-indigo-300 tracking-wider">
+                  INITIALIZING NEURAL ENGINE ({downloadStatus.filename})
+                </span>
+                <span className="text-sm font-bold text-indigo-400">{downloadStatus.percent}%</span>
+              </div>
+              <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden shadow-inner">
+                <div 
+                  className="bg-indigo-500 h-full rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(99,102,241,0.8)]" 
+                  style={{ width: `${downloadStatus.percent}%` }}
+                />
+              </div>
             </div>
           </motion.div>
         )}
