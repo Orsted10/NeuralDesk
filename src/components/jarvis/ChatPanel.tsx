@@ -389,6 +389,13 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     const textToSend = overrideInput || input
     if (!textToSend.trim() || isLoading) return
 
+    // Unlock Web Speech API immediately on user interaction to bypass async autoplay blocking
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      const dummy = new SpeechSynthesisUtterance('')
+      dummy.volume = 0
+      window.speechSynthesis.speak(dummy)
+    }
+
     let currentSessionId = activeSessionId
     if (!currentSessionId) {
       try {
