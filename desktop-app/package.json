@@ -8,7 +8,8 @@
     "build": "electron-builder build --win"
   },
   "keywords": [],
-  "author": "",
+  "author": "Ankan",
+  "repository": "https://github.com/Orsted10/NeuralDesk",
   "license": "ISC",
   "build": {
     "appId": "com.neuraldesk.app",
@@ -19,6 +20,13 @@
     "directories": {
       "output": "release"
     },
+    "files": [
+      "main.js",
+      "preload.js",
+      "bin/voice_engine.exe",
+      "package.json",
+      "node_modules/**/*"
+    ],
     "asarUnpack": [
       "bin/voice_engine.exe"
     ]

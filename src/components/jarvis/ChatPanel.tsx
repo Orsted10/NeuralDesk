@@ -358,7 +358,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       setIsSpeaking(true);
       try {
         const response = await fetch(
-          "https://api-inference.huggingface.co/models/hexgrad/Kokoro-82M",
+          "https://api-inference.huggingface.co/models/espnet/kan-bayashi_ljspeech_vits",
           {
             headers: {
               Authorization: `Bearer ${hfToken}`,

@@ -15,7 +15,7 @@ try:
 except ImportError:
     Kokoro = None
 
-MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+MODEL_DIR = os.path.expanduser("~/.jarvis_models")
 ONNX_URL = "https://huggingface.co/hexgrad/Kokoro-82M/resolve/main/kokoro-v0_19.onnx"
 VOICES_URL = "https://huggingface.co/hexgrad/Kokoro-82M/resolve/main/voices.json"
 
@@ -78,7 +78,14 @@ async def notify_clients(message):
 
 async def speak_text(text):
     global kokoro_model, is_speaking
-    if not kokoro_model or is_speaking:
+    if not kokoro_model:
+        # If model is still downloading, notify UI immediately to not freeze
+        await notify_clients({"type": "speech_started"})
+        await asyncio.sleep(0.1)
+        await notify_clients({"type": "speech_ended"})
+        return
+        
+    if is_speaking:
         return
         
     is_speaking = True
