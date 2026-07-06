@@ -658,9 +658,45 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         cleanMessage = cleanMessage.replace(finalMatch[0], '[EXECUTING PROTOCOL: CALENDAR...]').trim()
         try {
           const payloadString = finalMatch[1].trim()
-          const payload = JSON.parse(payloadString)
-          const startDateTime = new Date(`${payload.date}T${payload.startTime}`).toISOString()
-          const endDateTime = new Date(`${payload.date}T${payload.endTime}`).toISOString()
+          let title = "Event"
+          let date = new Date().toISOString().split('T')[0]
+          let startTime = "12:00"
+          let endTime = "13:00"
+          let description = ""
+
+          if (payloadString.startsWith('{')) {
+            try {
+              const payload = JSON.parse(payloadString)
+              title = payload.title || title
+              date = payload.date || date
+              startTime = payload.startTime || startTime
+              endTime = payload.endTime || endTime
+              description = payload.description || description
+            } catch (jsonErr) {
+              // fallback to regex below
+            }
+          }
+          
+          // Fallback robust regex parsing for Nemotron hallucinations
+          if (!payloadString.startsWith('{') || title === "Event") {
+            const titleMatch = payloadString.match(/"?title"?\s*:\s*"?([^",\n}]+)"?/i)
+            if (titleMatch) title = titleMatch[1].trim()
+            
+            const dateMatch = payloadString.match(/"?date"?\s*:\s*"?([^",\n}]+)"?/i)
+            if (dateMatch) date = dateMatch[1].trim()
+            
+            const startMatch = payloadString.match(/"?startTime"?\s*:\s*"?([^",\n}]+)"?/i)
+            if (startMatch) startTime = startMatch[1].trim()
+            
+            const endMatch = payloadString.match(/"?endTime"?\s*:\s*"?([^",\n}]+)"?/i)
+            if (endMatch) endTime = endMatch[1].trim()
+            
+            const descMatch = payloadString.match(/"?description"?\s*:\s*"?([^",\n}]+)"?/i)
+            if (descMatch) description = descMatch[1].trim()
+          }
+
+          const startDateTime = new Date(`${date}T${startTime}`).toISOString()
+          const endDateTime = new Date(`${date}T${endTime}`).toISOString()
 
           fetch('/api/calendar', {
             method: 'POST',
