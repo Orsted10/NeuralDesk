@@ -359,8 +359,8 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       
     if (!plainText) return;
 
-    // Route TTS to Local Python WebSocket if available
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    // Route TTS to Local Python WebSocket if available (Desktop App Only)
+    if (typeof window !== 'undefined' && (window as any).jarvisDesktop && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'speak', text: plainText }))
       return;
     }
@@ -459,7 +459,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
 
     // Unlock Web Speech API immediately
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      const dummy = new SpeechSynthesisUtterance('')
+      const dummy = new SpeechSynthesisUtterance(' ')
       dummy.volume = 0
       window.speechSynthesis.speak(dummy)
     }

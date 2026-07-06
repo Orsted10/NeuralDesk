@@ -188,7 +188,7 @@ CRITICAL: NEVER ask for a phone number. Use the name they provided.`
         })
 
         const response = await openrouter.chat.completions.create({
-          model: 'nvidia/nemotron-3-nano-30b-a3b:free',
+          model: 'meta-llama/llama-3.3-70b-instruct:free',
           stream: true,
           max_tokens: 1500,
           messages: [
