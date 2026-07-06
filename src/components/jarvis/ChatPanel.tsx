@@ -562,10 +562,10 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           .then(data => {
             let injection = ''
             if (!data.items || data.items.length === 0) {
-              injection = `<system>Web Search Results for "${query}":\nNo results found.</system>\nDo NOT attempt to search again. Tell me you couldn't find the answer.`
+              injection = `[SYSTEM NOTIFICATION: Web Search Results for "${query}":\nNo results found. Tell the user you couldn't find the answer.]`
             } else {
               const results = data.items.slice(0, 4).map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n')
-              injection = `<system>Web Search Results for "${query}":\n${results}</system>\nAnalyze these search results and answer my previous question. DO NOT output any XML action tags in your response.`
+              injection = `[SYSTEM NOTIFICATION: Web Search Results for "${query}":\n${results}\n\nAnalyze these search results and answer the user. Do NOT output internal thoughts.]`
             }
             
             // Automatically trigger the next turn so JARVIS can analyze the results!
@@ -580,9 +580,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         toast.success(`Protocol Complete: Executing OS Command.`, { icon: '💻' })
         ;(window as any).jarvisDesktop.executeCommand(command).then((res: any) => {
           if (res.success) {
-            handleSend(`<system>Command executed successfully. Output: ${res.stdout}</system>`)
+            handleSend(`[SYSTEM NOTIFICATION: Command executed successfully. Output: ${res.stdout}. Acknowledge this naturally.]`)
           } else {
-            handleSend(`<system>Command failed. Error: ${res.error}</system>`)
+            handleSend(`[SYSTEM NOTIFICATION: Command failed. Error: ${res.error}. Inform the user naturally.]`)
           }
         })
       }
@@ -600,9 +600,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
               toast.success(`Protocol Complete: Sending WhatsApp message.`, { icon: '💬' })
               ;(window as any).jarvisDesktop.sendWhatsappMessage(to, message).then((res: any) => {
                 if (res.success) {
-                  handleSend(`<system>WhatsApp message sent successfully to ${to}.</system>`)
+                  handleSend(`[SYSTEM NOTIFICATION: WhatsApp message sent successfully to ${to}. Acknowledge this naturally.]`)
                 } else {
-                  handleSend(`<system>Failed to send WhatsApp message. Error: ${res.error}</system>`)
+                  handleSend(`[SYSTEM NOTIFICATION: Failed to send WhatsApp message. Error: ${res.error}. Inform the user.]`)
                 }
               })
             }
@@ -619,9 +619,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         ;(window as any).jarvisDesktop.readWhatsappMessages(contact).then((res: any) => {
           if (res.success) {
             const chatLog = res.messages.map((m: any) => `[${m.timestamp}] ${m.sender}: ${m.body}`).join('\n')
-            handleSend(`<system>Successfully fetched last 5 messages with ${res.chatName}:\n${chatLog}</system>\nPlease summarize the recent messages or answer my previous question based on them.`)
+            handleSend(`[SYSTEM NOTIFICATION: Successfully fetched last 5 messages with ${res.chatName}:\n${chatLog}\n\nPlease summarize the recent messages or answer my previous question based on them. No internal thoughts!]`)
           } else {
-            handleSend(`<system>Failed to read WhatsApp messages. Error: ${res.error}</system>`)
+            handleSend(`[SYSTEM NOTIFICATION: Failed to read WhatsApp messages. Error: ${res.error}. Inform the user.]`)
           }
         })
       }
@@ -711,11 +711,11 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
             if (res.ok) {
               toast.success('Protocol Complete: Event scheduled.')
               window.dispatchEvent(new Event('calendar-updated'))
-              handleSend(`<system>Successfully scheduled calendar event.</system>`)
+              handleSend(`[SYSTEM NOTIFICATION: Successfully scheduled calendar event. Tell the user the meeting has been scheduled.]`)
             }
             else {
               toast.error('Protocol Failed: Could not schedule event.')
-              handleSend(`<system>Failed to schedule calendar event.</system>`)
+              handleSend(`[SYSTEM NOTIFICATION: Failed to schedule calendar event. Inform the user.]`)
             }
           })
         } catch (e) {
@@ -745,10 +745,10 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
               if (res.ok) {
                 toast.success('Protocol Complete: Event terminated.', { icon: '🗑️' })
                 window.dispatchEvent(new Event('calendar-updated'))
-                handleSend(`<system>Successfully deleted calendar event.</system>`)
+                handleSend(`[SYSTEM NOTIFICATION: Successfully deleted calendar event. Acknowledge this naturally.]`)
               } else {
                 toast.error('Protocol Failed: Could not terminate event.')
-                handleSend(`<system>Failed to delete calendar event. Ensure the event ID is correct.</system>`)
+                handleSend(`[SYSTEM NOTIFICATION: Failed to delete calendar event. Ensure the event ID is correct and inform the user.]`)
               }
             })
           } catch (e) {
