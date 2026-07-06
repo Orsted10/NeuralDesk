@@ -702,8 +702,8 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              summary: payload.title,
-              description: payload.description,
+              summary: title,
+              description: description,
               startDateTime,
               endDateTime
             }),
