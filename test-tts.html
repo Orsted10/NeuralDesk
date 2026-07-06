@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<body>
+<button onclick="playAudio()">Play Google TTS</button>
+<script>
+function playAudio() {
+  const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=Hello+from+the+Google+Speech+API&tl=en-us&client=tw-ob`);
+  audio.play();
+}
+</script>
+</body>
+</html>

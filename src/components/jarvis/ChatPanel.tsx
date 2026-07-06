@@ -360,10 +360,11 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     if (!plainText) return;
 
     // Route TTS to Local Python WebSocket if available (Desktop App Only)
-    if (typeof window !== 'undefined' && (window as any).jarvisDesktop && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'speak', text: plainText }))
-      return;
-    }
+    // NOTE: Commented out to use the browser TTS (Web Speech API) even in the Desktop App, as requested by the user.
+    // if (typeof window !== 'undefined' && (window as any).jarvisDesktop && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    //   wsRef.current.send(JSON.stringify({ type: 'speak', text: plainText }))
+    //   return;
+    // }
 
 
 
@@ -482,8 +483,8 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         assistantMessage += chunk
         
         // Hide action blocks from UI during streaming if possible
-        let displayMessage = assistantMessage
-        const actionMatch = assistantMessage.match(/<schedule_event>\s*(.*?)\s*<\/schedule_event>/is)
+        let displayMessage = assistantMessage.replace(/<thought>[\s\S]*?(<\/thought>|$)/gi, '')
+        const actionMatch = displayMessage.match(/<schedule_event>\s*(.*?)\s*<\/schedule_event>/is)
         const mapMatch = assistantMessage.match(/<show_map>\s*(.*?)\s*<\/show_map>/is)
         const docMatch = assistantMessage.match(/<create_doc>\s*(.*?)\s*<\/create_doc>/is)
         const sheetMatch = assistantMessage.match(/<create_sheet>\s*(.*?)\s*<\/create_sheet>/is)
@@ -549,7 +550,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       const finalWaSend = assistantMessage.match(/<whatsapp_send>\s*(.*?)\s*<\/whatsapp_send>/is)
       const finalWaRead = assistantMessage.match(/<read_whatsapp>\s*(.*?)\s*<\/read_whatsapp>/is)
 
-      let cleanMessage = assistantMessage
+      let cleanMessage = assistantMessage.replace(/<thought>[\s\S]*?<\/thought>/gi, '').trim()
 
       if (finalSearch) {
         cleanMessage = cleanMessage.replace(finalSearch[0], '[EXECUTING PROTOCOL: WEB SEARCH...]').trim()
@@ -1024,7 +1025,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         )}
         <AnimatePresence>
           {messages.map((msg, i) => {
-            if (msg.content.trim().startsWith('<system>')) return null;
+            if (msg.content.trim().startsWith('<system>') || msg.content.trim().startsWith('[SYSTEM NOTIFICATION:')) return null;
             return (
             <motion.div
               key={i}
