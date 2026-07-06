@@ -117,32 +117,7 @@ CRITICAL: NEVER ask for a phone number. Use the name they provided.`
     const finalMessage = `${message}${actionProtocol}`
 
     const tryProvider = async (p: string) => {
-      if (p === 'gemini') {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-        const model = genAI.getGenerativeModel({ 
-          model: 'gemini-2.5-flash',
-          systemInstruction: dynamicPrompt
-        })
-        
-        const chat = model.startChat({
-          history: history.map((m: any) => ({
-            role: m.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: m.content }],
-          })),
-        })
 
-        const result = await chat.sendMessageStream(finalMessage)
-        
-        const stream = new ReadableStream({
-          async start(controller) {
-            for await (const chunk of result.stream) {
-              controller.enqueue(new TextEncoder().encode(chunk.text()))
-            }
-            controller.close()
-          },
-        })
-        return new Response(stream)
-      } 
 
       if (p === 'grok' || p === 'groq') {
         const apiKey = p === 'groq' ? process.env.GROQ_API_KEY : process.env.GROK_API_KEY
@@ -188,7 +163,7 @@ CRITICAL: NEVER ask for a phone number. Use the name they provided.`
         })
 
         const response = await openrouter.chat.completions.create({
-          model: 'google/gemini-2.5-flash:free',
+          model: 'nvidia/nemotron-3-nano-30b-a3b:free',
           stream: true,
           max_tokens: 1500,
           messages: [
