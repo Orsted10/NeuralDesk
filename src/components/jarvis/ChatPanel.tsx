@@ -27,7 +27,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   const [isLoading, setIsLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [provider, setProvider] = useState<'openrouter' | 'groq'>('openrouter')
+  const [provider, setProvider] = useState<'gemini' | 'groq'>('gemini')
   const [latency, setLatency] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
@@ -365,54 +365,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       return;
     }
 
-    // Cloud TTS Fallback via Hugging Face API
-    const hfToken = process.env.NEXT_PUBLIC_HF_TOKEN;
-    if (hfToken && audioRef.current) {
-      setIsSpeaking(true);
-      let retries = 5;
-      while (retries > 0) {
-        try {
-          const response = await fetch(
-            "https://api-inference.huggingface.co/models/espnet/kan-bayashi_ljspeech_vits",
-            {
-              headers: {
-                Authorization: `Bearer ${hfToken}`,
-                "Content-Type": "application/json",
-              },
-              method: "POST",
-              body: JSON.stringify({ inputs: plainText }),
-            }
-          );
-          
-          if (response.ok) {
-            const blob = await response.blob();
-            const audioUrl = URL.createObjectURL(blob);
-            audioRef.current.src = audioUrl;
-            audioRef.current.onended = () => setIsSpeaking(false);
-            audioRef.current.onerror = () => setIsSpeaking(false);
-            try {
-              await audioRef.current.play();
-            } catch(e) {
-               console.error("Autoplay failed:", e)
-               setIsSpeaking(false);
-            }
-            return;
-          } else if (response.status === 503) {
-            // Model is cold loading, wait 3 seconds and retry
-            await new Promise(r => setTimeout(r, 3000));
-            retries--;
-            continue;
-          } else {
-            console.error("HF TTS Error:", await response.text());
-            break;
-          }
-        } catch (err) {
-          console.error("HF TTS Fetch Error:", err);
-          break;
-        }
-      }
-      setIsSpeaking(false);
-    }
+
 
     // Final Fallback: Web Speech API
     if (typeof window !== 'undefined' && window.speechSynthesis) {

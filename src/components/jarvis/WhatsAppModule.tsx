@@ -29,7 +29,8 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
     async function fetchContacts() {
       if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
         const desktopContacts = await (window as any).jarvisDesktop.getWhatsappContacts()
-        setContacts(desktopContacts)
+        const uniqueContacts = desktopContacts.filter((v: any, i: number, a: any[]) => a.findIndex(v2 => (v2.name === v.name)) === i)
+        setContacts(uniqueContacts)
       } else {
         const { createClient } = await import('@/lib/supabase/client')
         const supabase = createClient()
