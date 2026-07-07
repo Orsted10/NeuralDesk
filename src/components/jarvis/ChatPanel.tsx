@@ -975,6 +975,25 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           >
             + New
           </button>
+          
+          {typeof window !== 'undefined' && !!(window as any).jarvisDesktop && (
+            <button
+              onClick={() => {
+                toast.loading("Resetting WhatsApp Connection...", { id: 'wa-logout' });
+                (window as any).jarvisDesktop.logoutWhatsapp().then((res: any) => {
+                  if (res.success) {
+                    toast.success("WhatsApp reset successfully. Please wait for the new QR code.", { id: 'wa-logout' });
+                  } else {
+                    toast.error(`Reset Failed: ${res.error}`, { id: 'wa-logout' });
+                  }
+                });
+              }}
+              className="text-xs font-medium border border-red-500/20 text-red-400 px-3 py-1.5 rounded-xl transition-all bg-red-500/[0.03] hover:bg-red-500/[0.1] active:scale-95 flex items-center gap-1 ml-2"
+              title="If WhatsApp is not responding, click here to disconnect and scan a new QR code."
+            >
+              Reset WhatsApp
+            </button>
+          )}
 
           <div className="flex gap-2 items-center ml-auto mr-2">
             <span className="flex items-center gap-1.5 text-[9px] tracking-wider text-emerald-400 font-bold bg-emerald-400/10 px-2 py-1 rounded-md border border-emerald-400/20">

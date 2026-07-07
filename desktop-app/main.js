@@ -270,6 +270,23 @@ ipcMain.handle('whatsapp-read', async (event, contactName) => {
   }
 });
 
+ipcMain.handle('whatsapp-logout', async () => {
+  try {
+    if (whatsappClient) {
+      await whatsappClient.destroy();
+    }
+    const authPath = path.join(__dirname, '.wwebjs_auth');
+    if (fs.existsSync(authPath)) {
+      fs.rmSync(authPath, { recursive: true, force: true });
+    }
+    currentWhatsappQr = null;
+    initializeWhatsApp();
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('get-os-context', async () => {
   return new Promise((resolve) => {
     const context = {

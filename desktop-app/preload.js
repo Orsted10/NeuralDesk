@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('jarvisDesktop', {
   whatsappReady: () => ipcRenderer.invoke('whatsapp-ready'),
   getWhatsappQr: () => ipcRenderer.invoke('whatsapp-get-qr'),
   getWhatsappContacts: () => ipcRenderer.invoke('whatsapp-get-contacts'),
+  logoutWhatsapp: () => ipcRenderer.invoke('whatsapp-logout'),
   sendWhatsappMessage: (to, message) => ipcRenderer.invoke('whatsapp-send', { to, message }),
   readWhatsappMessages: (contactName) => ipcRenderer.invoke('whatsapp-read', contactName),
   
