@@ -129,15 +129,37 @@ CRITICAL: NEVER ask for a phone number. Use the name they provided.`
           baseURL: baseURL,
         })
 
-        const response = await grok.chat.completions.create({
-          model: p === 'groq' ? 'llama-3.3-70b-versatile' : 'grok-beta',
-          stream: true,
-          messages: [
-          { role: 'system', content: dynamicPrompt },
-            ...history,
-            { role: 'user', content: finalMessage },
-          ],
-        })
+        const groqModels = p === 'groq' 
+          ? ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768', 'llama-3.1-8b-instant'] 
+          : ['grok-beta']
+
+        let response: any
+        let lastGroqError: any
+        
+        for (const modelName of groqModels) {
+          try {
+            console.log(`[AI-ROUTER] Attempting ${p} model: ${modelName}`)
+            response = await grok.chat.completions.create({
+              model: modelName,
+              stream: true,
+              messages: [
+              { role: 'system', content: dynamicPrompt },
+                ...history,
+                { role: 'user', content: finalMessage },
+              ],
+            })
+            // If successful, break out of model loop
+            break
+          } catch (err: any) {
+            console.warn(`[AI-ROUTER] ${p} model ${modelName} failed:`, err.message)
+            lastGroqError = err
+            // If it's a Grok specific error, or we exhausted models, it continues to next model
+          }
+        }
+        
+        if (!response) {
+          throw lastGroqError || new Error(`All ${p} models failed.`)
+        }
 
         const stream = new ReadableStream({
           async start(controller) {

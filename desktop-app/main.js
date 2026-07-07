@@ -99,23 +99,33 @@ function initializeWhatsApp() {
 function startVoiceEngine() {
   console.log("Starting Python Voice Engine...");
   
-  if (app.isPackaged) {
-    const voiceEnginePath = path.join(process.resourcesPath, 'app.asar.unpacked', 'bin', 'voice_engine.exe');
-    console.log(`Launching packaged engine: ${voiceEnginePath}`);
-    voiceEngineProcess = spawn(voiceEnginePath);
+  const spawnEngine = () => {
+    if (app.isPackaged) {
+      const voiceEnginePath = path.join(process.resourcesPath, 'app.asar.unpacked', 'bin', 'voice_engine.exe');
+      console.log(`Launching packaged engine: ${voiceEnginePath}`);
+      voiceEngineProcess = spawn(voiceEnginePath);
+    } else {
+      const voiceEnginePath = path.join(__dirname, 'voice_engine.py');
+      console.log(`Launching dev engine: ${voiceEnginePath}`);
+      voiceEngineProcess = spawn('python', [voiceEnginePath]);
+    }
+    
+    voiceEngineProcess.stdout.on('data', (data) => {
+      console.log(`VoiceEngine: ${data}`);
+    });
+    
+    voiceEngineProcess.stderr.on('data', (data) => {
+      console.error(`VoiceEngine Error: ${data}`);
+    });
+  };
+
+  if (process.platform === 'win32') {
+    exec('taskkill /F /IM voice_engine.exe', (err) => {
+      spawnEngine();
+    });
   } else {
-    const voiceEnginePath = path.join(__dirname, 'voice_engine.py');
-    console.log(`Launching dev engine: ${voiceEnginePath}`);
-    voiceEngineProcess = spawn('python', [voiceEnginePath]);
+    spawnEngine();
   }
-  
-  voiceEngineProcess.stdout.on('data', (data) => {
-    console.log(`VoiceEngine: ${data}`);
-  });
-  
-  voiceEngineProcess.stderr.on('data', (data) => {
-    console.error(`VoiceEngine Error: ${data}`);
-  });
 }
 
 app.whenReady().then(() => {
