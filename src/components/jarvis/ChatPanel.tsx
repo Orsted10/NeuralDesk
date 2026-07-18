@@ -31,6 +31,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   const [latency, setLatency] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
 
   const [sessions, setSessions] = useState<any[]>([])
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
@@ -271,36 +272,55 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       setIsListening(true)
       playWakeBeep()
 
-      // Web Fallback: Try browser's SpeechRecognition only if not on Desktop (Desktop uses Python WS)
+      // Web Fallback: Use MediaRecorder + /api/transcribe if not on Desktop
       if (typeof window !== 'undefined' && !(window as any).jarvisDesktop) {
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-        if (SpeechRecognition) {
-          const recognition = new SpeechRecognition()
-          recognition.continuous = false
-          recognition.interimResults = false
-          recognitionRef.current = recognition
-          
-          recognition.onresult = (event: any) => {
-            const transcript = Array.from(event.results)
-              .map((res: any) => res[0].transcript)
-              .join('')
-            setInput(transcript)
-            handleSendRef.current?.(transcript)
+        navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+          const mediaRecorder = new MediaRecorder(stream)
+          mediaRecorderRef.current = mediaRecorder
+          const audioChunks: Blob[] = []
+
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) audioChunks.push(event.data)
           }
-          
-          recognition.onend = () => {
+
+          mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
+            const formData = new FormData()
+            formData.append('file', audioBlob, 'voice.webm')
+            
+            try {
+              toast.loading("Processing voice...", { id: "transcribe" })
+              const res = await fetch('/api/transcribe', {
+                method: 'POST',
+                body: formData
+              })
+              const data = await res.json()
+              if (data.text) {
+                toast.success("Voice recognized", { id: "transcribe" })
+                setInput(data.text)
+                handleSendRef.current?.(data.text)
+              } else {
+                toast.error(data.error || "Could not recognize voice", { id: "transcribe" })
+              }
+            } catch (e) {
+              console.error('Transcription error', e)
+              toast.error("Transcription error", { id: "transcribe" })
+            }
+
+            stream.getTracks().forEach(track => track.stop())
             setIsAwake(false)
             isAwakeRef.current = false
             setIsListening(false)
           }
-          
-          recognition.start()
-        } else {
-          toast.error("Your browser does not support Voice Recognition.")
+
+          mediaRecorder.start()
+          toast.success("Listening... Click the orb again to send.")
+        }).catch(err => {
+          toast.error("Microphone access denied.")
           setIsAwake(false)
           isAwakeRef.current = false
           setIsListening(false)
-        }
+        })
       }
     } else {
       // Manual turn off
@@ -309,6 +329,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       setIsListening(false)
       if (recognitionRef.current) {
         recognitionRef.current.stop()
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop()
       }
     }
   }
