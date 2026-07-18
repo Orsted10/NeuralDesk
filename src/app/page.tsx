@@ -1,8 +1,19 @@
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import AuthRedirect from '@/components/jarvis/AuthRedirect'
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (user) {
+    redirect('/dashboard')
+  }
+
   return (
     <main className="min-h-screen bg-[#0a0a0f] text-cyan-500/80 p-8 md:p-16 flex flex-col items-center justify-center font-mono relative overflow-hidden">
+      <AuthRedirect />
       {/* Background glow effects */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-900/10 rounded-full blur-[120px] pointer-events-none" />
 

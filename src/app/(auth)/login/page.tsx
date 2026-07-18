@@ -18,7 +18,24 @@ export default function LoginPage() {
       i++
       if (i > fullText.length) clearInterval(interval)
     }, 100)
-    return () => clearInterval(interval)
+
+    // Check if user is already logged in or if implicit flow redirects here
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        window.location.href = '/dashboard'
+      }
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        window.location.href = '/dashboard'
+      }
+    })
+
+    return () => {
+      clearInterval(interval)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const handleLogin = async () => {
