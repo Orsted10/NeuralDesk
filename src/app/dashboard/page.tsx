@@ -16,7 +16,9 @@ import {
   Compass,
   HardDrive,
   Tv,
-  LogOut
+  LogOut,
+  Newspaper,
+  TrendingUp
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -28,6 +30,8 @@ import CalendarModule from '@/components/jarvis/CalendarModule'
 import MapsModule from '@/components/jarvis/MapsModule'
 import DriveModule from '@/components/jarvis/DriveModule'
 import YouTubeModule from '@/components/jarvis/YouTubeModule'
+import NewsModule from '@/components/jarvis/NewsModule'
+import FinanceModule from '@/components/jarvis/FinanceModule'
 import { HUDCard, StatusIndicator, ParticleBackground } from '@/components/jarvis/HUD'
 
 export default function DashboardPage() {
@@ -168,6 +172,8 @@ export default function DashboardPage() {
     const handleMapSwitch = () => setActiveModule('maps')
     const handleDriveSwitch = () => setActiveModule('drive')
     const handleYoutubeSwitch = () => setActiveModule('youtube')
+    const handleNewsSwitch = () => setActiveModule('news')
+    const handleFinanceSwitch = () => setActiveModule('finance')
     const handleEmailCompose = () => {
       setEmailView('compose')
       setActiveModule('email')
@@ -182,6 +188,8 @@ export default function DashboardPage() {
     window.addEventListener('show-map', handleMapSwitch)
     window.addEventListener('create-doc', handleDriveSwitch)
     window.addEventListener('play-video', handleYoutubeSwitch)
+    window.addEventListener('fetch_news', handleNewsSwitch)
+    window.addEventListener('get_crypto_price', handleFinanceSwitch)
     window.addEventListener('send-email', handleEmailCompose)
     window.addEventListener('read-emails', handleEmailInbox)
     window.addEventListener('calendar-updated', handleCalendarUpdate)
@@ -193,6 +201,8 @@ export default function DashboardPage() {
       window.removeEventListener('show-map', handleMapSwitch)
       window.removeEventListener('create-doc', handleDriveSwitch)
       window.removeEventListener('play-video', handleYoutubeSwitch)
+      window.removeEventListener('fetch_news', handleNewsSwitch)
+      window.removeEventListener('get_crypto_price', handleFinanceSwitch)
       window.removeEventListener('send-email', handleEmailCompose)
       window.removeEventListener('read-emails', handleEmailInbox)
       window.removeEventListener('open-module', handleOpenModule)
@@ -217,6 +227,8 @@ export default function DashboardPage() {
     { icon: HardDrive, label: 'Drive', id: 'drive' },
     { icon: Tv, label: 'YouTube', id: 'youtube' },
     { icon: Cloud, label: 'Weather', id: 'weather' },
+    { icon: Newspaper, label: 'News', id: 'news' },
+    { icon: TrendingUp, label: 'Markets', id: 'finance' },
     { icon: CheckSquare, label: 'Tasks', id: 'tasks' },
   ]
 
@@ -249,46 +261,46 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Grid */}
-      <div className="flex-1 grid grid-cols-12 gap-6 relative z-10">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 pb-24 lg:pb-0">
         
-        {/* Left Sidebar */}
-        <aside className="col-span-1 flex flex-col gap-6 items-center py-8 glass-panel rounded-3xl z-20">
+        {/* Left Sidebar / Bottom Nav */}
+        <aside className="fixed bottom-4 left-4 right-4 lg:relative lg:bottom-0 lg:left-0 lg:right-0 lg:col-span-1 flex lg:flex-col gap-2 lg:gap-6 justify-center lg:justify-start items-center py-3 lg:py-8 glass-panel rounded-3xl z-50 overflow-x-auto px-4 lg:px-0 scrollbar-hide border border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] lg:shadow-none bg-black/60 lg:bg-transparent backdrop-blur-xl">
           {navItems.map((item) => (
             <motion.button
               key={item.id}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setActiveModule(item.id === activeModule ? null : item.id)}
-              className={`p-3 transition-all duration-300 rounded-xl relative group ${
+              className={`p-3 min-w-[3rem] flex-shrink-0 transition-all duration-300 rounded-xl relative group ${
                 activeModule === item.id ? 'bg-white/10 text-zinc-100 shadow-md' : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'
               }`}
             >
-              <item.icon className="w-6 h-6" />
-              <span className="absolute left-16 bg-zinc-800 text-zinc-100 px-3 py-1.5 rounded-lg text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl border border-white/10 pointer-events-none">
+              <item.icon className="w-5 h-5 lg:w-6 lg:h-6 mx-auto" />
+              <span className="hidden lg:block absolute left-16 bg-zinc-800 text-zinc-100 px-3 py-1.5 rounded-lg text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl border border-white/10 pointer-events-none">
                 {item.label}
               </span>
             </motion.button>
           ))}
-          <div className="mt-auto flex flex-col gap-4">
+          <div className="lg:mt-auto flex lg:flex-col gap-2 lg:gap-4 ml-auto lg:ml-0">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleLogout}
               className="p-3 text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all relative group"
             >
-              <LogOut className="w-6 h-6" />
-              <span className="absolute left-16 bg-rose-500/10 text-rose-400 px-3 py-1.5 rounded-lg text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl border border-rose-500/20 pointer-events-none">
+              <LogOut className="w-5 h-5 lg:w-6 lg:h-6" />
+              <span className="hidden lg:block absolute left-16 bg-rose-500/10 text-rose-400 px-3 py-1.5 rounded-lg text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl border border-rose-500/20 pointer-events-none">
                 Sign Out
               </span>
             </motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="p-3 text-zinc-600 hover:text-zinc-200 hover:bg-white/5 rounded-xl transition-all">
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="p-3 text-zinc-600 hover:text-zinc-200 hover:bg-white/5 rounded-xl transition-all hidden lg:block">
               <Settings className="w-6 h-6" />
             </motion.button>
           </div>
         </aside>
 
         {/* Center Interface */}
-        <section className="col-span-8 flex flex-col items-center justify-center relative">
+        <section className="col-span-1 lg:col-span-8 flex flex-col items-center justify-center relative">
 
           {activeModule === 'email' && (
             <EmailModule onClose={() => setActiveModule(null)} initialView={emailView} />
@@ -307,6 +319,12 @@ export default function DashboardPage() {
           )}
           {activeModule === 'youtube' && (
             <YouTubeModule />
+          )}
+          {activeModule === 'news' && (
+            <NewsModule onClose={() => setActiveModule(null)} />
+          )}
+          {activeModule === 'finance' && (
+            <FinanceModule onClose={() => setActiveModule(null)} />
           )}
 
           {activeModule && (
@@ -350,7 +368,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Right Status Panel */}
-        <aside className="col-span-3 flex flex-col gap-6">
+        <aside className="hidden lg:flex col-span-3 flex-col gap-6">
           <HUDCard title="System Metrics">
             <div className="space-y-5">
               <div className="space-y-2">
@@ -423,7 +441,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom Status Bar */}
-      <footer className="relative z-10 mt-6 flex justify-between items-center text-xs font-medium text-zinc-600">
+      <footer className="relative z-10 mt-6 lg:flex justify-between items-center text-xs font-medium text-zinc-600 hidden">
         <div className="flex gap-6">
           <span>{location.city}</span>
           <span>LAT: {location.lat} • LONG: {location.long}</span>

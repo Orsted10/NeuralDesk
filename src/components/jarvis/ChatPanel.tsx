@@ -901,7 +901,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     // replaced toggles
 
   return (
-    <div className="w-full max-w-2xl flex flex-col h-[65vh] max-h-[600px] min-h-[400px] glass-panel rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 relative">
+    <div className="w-full lg:max-w-2xl flex flex-col h-[85vh] lg:h-[65vh] max-h-[800px] lg:max-h-[600px] min-h-[400px] glass-panel lg:rounded-3xl rounded-t-3xl lg:overflow-hidden shadow-2xl transition-all duration-500 relative mt-auto lg:mt-0">
       {/* WhatsApp QR Modal */}
       <AnimatePresence>
         {whatsappQr && (
@@ -1091,7 +1091,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       </div>
 
       {/* Input Area */}
-      <div className="p-4 border-t border-white/[0.05] bg-white/[0.01]">
+      <div className="p-4 border-t border-white/[0.05] bg-white/[0.01] rounded-b-3xl">
         <div className="flex gap-3">
           <Button
             onClick={toggleListening}

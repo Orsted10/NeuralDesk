@@ -4,6 +4,13 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'NeuralDesk JARVIS',
   description: 'AI-Powered Workspace Assistant',
+  manifest: '/manifest.json',
+  themeColor: '#09090b',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'JARVIS'
+  },
   verification: {
     google: "iAFq7UHZVR1PPfzY-Nf4X7MS7derRebKr__J6HjAZAw",
   },

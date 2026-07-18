@@ -102,10 +102,15 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                   </button>
                 </div>
                 {onClose && (
-                  <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 hover:bg-white/10 p-2 rounded-full transition-all">
-                    <X className="w-4 h-4" />
+                  <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white rounded-lg hover:bg-white/10 transition-all">
+                    <X className="w-5 h-5" />
                   </button>
                 )}
+              </div>
+
+              <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-6 py-2 text-xs text-emerald-400/80 flex items-center gap-2 -mx-6 mb-4">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Mobile Sync Active: Ensure NeuralDesk Desktop is running on your home network for WhatsApp background services.
               </div>
 
               <div className="grid grid-cols-2 gap-6">
