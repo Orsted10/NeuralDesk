@@ -12,8 +12,8 @@
   "repository": "https://github.com/Orsted10/NeuralDesk",
   "license": "ISC",
   "build": {
-    "appId": "com.neuraldesk.app",
-    "productName": "NeuralDesk JARVIS",
+    "appId": "com.aetheriacompute.app",
+    "productName": "AetheriaCompute",
     "compression": "store",
     "win": {
       "target": "nsis"
@@ -37,7 +37,9 @@
     "electron-builder": "^24.13.3"
   },
   "dependencies": {
+    "active-win": "^8.2.1",
     "qrcode-terminal": "^0.12.0",
+    "sqlite3": "^6.0.1",
     "whatsapp-web.js": "^1.34.7"
   }
 }

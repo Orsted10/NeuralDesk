@@ -11,28 +11,28 @@ export default function PrivacyPolicy() {
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-cyan-300">1. Information We Collect</h2>
           <p>
-            JARVIS requests access to your Google account (Gmail, Calendar, Drive, Docs, YouTube) strictly to provide AI-assisted operations on your behalf. We do not store your private emails, documents, or calendar events on our servers. Data is processed in real-time and passed to secure AI endpoints.
+            Aetheria requests access to your Google account (Gmail, Calendar, Drive, Docs, YouTube) strictly to provide AI-assisted operations on your behalf. We do not store your private emails, documents, or calendar events on our servers. Data is processed in real-time and passed to secure AI endpoints.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold mb-3 text-cyan-400">2. Local Processing (Desktop App)</h2>
+          <p>
+            If you are using the Aetheria Desktop App, additional context such as your active OS window, typing rhythm, and local file access is processed entirely on your local machine. This data is never sent to our servers.e your data for advertising purposes.
           </p>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-cyan-300">2. How We Use Your Data</h2>
+          <h2 className="text-xl font-semibold mb-3 text-cyan-400">3. Third-Party AI Models</h2>
           <p>
-            Your Google data is used exclusively to answer your queries, draft emails, summarize documents, and manage your schedule. We do not sell, share, or use your data for advertising purposes.
+            To generate responses and execute commands, your prompts and necessary context are securely transmitted to our AI partners (e.g., Google Gemini, Groq). By using Aetheria, you consent to this data flow.
           </p>
         </section>
 
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-cyan-300">3. Third-Party AI Providers</h2>
+        <section>
+          <h2 className="text-xl font-semibold mb-3 text-cyan-400">4. Revoking Access</h2>
           <p>
-            To process your requests, selected data may be temporarily sent to advanced AI models (e.g., OpenAI, Anthropic, Google Gemini). We ensure these providers do not use your personal data to train their public models.
-          </p>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-cyan-300">4. Data Retention and Deletion</h2>
-          <p>
-            You can revoke JARVIS's access to your Google account at any time via your Google Account Security settings. Since we do not persistently store your private Google data, revoking access immediately ceases all data processing.
+            You can revoke Aetheria's access to your Google account at any time via your Google Account Security settings. Since we do not persistently store your private Google data, revoking access immediately ceases all data processing.
           </p>
         </section>
 

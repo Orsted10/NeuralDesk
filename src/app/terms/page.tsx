@@ -11,28 +11,28 @@ export default function TermsOfService() {
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-cyan-300">1. Acceptance of Terms</h2>
           <p>
-            By accessing and using JARVIS, you accept and agree to be bound by the terms and provision of this agreement.
+            By accessing and using Aetheria, you accept and agree to be bound by the terms and provision of this agreement.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold mb-3 text-cyan-400">2. Service Description</h2>
+          <p>
+            Aetheria is an advanced AI assistant designed to interface with your Google accounts to automate and streamline digital tasks. The service is provided "as is" without any warranties regarding uptime, accuracy of AI-generated content, or continuous availability.
           </p>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-cyan-300">2. Description of Service</h2>
+          <h2 className="text-xl font-semibold mb-3 text-cyan-400">3. User Responsibilities</h2>
           <p>
-            JARVIS is an advanced AI assistant designed to interface with your Google accounts to automate and streamline digital tasks. The service is provided "as is" without any warranties regarding uptime, accuracy of AI-generated content, or continuous availability.
+            You are responsible for any actions taken by Aetheria on your behalf (such as emails sent or files modified). Always verify critical AI-generated actions before execution.
           </p>
         </section>
 
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-cyan-300">3. User Responsibilities</h2>
+        <section>
+          <h2 className="text-xl font-semibold mb-3 text-cyan-400">4. Limitation of Liability</h2>
           <p>
-            You are responsible for any actions taken by JARVIS on your behalf (such as emails sent or files modified). Always verify critical AI-generated actions before execution.
-          </p>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-cyan-300">4. Limitation of Liability</h2>
-          <p>
-            In no event shall JARVIS or its creators be liable for any indirect, incidental, special, or consequential damages resulting from the use or inability to use the service, or from the alteration of your data by the AI models.
+            In no event shall Aetheria or its creators be liable for any indirect, incidental, special, or consequential damages resulting from the use or inability to use the service, or from the alteration of your data by the AI models.
           </p>
         </section>
 

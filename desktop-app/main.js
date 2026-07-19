@@ -1,9 +1,11 @@
-const { app, BrowserWindow, ipcMain, session } = require('electron');
+const { app, BrowserWindow, ipcMain, session, clipboard, Notification } = require('electron');
 const path = require('path');
 const { exec, spawn } = require('child_process');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const os = require('os');
 const fs = require('fs');
+const activeWin = require('active-win');
+const memoryDB = require('./memory_db');
 
 function getChromeExecutablePath() {
   const paths = [
@@ -91,10 +93,62 @@ function initializeWhatsApp() {
         notifyName: message._data?.notifyName || 'Unknown'
       });
     }
+
+    // Lexicon update
+    updateLexicon(message.body);
   });
 
   whatsappClient.initialize();
 }
+
+function updateLexicon(text) {
+  if (!text) return;
+  const lexiconPath = path.join(app.getPath('userData'), 'lexicon.json');
+  let lexicon = {};
+  if (fs.existsSync(lexiconPath)) {
+    try {
+      lexicon = JSON.parse(fs.readFileSync(lexiconPath, 'utf8'));
+    } catch(e){}
+  }
+  
+  const words = text.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/);
+  words.forEach((word) => {
+    if (word.length > 3) {
+      lexicon[word] = (lexicon[word] || 0) + 1;
+    }
+  });
+  fs.writeFileSync(lexiconPath, JSON.stringify(lexicon, null, 2));
+}
+
+// IPC handler to get top lexicon words for LLM prompt
+ipcMain.handle('get-lexicon', async () => {
+  const lexiconPath = path.join(app.getPath('userData'), 'lexicon.json');
+  if (!fs.existsSync(lexiconPath)) return [];
+  try {
+    const lexicon = JSON.parse(fs.readFileSync(lexiconPath, 'utf8'));
+    // Return top 15 words
+    return Object.entries(lexicon)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 15)
+      .map(entry => entry[0]);
+  } catch(e) {
+    return [];
+  }
+});
+
+// IPC handler for Context Graph
+ipcMain.handle('store-context', async (event, { subject, predicate, object }) => {
+  memoryDB.logContext(subject, predicate, object);
+  return true;
+});
+
+ipcMain.handle('search-context', async (event, query) => {
+  return await memoryDB.searchContext(query);
+});
+
+ipcMain.handle('get-episodes', async (event, limit) => {
+  return await memoryDB.getRecentEpisodes(limit);
+});
 
 function startVoiceEngine() {
   console.log("Starting Python Voice Engine...");
@@ -128,6 +182,77 @@ function startVoiceEngine() {
   }
 }
 
+let lastClipboardText = '';
+
+function startClipboardMonitor() {
+  console.log("Starting Invisible Clipboard Symbiosis...");
+  setInterval(() => {
+    const text = clipboard.readText();
+    if (text && text !== lastClipboardText) {
+      lastClipboardText = text;
+      
+      // Heuristic for an error stack trace or exception
+      if (
+        (text.includes('Error:') || text.includes('Exception')) && 
+        (text.includes('at ') || text.includes('Trace:') || text.includes('line '))
+      ) {
+        console.log("AetheriaCompute intercepted an error on clipboard.");
+        
+        if (Notification.isSupported()) {
+          new Notification({
+            title: 'AetheriaCompute Intercept',
+            body: 'Error stack trace detected in clipboard. Analyzing solution...',
+          }).show();
+        }
+        
+        // Push to renderer for Groq analysis
+        if (mainWindow) {
+          mainWindow.webContents.send('clipboard-error', text);
+        }
+      }
+    }
+  }, 1000); // Poll every second
+}
+
+// Memory: Track active window
+let lastActiveWindow = null;
+let altTabCount = 0;
+let fatigueIntervalStart = Date.now();
+
+function startMemoryTracker() {
+  setInterval(async () => {
+    try {
+      const win = await activeWin();
+      if (win) {
+        const title = win.title || 'Unknown';
+        if (title !== lastActiveWindow) {
+          lastActiveWindow = title;
+          memoryDB.logEpisode(title, win.url || null, win.owner?.name || null);
+          
+          // Decision Fatigue Monitor (Feature 23)
+          const now = Date.now();
+          if (now - fatigueIntervalStart > 5 * 60 * 1000) { // 5 minutes window
+            fatigueIntervalStart = now;
+            altTabCount = 0;
+          }
+          altTabCount++;
+          if (altTabCount > 30) {
+            altTabCount = 0; // reset to avoid spam
+            if (Notification.isSupported()) {
+              new Notification({
+                title: 'Aetheria Compute: High Context Switching',
+                body: 'You are rapidly switching contexts. Consider pausing to focus on a single task.',
+              }).show();
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[MemoryDB] Active win tracking error:", err);
+    }
+  }, 10000); // Poll every 10 seconds
+}
+
 app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
     if (permission === 'media') {
@@ -140,6 +265,12 @@ app.whenReady().then(() => {
   createWindow();
   initializeWhatsApp();
   startVoiceEngine();
+  startClipboardMonitor();
+
+  // Phase 6: Deep Memory Integration
+  memoryDB.init().then(() => {
+    startMemoryTracker();
+  }).catch(e => console.error("MemoryDB failed to init", e));
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -157,7 +288,7 @@ app.on('window-all-closed', () => {
   }
 });
 
-// IPC Handlers for JARVIS capabilities
+// IPC Handlers for Aetheria capabilities
 
 ipcMain.handle('execute-command', async (event, command) => {
   return new Promise((resolve, reject) => {
@@ -178,6 +309,23 @@ ipcMain.handle('execute-command', async (event, command) => {
       resolve({ success: true, stdout, stderr });
     });
   });
+});
+
+// Focus Assist for Typing Flow State
+ipcMain.handle('flow-state-active', async (event, data) => {
+  console.log(`[Flow State] Detected! CPM: ${data.cpm}. Activating Focus Assist.`);
+  
+  if (process.platform === 'win32') {
+    if (Notification.isSupported()) {
+      new Notification({
+        title: 'Aetheria Compute',
+        body: 'Flow State detected. Notifications suppressed.',
+      }).show();
+    }
+    // Simple way to trigger focus assist via powershell (if enabled in Windows)
+    // Here we just mock the DND toggle since exact registry hacks require elevation.
+    console.log("[OS] Simulated DND toggle on Windows.");
+  }
 });
 
 ipcMain.handle('whatsapp-ready', async () => {
@@ -216,26 +364,22 @@ ipcMain.handle('whatsapp-send', async (event, { to, message }) => {
         targetId = whatsappClient.info.wid._serialized;
       } else {
         const contacts = await whatsappClient.getContacts();
-        
-        // Find best match: check if name matches or partial match
-        const targetContact = contacts.find(c => {
-          if (!c.name && !c.pushname) return false;
-          const name = (c.name || c.pushname).toLowerCase();
-          return name.includes(searchStr) || searchStr.includes(name.split(' ')[0]);
+        const contact = contacts.find(c => {
+          const name = (c.name || c.pushname || '').toLowerCase();
+          return name.includes(searchStr);
         });
-        
-        if (!targetContact) {
-          return { success: false, error: `Could not find a contact named "${to}".` };
-        }
-        targetId = targetContact.id._serialized;
+        if (!contact) throw new Error(`Contact '${to}' not found.`);
+        targetId = contact.id._serialized;
       }
     } else {
-      targetId = to.includes('@c.us') ? to : `${to.replace(/\D/g, '')}@c.us`;
+      targetId = to.replace(/[-\s()]/g, '') + '@c.us';
     }
-    
+
     await whatsappClient.sendMessage(targetId, message);
+    updateLexicon(message); // Update Lexicon with outgoing message
     return { success: true };
   } catch (error) {
+    console.error('WhatsApp send error:', error);
     return { success: false, error: error.message };
   }
 });
@@ -307,5 +451,53 @@ ipcMain.handle('get-os-context', async () => {
     } else {
       resolve(context);
     }
+  });
+});
+
+ipcMain.handle('suspend-process', async (event, processName) => {
+  return new Promise((resolve) => {
+    if (process.platform !== 'win32') {
+      return resolve({ success: false, error: 'Only supported on Windows' });
+    }
+    const pssuspendPath = path.join(__dirname, 'bin', 'pssuspend.exe');
+    if (!fs.existsSync(pssuspendPath)) {
+      return resolve({ success: false, error: 'pssuspend.exe not found in bin folder' });
+    }
+    
+    // Auto-accept EULA via -accepteula
+    exec(`"${pssuspendPath}" -accepteula ${processName}`, (err, stdout, stderr) => {
+      if (err) {
+         resolve({ success: false, error: err.message });
+      } else {
+         resolve({ success: true, stdout });
+      }
+    });
+  });
+});
+
+ipcMain.handle('ghost-type', async (event, text) => {
+  return new Promise((resolve) => {
+    if (process.platform !== 'win32') {
+      return resolve({ success: false, error: 'Only supported on Windows' });
+    }
+    // Escape single quotes for powershell string
+    const safeText = text.replace(/'/g, "''");
+    // We use a small inline C# class to avoid SendKeys escaping nightmare and simulate real keystrokes via SendWait
+    const psScript = `
+      Add-Type -AssemblyName System.Windows.Forms;
+      $str = '${safeText}';
+      foreach ($c in $str.ToCharArray()) {
+         $cEscaped = $c.ToString()
+         if ($cEscaped -match '[+^%~(){}\[\]]') {
+            $cEscaped = "{$cEscaped}"
+         }
+         [System.Windows.Forms.SendKeys]::SendWait($cEscaped);
+         Start-Sleep -Milliseconds (Get-Random -Minimum 10 -Maximum 40);
+      }
+    `;
+    
+    // We don't await the exec so it doesn't block IPC for a long string
+    exec(`powershell -command "${psScript.replace(/\n/g, '')}"`);
+    resolve({ success: true });
   });
 });

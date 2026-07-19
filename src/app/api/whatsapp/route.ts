@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.message || 'Neural Link communication failure.')
+        throw new Error(errorData.message || 'Aetheria Link communication failure.')
       }
       
       return NextResponse.json({ success: true })

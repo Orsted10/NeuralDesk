@@ -12,52 +12,55 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0a0a0f] text-cyan-500/80 p-8 md:p-16 flex flex-col items-center justify-center font-mono relative overflow-hidden">
+    <main className="min-h-screen relative overflow-hidden font-sans">
       <AuthRedirect />
-      {/* Background glow effects */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-900/10 rounded-full blur-[120px] pointer-events-none" />
+      
+      {/* Ambient background gradients */}
+      <div className="gradient-blur-bg" />
+      <div className="absolute top-0 right-0 w-[50vw] h-[50vw] bg-indigo-500/10 rounded-full blur-[150px] pointer-events-none transform translate-x-1/3 -translate-y-1/3" />
+      <div className="absolute bottom-0 left-0 w-[50vw] h-[50vw] bg-purple-500/10 rounded-full blur-[150px] pointer-events-none transform -translate-x-1/3 translate-y-1/3" />
 
-      <div className="max-w-4xl mx-auto z-10 flex flex-col items-center text-center space-y-8">
-        <div className="border border-cyan-500/30 p-8 bg-black/40 backdrop-blur-md rounded-lg shadow-[0_0_30px_rgba(0,242,255,0.1)]">
-          <h1 className="text-4xl md:text-6xl font-bold text-cyan-400 mb-4 tracking-tighter uppercase">
-            JARVIS
-          </h1>
-          <h2 className="text-xl md:text-2xl text-cyan-300 mb-8 tracking-widest uppercase">
-            Intelligent Task Automation Ecosystem
-          </h2>
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-8 md:p-24 text-center">
+        <div className="glass-panel p-12 md:p-20 rounded-3xl max-w-5xl mx-auto w-full flex flex-col items-center space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
           
-          <div className="text-left space-y-6 text-cyan-500/90 text-lg leading-relaxed max-w-2xl mx-auto">
-            <p>
-              JARVIS is an advanced personal AI assistant designed to securely interface with your digital workspace. Its primary purpose is to automate repetitive tasks and provide intelligent insights across your Google accounts.
-            </p>
-            
-            <div>
-              <h3 className="font-bold text-cyan-300 mb-2 uppercase tracking-wide">Core Capabilities:</h3>
-              <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong className="text-cyan-400">Email Management:</strong> Read, summarize, and draft responses to your Gmail.</li>
-                <li><strong className="text-cyan-400">Calendar Organization:</strong> View your schedule and seamlessly add new events.</li>
-                <li><strong className="text-cyan-400">Drive & Documents:</strong> Search through your Google Drive and analyze Google Docs/Sheets.</li>
-                <li><strong className="text-cyan-400">YouTube Integration:</strong> Manage and interact with your YouTube account.</li>
-              </ul>
-            </div>
-
-            <p className="text-sm text-cyan-500/60 pt-4">
-              * Note: Access to these services requires explicit authorization via Google OAuth. Data is processed securely and is never sold or used for advertising.
+          <div className="space-y-4">
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">
+              <span className="premium-text">Aetheria</span>Compute
+            </h1>
+            <p className="text-xl md:text-2xl text-zinc-400 font-light tracking-wide">
+              The Ambient Compute Engine.
             </p>
           </div>
+          
+          <div className="grid md:grid-cols-2 gap-6 w-full max-w-3xl text-left">
+            <div className="glass-card p-6 rounded-2xl">
+              <h3 className="text-lg font-semibold text-zinc-200 mb-2">Zero-UI Philosophy</h3>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                Aetheria anticipates your needs, monitoring your clipboard, peripheral vision, and acoustic environment to act proactively.
+              </p>
+            </div>
+            <div className="glass-card p-6 rounded-2xl">
+              <h3 className="text-lg font-semibold text-zinc-200 mb-2">Omnipresent Integration</h3>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                Bridging your local OS, WhatsApp, and Google Workspace into a single, seamless, synchronized intelligence node.
+              </p>
+            </div>
+          </div>
 
-          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6">
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-6 w-full max-w-md">
             <Link 
               href="/login" 
-              className="px-8 py-4 bg-cyan-500/10 border border-cyan-500 hover:bg-cyan-500/20 text-cyan-400 font-bold tracking-widest uppercase transition-all duration-300 shadow-[0_0_15px_rgba(0,242,255,0.2)] hover:shadow-[0_0_25px_rgba(0,242,255,0.4)]"
+              className="w-full sm:w-auto px-10 py-4 bg-white text-black hover:bg-zinc-200 font-semibold rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.25)] hover:-translate-y-0.5"
             >
-              System Login
+              Initialize Node
             </Link>
-            <div className="flex gap-4 text-sm">
-              <Link href="/privacy" className="text-cyan-500/60 hover:text-cyan-400 underline">Privacy Policy</Link>
-              <Link href="/terms" className="text-cyan-500/60 hover:text-cyan-400 underline">Terms of Service</Link>
-            </div>
           </div>
+          
+          <div className="flex gap-6 text-sm pt-4">
+            <Link href="/privacy" className="text-zinc-500 hover:text-zinc-300 transition-colors">Privacy Architecture</Link>
+            <Link href="/terms" className="text-zinc-500 hover:text-zinc-300 transition-colors">Terms of Synchrony</Link>
+          </div>
+          
         </div>
       </div>
     </main>

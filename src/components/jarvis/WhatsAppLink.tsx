@@ -16,25 +16,25 @@ export default function WhatsAppLink({ onClose }: { onClose?: () => void }) {
 
   // Initialize or resume instance
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+    if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
        checkStatus('desktop')
        return
     }
-    const savedInstance = localStorage.getItem('jarvis_wa_instance')
+    const savedInstance = localStorage.getItem('aetheria_wa_instance')
     if (savedInstance) {
       setInstanceName(savedInstance)
       checkStatus(savedInstance)
     } else {
       const newInstance = `user_${Math.random().toString(36).substring(2, 10)}`
       setInstanceName(newInstance)
-      localStorage.setItem('jarvis_wa_instance', newInstance)
+      localStorage.setItem('aetheria_wa_instance', newInstance)
     }
   }, [])
 
   const checkStatus = async (name: string) => {
     try {
-      if (name === 'desktop' && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
-         const ready = await (window as any).jarvisDesktop.whatsappReady()
+      if (name === 'desktop' && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+         const ready = await (window as any).aetheriaDesktop.whatsappReady()
          if (ready) {
            setStatus('connected')
          } else {
@@ -59,19 +59,19 @@ export default function WhatsAppLink({ onClose }: { onClose?: () => void }) {
 
   const startPairing = async () => {
     setStatus('pairing')
-    if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+    if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
        // Desktop mode
-       const ready = await (window as any).jarvisDesktop.whatsappReady()
+       const ready = await (window as any).aetheriaDesktop.whatsappReady()
        if (ready) {
          setStatus('connected')
          return
        }
-       const qr = await (window as any).jarvisDesktop.getWhatsappQr()
+       const qr = await (window as any).aetheriaDesktop.getWhatsappQr()
        if (qr) {
          setQrCode(qr)
        }
        // Listen for updates
-       ;(window as any).jarvisDesktop.onWhatsappQr((newQr: string) => {
+       ;(window as any).aetheriaDesktop.onWhatsappQr((newQr: string) => {
          setQrCode(newQr)
        })
        return

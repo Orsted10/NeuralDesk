@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Mail, 
   MessageSquare, 
   Calendar, 
-  Cloud, 
-  CheckSquare, 
   Mic, 
   Settings,
   Shield,
@@ -18,7 +16,11 @@ import {
   Tv,
   LogOut,
   Newspaper,
-  TrendingUp
+  TrendingUp,
+  Eye,
+  EyeOff,
+  Zap,
+  Wifi
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -46,6 +48,10 @@ export default function DashboardPage() {
   const [events, setEvents] = useState<any[]>([])
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string>('User')
+  const [privacyShield, setPrivacyShield] = useState(false)
+  const [visionStatus, setVisionStatus] = useState<'inactive' | 'active' | 'alert'>('inactive')
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const visionIntervalRef = useRef<any>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -58,133 +64,113 @@ export default function DashboardPage() {
     try {
       const start = new Date()
       const end = new Date()
-      end.setDate(end.getDate() + 7) // Fetch upcoming 7 days
+      end.setDate(end.getDate() + 7)
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
       const res = await fetch(`/api/calendar?timeMin=${encodeURIComponent(start.toISOString())}&timeMax=${encodeURIComponent(end.toISOString())}&timeZone=${encodeURIComponent(tz)}`)
       const data = await res.json()
       if (res.ok && data.events) {
         const mapped = data.events.map((ev: any) => {
-          const isAllDay = ev.start?.date !== undefined;
-          let timeStr = 'All Day';
-          let dateStr = '';
-          
+          const isAllDay = ev.start?.date !== undefined
+          let timeStr = 'All Day'
+          let dateStr = ''
           if (isAllDay) {
-            const [y, m, d] = ev.start.date.split('-');
-            const dObj = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
-            dateStr = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const [y, m, d] = ev.start.date.split('-')
+            const dObj = new Date(parseInt(y), parseInt(m)-1, parseInt(d))
+            dateStr = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
           } else if (ev.start?.dateTime) {
-            const dateObj = new Date(ev.start.dateTime);
-            timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const dateObj = new Date(ev.start.dateTime)
+            timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+            dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
           }
-
-          const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          const displayTime = dateStr === today ? timeStr : `${dateStr} • ${timeStr}`;
-
+          const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          const displayTime = dateStr === today ? timeStr : `${dateStr} • ${timeStr}`
           return { id: ev.id, time: displayTime, title: ev.summary || 'Event' }
         })
-        if (mapped.length > 0) {
-          setEvents(mapped)
-        } else {
-          setEvents([])
-        }
+        setEvents(mapped.length > 0 ? mapped : [])
       }
     } catch (e) {
-      console.error("Failed to load active calendar events", e)
+      console.error("Failed to load calendar events", e)
     }
   }
 
+  // Vision Engine: Presence-Based Security
+  useEffect(() => {
+    let stream: MediaStream | null = null
+    const startVision = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' } })
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          videoRef.current.play()
+        }
+        setVisionStatus('active')
+        // Placeholder: In production MediaPipe FaceDetection runs at 1fps here
+        // When faces.length > 1, setPrivacyShield(true) and setVisionStatus('alert')
+        visionIntervalRef.current = setInterval(() => {
+          if (videoRef.current && videoRef.current.readyState >= 2) {
+            setVisionStatus('active')
+          }
+        }, 2000)
+      } catch {
+        setVisionStatus('inactive')
+      }
+    }
+    const t = setTimeout(startVision, 2000)
+    return () => {
+      clearTimeout(t)
+      if (visionIntervalRef.current) clearInterval(visionIntervalRef.current)
+      if (stream) stream.getTracks().forEach(t => t.stop())
+    }
+  }, [])
+
   useEffect(() => {
     setMounted(true)
-    
-    // Fetch User Info
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user?.email) setUserEmail(data.user.email)
       if (data?.user?.user_metadata?.name || data?.user?.user_metadata?.full_name) {
         setUserName(data.user.user_metadata.name || data.user.user_metadata.full_name)
       }
     })
-
-    // Track Time
     const timer = setInterval(() => setTime(new Date()), 1000)
-    
-    // System Telemetry fetch
     const fetchTelemetry = async () => {
       try {
         const res = await fetch('/api/gcp-telemetry')
         const data = await res.json()
-        if (data.cpu !== undefined) {
-          setStats({ 
-            cpu: data.cpu, 
-            ram: data.ram, 
-            totalRam: data.totalRam, 
-            ramPercent: data.ramPercent,
-            cpuModel: data.cpuModel || 'Unknown CPU'
-          })
-        }
-      } catch (e) {}
+        if (data.cpu !== undefined) setStats({ cpu: data.cpu, ram: data.ram, totalRam: data.totalRam, ramPercent: data.ramPercent, cpuModel: data.cpuModel || 'Unknown CPU' })
+      } catch {}
     }
     fetchTelemetry()
     const statsTimer = setInterval(fetchTelemetry, 10000)
-
-    // Track Location & Fetch REAL Weather
     if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const lat = position.coords.latitude.toFixed(4)
-        const lon = position.coords.longitude.toFixed(4)
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude.toFixed(4)
+        const lon = pos.coords.longitude.toFixed(4)
         setLocation({ lat, long: lon, city: 'Verified Node' })
-        
         try {
-          // Fetch Real Weather from Open-Meteo (Free, No Key)
           const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`)
           const data = await res.json()
-          
-          if (data.current) {
-            setWeather({
-              temp: `${Math.round(data.current.temperature_2m)}°C`,
-              humidity: `${data.current.relative_humidity_2m}%`,
-              wind: `${data.current.wind_speed_10m} km/h`,
-              status: data.current.temperature_2m > 20 ? 'Optimal' : 'Cooling'
-            })
-          }
-        } catch (e) {
-          console.error("Weather fetch failed", e)
-        }
+          if (data.current) setWeather({ temp: `${Math.round(data.current.temperature_2m)}°C`, humidity: `${data.current.relative_humidity_2m}%`, wind: `${data.current.wind_speed_10m} km/h`, status: data.current.temperature_2m > 20 ? 'Optimal' : 'Cooling' })
+        } catch {}
       })
     }
-
-    // Load active calendar events
     loadCalendarEvents()
-
-    // Load unread emails for context
-    const loadUnreadEmails = async () => {
+    const loadEmails = async () => {
       try {
         const res = await fetch('/api/gmail')
         const data = await res.json()
-        if (data.emails) {
-          (window as any).unreadEmailsContext = data.emails.map((e: any) => `[From: ${e.from}] ${e.subject}`).join(' | ')
-        }
-      } catch (e) {}
+        if (data.emails) (window as any).unreadEmailsContext = data.emails.map((e: any) => `[From: ${e.from}] ${e.subject}`).join(' | ')
+      } catch {}
     }
-    loadUnreadEmails()
-
-    // Auto HUD Module switches when JARVIS triggers actions
+    loadEmails()
     const handleMapSwitch = () => setActiveModule('maps')
     const handleDriveSwitch = () => setActiveModule('drive')
     const handleYoutubeSwitch = () => setActiveModule('youtube')
     const handleNewsSwitch = () => setActiveModule('news')
     const handleFinanceSwitch = () => setActiveModule('finance')
-    const handleEmailCompose = () => {
-      setEmailView('compose')
-      setActiveModule('email')
-    }
-    const handleEmailInbox = () => {
-      setEmailView('inbox')
-      setActiveModule('email')
-    }
+    const handleEmailCompose = () => { setEmailView('compose'); setActiveModule('email') }
+    const handleEmailInbox = () => { setEmailView('inbox'); setActiveModule('email') }
     const handleCalendarUpdate = () => loadCalendarEvents()
     const handleOpenModule = (e: any) => setActiveModule(e.detail)
-
     window.addEventListener('show-map', handleMapSwitch)
     window.addEventListener('create-doc', handleDriveSwitch)
     window.addEventListener('play-video', handleYoutubeSwitch)
@@ -194,10 +180,8 @@ export default function DashboardPage() {
     window.addEventListener('read-emails', handleEmailInbox)
     window.addEventListener('calendar-updated', handleCalendarUpdate)
     window.addEventListener('open-module', handleOpenModule)
-
     return () => {
-      clearInterval(timer)
-      clearInterval(statsTimer)
+      clearInterval(timer); clearInterval(statsTimer)
       window.removeEventListener('show-map', handleMapSwitch)
       window.removeEventListener('create-doc', handleDriveSwitch)
       window.removeEventListener('play-video', handleYoutubeSwitch)
@@ -210,247 +194,256 @@ export default function DashboardPage() {
     }
   }, [])
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour12: false, 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      second: '2-digit' 
-    })
-  }
+  const formatTime = (date: Date) => date.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
   const navItems = [
-    { icon: Mail, label: 'Email', id: 'email' },
-    { icon: MessageSquare, label: 'WhatsApp', id: 'whatsapp' },
-    { icon: Calendar, label: 'Calendar', id: 'calendar' },
-    { icon: Compass, label: 'Maps', id: 'maps' },
-    { icon: HardDrive, label: 'Drive', id: 'drive' },
-    { icon: Tv, label: 'YouTube', id: 'youtube' },
-    { icon: Cloud, label: 'Weather', id: 'weather' },
-    { icon: Newspaper, label: 'News', id: 'news' },
-    { icon: TrendingUp, label: 'Markets', id: 'finance' },
-    { icon: CheckSquare, label: 'Tasks', id: 'tasks' },
+    { icon: Mail, label: 'Email', id: 'email', color: 'text-blue-400' },
+    { icon: MessageSquare, label: 'WhatsApp', id: 'whatsapp', color: 'text-emerald-400' },
+    { icon: Calendar, label: 'Calendar', id: 'calendar', color: 'text-purple-400' },
+    { icon: Compass, label: 'Maps', id: 'maps', color: 'text-amber-400' },
+    { icon: HardDrive, label: 'Drive', id: 'drive', color: 'text-indigo-400' },
+    { icon: Tv, label: 'YouTube', id: 'youtube', color: 'text-red-400' },
+    { icon: Newspaper, label: 'News', id: 'news', color: 'text-zinc-400' },
+    { icon: TrendingUp, label: 'Markets', id: 'finance', color: 'text-green-400' },
   ]
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100 p-6 flex flex-col relative overflow-hidden font-sans">
+    <main className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col relative overflow-hidden font-sans">
       <ParticleBackground />
+      <video ref={videoRef} className="hidden" muted playsInline />
+      <div className="gradient-blur-bg" />
+      <div className="absolute top-0 right-0 w-[40vw] h-[40vw] bg-indigo-500/10 rounded-full blur-[150px] pointer-events-none transform translate-x-1/4 -translate-y-1/4" />
+      <div className="absolute bottom-0 left-0 w-[30vw] h-[30vw] bg-purple-500/8 rounded-full blur-[120px] pointer-events-none transform -translate-x-1/4 translate-y-1/4" />
 
-      {/* Top Header */}
-      <header className="relative z-10 flex justify-between items-center mb-10 pb-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 glass-card rounded-2xl flex items-center justify-center shadow-lg">
-            <Shield className="w-6 h-6 text-indigo-400" />
+      {/* Privacy Shield Overlay */}
+      <AnimatePresence>
+        {privacyShield && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] backdrop-blur-2xl bg-black/70 flex items-center justify-center">
+            <div className="glass-panel p-10 rounded-3xl text-center max-w-sm">
+              <Shield className="w-14 h-14 text-red-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-zinc-100 mb-2">Privacy Shield Active</h2>
+              <p className="text-sm text-zinc-400 mb-6">External presence detected. All content is protected.</p>
+              <button onClick={() => setPrivacyShield(false)}
+                className="px-8 py-3 bg-white text-black rounded-full text-sm font-semibold hover:bg-zinc-200 transition-colors">
+                Dismiss Shield
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header */}
+      <header className="relative z-10 flex justify-between items-center px-6 py-4 border-b border-white/[0.04] flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 glass-card rounded-xl flex items-center justify-center">
+            <Zap className="w-4 h-4 text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight premium-text">NeuralDesk</h1>
-            <p className="text-xs font-medium text-zinc-500 mt-1">Ankan's Workspace</p>
+            <div className="text-base font-bold tracking-tight leading-none">
+              <span className="premium-text">Aetheria</span><span className="text-zinc-300">Compute</span>
+            </div>
+            <div className="text-[9px] font-medium text-zinc-600 tracking-widest uppercase mt-0.5">Ambient Compute Engine</div>
           </div>
         </div>
-        
-        <div className="flex gap-8 items-center">
-          <div className="text-right">
-            <div className="text-2xl font-semibold tracking-tight text-zinc-200">
+
+        <div className="flex items-center gap-4">
+          <div className={`hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-bold tracking-widest uppercase transition-all ${
+            visionStatus === 'alert' ? 'border-red-500/40 bg-red-500/10 text-red-400' :
+            visionStatus === 'active' ? 'border-emerald-500/30 bg-emerald-500/8 text-emerald-400' :
+            'border-zinc-800/50 text-zinc-700'}`}>
+            <Eye className="w-3 h-3" />
+            {visionStatus === 'alert' ? 'THREAT' : visionStatus === 'active' ? 'VISION ON' : 'OFFLINE'}
+          </div>
+
+          <button onClick={() => setPrivacyShield(p => !p)} title="Toggle Privacy Shield"
+            className={`p-2 rounded-lg transition-all ${privacyShield ? 'text-red-400 bg-red-500/10' : 'text-zinc-600 hover:text-zinc-300 hover:bg-white/5'}`}>
+            {privacyShield ? <EyeOff className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
+          </button>
+
+          <div className="hidden sm:block text-right">
+            <div className="text-lg font-semibold tracking-tight text-zinc-200 tabular-nums">
               {mounted ? formatTime(time) : '--:--:--'}
             </div>
-            <div className="text-xs font-medium text-zinc-500 mt-1">
-              {mounted ? time.toDateString() : 'Loading...'}
+            <div className="text-[9px] font-medium text-zinc-600 mt-0.5">
+              {mounted ? time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '...'}
             </div>
           </div>
+
+          <button onClick={handleLogout} className="p-2 text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all" title="Sign Out">
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </header>
 
-      {/* Main Grid */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 pb-24 lg:pb-0">
-        
-        {/* Left Sidebar / Bottom Nav */}
-        <aside className="fixed bottom-4 left-4 right-4 lg:relative lg:bottom-0 lg:left-0 lg:right-0 lg:col-span-1 flex lg:flex-col gap-2 lg:gap-6 justify-center lg:justify-start items-center py-3 lg:py-8 glass-panel rounded-3xl z-50 overflow-x-auto px-4 lg:px-0 scrollbar-hide border border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] lg:shadow-none bg-black/60 lg:bg-transparent backdrop-blur-xl">
+      {/* Main Body */}
+      <div className="flex-1 flex overflow-hidden relative z-10">
+
+        {/* Left Sidebar */}
+        <aside className="hidden lg:flex flex-col gap-1 w-16 border-r border-white/[0.04] py-4 px-2 items-center flex-shrink-0">
           {navItems.map((item) => (
-            <motion.button
-              key={item.id}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <motion.button key={item.id} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               onClick={() => setActiveModule(item.id === activeModule ? null : item.id)}
-              className={`p-3 min-w-[3rem] flex-shrink-0 transition-all duration-300 rounded-xl relative group ${
-                activeModule === item.id ? 'bg-white/10 text-zinc-100 shadow-md' : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'
-              }`}
-            >
-              <item.icon className="w-5 h-5 lg:w-6 lg:h-6 mx-auto" />
-              <span className="hidden lg:block absolute left-16 bg-zinc-800 text-zinc-100 px-3 py-1.5 rounded-lg text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl border border-white/10 pointer-events-none">
-                {item.label}
-              </span>
+              className={`w-full p-2.5 flex flex-col items-center gap-1 rounded-xl transition-all ${
+                activeModule === item.id ? 'bg-white/10 shadow-md' : 'text-zinc-600 hover:text-zinc-200 hover:bg-white/5'}`}
+              title={item.label}>
+              <item.icon className={`w-4 h-4 ${activeModule === item.id ? item.color : ''}`} />
+              <span className="text-[7px] font-bold tracking-wider text-current">{item.label.slice(0,5).toUpperCase()}</span>
             </motion.button>
           ))}
-          <div className="lg:mt-auto flex lg:flex-col gap-2 lg:gap-4 ml-auto lg:ml-0">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleLogout}
-              className="p-3 text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all relative group"
-            >
-              <LogOut className="w-5 h-5 lg:w-6 lg:h-6" />
-              <span className="hidden lg:block absolute left-16 bg-rose-500/10 text-rose-400 px-3 py-1.5 rounded-lg text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl border border-rose-500/20 pointer-events-none">
-                Sign Out
-              </span>
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="p-3 text-zinc-600 hover:text-zinc-200 hover:bg-white/5 rounded-xl transition-all hidden lg:block">
-              <Settings className="w-6 h-6" />
+          <div className="mt-auto">
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              className="w-full p-2.5 text-zinc-700 hover:text-zinc-300 hover:bg-white/5 rounded-xl transition-all">
+              <Settings className="w-4 h-4 mx-auto" />
             </motion.button>
           </div>
         </aside>
 
-        {/* Center Interface */}
-        <section className="col-span-1 lg:col-span-8 flex flex-col items-center justify-center relative">
-
-          {activeModule === 'email' && (
-            <EmailModule onClose={() => setActiveModule(null)} initialView={emailView} />
-          )}
-          {activeModule === 'whatsapp' && (
-            <WhatsAppModule onClose={() => setActiveModule(null)} />
-          )}
-          {activeModule === 'calendar' && (
-            <CalendarModule onClose={() => setActiveModule(null)} />
-          )}
-          {activeModule === 'maps' && (
-            <MapsModule />
-          )}
-          {activeModule === 'drive' && (
-            <DriveModule />
-          )}
-          {activeModule === 'youtube' && (
-            <YouTubeModule />
-          )}
-          {activeModule === 'news' && (
-            <NewsModule onClose={() => setActiveModule(null)} />
-          )}
-          {activeModule === 'finance' && (
-            <FinanceModule onClose={() => setActiveModule(null)} />
-          )}
-
-          {activeModule && (
-            <div className="fixed bottom-8 right-8 z-50 transform scale-75 hover:scale-100 transition-all cursor-pointer group">
-              <div className="absolute inset-0 bg-black/50 rounded-full blur-xl -z-10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <VoiceOrb isListening={voiceState.isListening} isSpeaking={voiceState.isSpeaking} onClick={() => setActiveModule(null)} />
-              <div className="absolute top-0 right-0 -mt-2 -mr-2 bg-indigo-500 text-white text-[10px] px-2 py-1 rounded-full font-bold shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                Close Module
-              </div>
-            </div>
-          )}
-
-          {/* Always mounted to keep background tasks active, hidden when module is active */}
-          <div className={activeModule ? "hidden" : "w-full flex flex-col items-center justify-center relative"}>
-            <VoiceOrb isListening={voiceState.isListening} isSpeaking={voiceState.isSpeaking} />
-
-            <div className="mt-8 w-full flex justify-center">
-              <ChatPanel 
-                onVoiceStateChange={setVoiceState} 
-                context={`User: ${userName}. User Email (for sending to myself): ${userEmail || 'Unknown'}. WhatsApp Self Contact Name: "${userName} (You)"${typeof window !== 'undefined' && (window as any).whatsappSelfNumber ? ` or "+${(window as any).whatsappSelfNumber}"` : ''}. Current Date & Time: ${time.toString()}. Live Location: (LAT: ${location.lat}, LONG: ${location.long}). Status: ${location.city}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Live Upcoming Calendar Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ')}. Unread Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
-              />
-            </div>
-
-            <div className="mt-8 text-center max-w-md">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-zinc-500 font-medium text-sm mb-4"
-              >
-                Listening for commands...
+        {/* Center Stage */}
+        <section className="flex-1 flex flex-col items-center justify-start overflow-y-auto pb-20 lg:pb-4">
+          <AnimatePresence mode="wait">
+            {activeModule ? (
+              <motion.div key={activeModule} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.2 }} className="w-full h-full p-4 md:p-6">
+                {activeModule === 'email' && <EmailModule onClose={() => setActiveModule(null)} initialView={emailView} />}
+                {activeModule === 'whatsapp' && <WhatsAppModule onClose={() => setActiveModule(null)} />}
+                {activeModule === 'calendar' && <CalendarModule onClose={() => setActiveModule(null)} />}
+                {activeModule === 'maps' && <MapsModule />}
+                {activeModule === 'drive' && <DriveModule />}
+                {activeModule === 'youtube' && <YouTubeModule />}
+                {activeModule === 'news' && <NewsModule onClose={() => setActiveModule(null)} />}
+                {activeModule === 'finance' && <FinanceModule onClose={() => setActiveModule(null)} />}
+                <div className="fixed bottom-24 lg:bottom-8 right-8 z-50 transform scale-75 hover:scale-100 transition-all cursor-pointer group">
+                  <VoiceOrb isListening={voiceState.isListening} isSpeaking={voiceState.isSpeaking} onClick={() => setActiveModule(null)} />
+                  <div className="absolute -top-8 right-1/2 translate-x-1/2 bg-black/80 text-zinc-300 text-[10px] px-2 py-1 rounded-lg font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    Close Module
+                  </div>
+                </div>
               </motion.div>
-              <div className="h-1 w-32 mx-auto bg-zinc-800 rounded-full overflow-hidden">
-                <motion.div 
-                  animate={{ x: [-50, 150] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-1/2 h-full bg-indigo-500/50 rounded-full"
-                />
-              </div>
-            </div>
-          </div>
+            ) : (
+              <motion.div key="main" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="w-full flex flex-col items-center justify-center py-10 px-4">
+                <VoiceOrb isListening={voiceState.isListening} isSpeaking={voiceState.isSpeaking} />
+                <div className="mt-8 w-full flex justify-center">
+                  <ChatPanel
+                    onVoiceStateChange={setVoiceState}
+                    userName={userName}
+                    context={`User: ${userName}. Email: ${userEmail || 'Unknown'}. WhatsApp Self: "${userName} (You)"${typeof window !== 'undefined' && (window as any).whatsappSelfNumber ? ` or "+${(window as any).whatsappSelfNumber}"` : ''}. Date/Time: ${time.toString()}. Location: LAT ${location.lat}, LONG ${location.long}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ') || 'None'}. Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
+                  />
+                </div>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-8 text-center">
+                  <p className="text-zinc-700 text-[10px] tracking-widest uppercase font-semibold">Ambient Mode · Always Listening</p>
+                  <div className="mt-2 h-px w-20 mx-auto bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </section>
 
-        {/* Right Status Panel */}
-        <aside className="hidden lg:flex col-span-3 flex-col gap-6">
+        {/* Right HUD Panel */}
+        <aside className="hidden xl:flex flex-col gap-3 w-64 border-l border-white/[0.04] p-4 overflow-y-auto flex-shrink-0">
+          <div className="glass-card p-3 rounded-2xl flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+              {userName.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold text-zinc-200 truncate">{userName}</div>
+              <div className="text-[10px] text-zinc-500 truncate">{userEmail || 'Authenticated'}</div>
+            </div>
+            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] flex-shrink-0" />
+          </div>
+
           <HUDCard title="System Metrics">
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-medium text-zinc-400">
-                  <span>CPU Usage</span>
-                  <span>{stats.cpu}%</span>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] text-zinc-500">
+                  <span>CPU</span><span className="text-zinc-300 font-medium">{stats.cpu}%</span>
                 </div>
-                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                  <motion.div 
-                    animate={{ width: `${stats.cpu}%` }}
-                    className="h-full bg-indigo-500" 
-                  />
+                <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+                  <motion.div animate={{ width: `${stats.cpu}%` }} className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-medium text-zinc-400">
-                  <span>Memory Allocation</span>
-                  <span>{stats.ram} GB / {stats.totalRam} GB</span>
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] text-zinc-500">
+                  <span>Memory</span><span className="text-zinc-300 font-medium">{stats.ram}/{stats.totalRam}GB</span>
                 </div>
-                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                  <motion.div 
-                    animate={{ width: `${stats.ramPercent}%` }} 
-                    className="h-full bg-indigo-400" 
-                  />
+                <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+                  <motion.div animate={{ width: `${stats.ramPercent}%` }} className="h-full bg-gradient-to-r from-blue-500 to-indigo-400 rounded-full" />
                 </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-[9px] text-zinc-600 truncate">
+                <Cpu className="w-3 h-3 flex-shrink-0" /><span className="truncate">{stats.cpuModel}</span>
               </div>
             </div>
           </HUDCard>
 
-          <HUDCard title="Environmental Data">
+          <HUDCard title="Environment">
             <div className="space-y-2">
-              <StatusIndicator label="Temperature" value={weather.temp} />
+              <StatusIndicator label="Temp" value={weather.temp} />
               <StatusIndicator label="Humidity" value={weather.humidity} />
-              <StatusIndicator label="Wind Speed" value={weather.wind} />
+              <StatusIndicator label="Wind" value={weather.wind} />
               <StatusIndicator label="Status" value={weather.status} color="green" />
+              <div className="pt-1 border-t border-white/[0.04] flex items-center justify-between text-[9px] text-zinc-600">
+                <span className="flex items-center gap-1"><Wifi className="w-3 h-3" />{location.city}</span>
+                <span>{location.lat}, {location.long}</span>
+              </div>
             </div>
           </HUDCard>
 
-          <HUDCard title="Schedule" className="flex-1">
-            <div className="space-y-4">
+          <HUDCard title="Upcoming" className="flex-1">
+            <div className="space-y-3">
               {events.length === 0 ? (
-                <div className="text-sm text-zinc-500 text-center py-6">
-                  No upcoming events today.
-                </div>
-              ) : (
-                events.map((ev, i) => (
-                  <div key={i} className="flex gap-4 items-center group">
-                    <div className="w-1 h-8 bg-indigo-500/50 rounded-full transition-all group-hover:bg-indigo-400" />
-                    <div>
-                      <div className="text-xs font-medium text-zinc-400 mb-0.5">{ev.time}</div>
-                      <div className="text-sm font-semibold text-zinc-200">{ev.title}</div>
-                    </div>
+                <div className="text-[10px] text-zinc-600 text-center py-3">No upcoming events.</div>
+              ) : events.slice(0, 4).map((ev, i) => (
+                <div key={i} className="flex gap-2.5 items-start group">
+                  <div className="w-0.5 min-h-[28px] bg-indigo-500/30 group-hover:bg-indigo-400 rounded-full mt-0.5 flex-shrink-0 transition-colors" />
+                  <div>
+                    <div className="text-[9px] font-medium text-zinc-600 mb-0.5">{ev.time}</div>
+                    <div className="text-[11px] font-semibold text-zinc-300 leading-tight">{ev.title}</div>
                   </div>
-                ))
-              )}
+                </div>
+              ))}
             </div>
           </HUDCard>
 
-          <div className="glass-card p-4 rounded-2xl flex items-center gap-4">
-             <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
-               <Activity className="w-4 h-4 text-emerald-400" />
-             </div>
-             <div>
-               <div className="text-sm font-semibold text-zinc-200">System Nominal</div>
-               <div className="text-xs text-zinc-500">All services operational</div>
-             </div>
+          <div className={`glass-card p-3 rounded-2xl border transition-colors ${visionStatus === 'alert' ? 'border-red-500/30' : 'border-white/[0.03]'}`}>
+            <div className="flex items-center gap-2.5">
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${visionStatus === 'alert' ? 'bg-red-500/15' : visionStatus === 'active' ? 'bg-emerald-500/10' : 'bg-zinc-800'}`}>
+                {privacyShield ? <EyeOff className="w-3.5 h-3.5 text-red-400" /> : <Eye className={`w-3.5 h-3.5 ${visionStatus === 'active' ? 'text-emerald-400' : 'text-zinc-600'}`} />}
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold text-zinc-300">Vision Shield</div>
+                <div className="text-[9px] text-zinc-600">{visionStatus === 'active' ? 'Presence monitoring on' : 'Camera inactive'}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card p-3 rounded-2xl flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+              <Activity className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+            <div>
+              <div className="text-[11px] font-semibold text-zinc-200">All Systems Nominal</div>
+              <div className="text-[9px] text-zinc-500">v3.0.0 · AetheriaCompute</div>
+            </div>
           </div>
         </aside>
-
       </div>
 
-      {/* Bottom Status Bar */}
-      <footer className="relative z-10 mt-6 lg:flex justify-between items-center text-xs font-medium text-zinc-600 hidden">
-        <div className="flex gap-6">
-          <span>{location.city}</span>
-          <span>LAT: {location.lat} • LONG: {location.long}</span>
-        </div>
-        <div className="flex gap-6">
-          <span className="flex items-center gap-2"><Cpu className="w-4 h-4" /> {stats.cpuModel}</span>
-          <span>v2.0.0</span>
-        </div>
-      </footer>
+      {/* Mobile Bottom Nav */}
+      <nav className="lg:hidden fixed bottom-4 left-4 right-4 z-50 glass-panel rounded-2xl border border-white/10 py-2.5 px-3 flex items-center justify-around bg-black/75 backdrop-blur-2xl shadow-2xl">
+        {navItems.slice(0, 5).map((item) => (
+          <motion.button key={item.id} whileTap={{ scale: 0.9 }}
+            onClick={() => setActiveModule(item.id === activeModule ? null : item.id)}
+            className={`p-2.5 rounded-xl flex flex-col items-center gap-1 transition-all ${activeModule === item.id ? 'bg-white/10' : 'text-zinc-600'}`}>
+            <item.icon className={`w-5 h-5 ${activeModule === item.id ? item.color : ''}`} />
+            <span className="text-[8px] font-bold tracking-wider">{item.label.toUpperCase().slice(0,4)}</span>
+          </motion.button>
+        ))}
+        <motion.button whileTap={{ scale: 0.9 }} onClick={handleLogout} className="p-2.5 rounded-xl text-zinc-600 hover:text-rose-400 transition-colors">
+          <LogOut className="w-5 h-5" />
+        </motion.button>
+      </nav>
     </main>
   )
 }

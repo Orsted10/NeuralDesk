@@ -286,7 +286,7 @@ export default function MapsModule() {
     }
   }, [mapInstance, marker])
 
-  // Intercept JARVIS event-based commands
+  // Intercept Aetheria event-based commands
   useEffect(() => {
     const handleShowMap = (e: CustomEvent) => {
       const query = e.detail?.query

@@ -2,14 +2,14 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'NeuralDesk JARVIS',
-  description: 'AI-Powered Workspace Assistant',
+  title: 'AetheriaCompute',
+  description: 'Ambient Compute Engine',
   manifest: '/manifest.json',
   themeColor: '#09090b',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'JARVIS'
+    title: 'Aetheria'
   },
   verification: {
     google: "iAFq7UHZVR1PPfzY-Nf4X7MS7derRebKr__J6HjAZAw",

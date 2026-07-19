@@ -18,9 +18,10 @@ interface Message {
 interface ChatPanelProps {
   onVoiceStateChange?: (state: { isListening: boolean; isSpeaking: boolean }) => void
   context?: string
+  userName?: string
 }
 
-export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProps) {
+export default function ChatPanel({ onVoiceStateChange, context, userName = 'You' }: ChatPanelProps) {
   const [isMuted, setIsMuted] = useState(false)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
@@ -40,6 +41,84 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
   const [whatsappQr, setWhatsappQr] = useState<string | null>(null)
   const [isAwake, setIsAwake] = useState(false)
   const isAwakeRef = useRef(false)
+  
+  // Aetheria Category A Features
+  const [isIdle, setIsIdle] = useState(false)
+  const ambientVolumeRef = useRef<number>(1.0)
+  
+  // Peripheral Vision UI (Fade when idle)
+  useEffect(() => {
+    let timeout: any;
+    const resetIdle = () => {
+      setIsIdle(false)
+      clearTimeout(timeout)
+      timeout = setTimeout(() => setIsIdle(true), 15000) // 15 seconds idle
+    }
+    window.addEventListener('mousemove', resetIdle)
+    window.addEventListener('keydown', resetIdle)
+    resetIdle()
+    return () => {
+      window.removeEventListener('mousemove', resetIdle)
+      window.removeEventListener('keydown', resetIdle)
+      clearTimeout(timeout)
+    }
+  }, [])
+
+  // Acoustic Environment Mapping
+  useEffect(() => {
+    let audioContext: AudioContext;
+    let analyser: AnalyserNode;
+    let microphone: MediaStreamAudioSourceNode;
+    let dataArray: Uint8Array;
+    let stream: MediaStream;
+    let animationId: number;
+
+    const startAcousticMapping = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) return;
+        audioContext = new AudioContextClass();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        microphone = audioContext.createMediaStreamSource(stream);
+        microphone.connect(analyser);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const calculateVolume = () => {
+          analyser.getByteFrequencyData(dataArray as any);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          const average = sum / dataArray.length;
+          
+          let targetVol = 0.3 + (average / 100) * 0.7;
+          if (targetVol > 1.0) targetVol = 1.0;
+          if (targetVol < 0.3) targetVol = 0.3; // Whisper floor
+          
+          ambientVolumeRef.current = targetVol;
+          animationId = requestAnimationFrame(calculateVolume);
+        };
+        calculateVolume();
+      } catch (err) {
+        console.log("Acoustic mapping requires mic permission.");
+      }
+    };
+    
+    const onInteract = () => {
+      if (!audioContext) startAcousticMapping();
+      window.removeEventListener('click', onInteract);
+    };
+    window.addEventListener('click', onInteract);
+
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      if (audioContext && audioContext.state !== 'closed') audioContext.close();
+      window.removeEventListener('click', onInteract);
+    }
+  }, [])
   
   const playWakeBeep = () => {
     try {
@@ -128,7 +207,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         setSessions(prev => [data.session, ...prev])
         setActiveSessionId(data.session.id)
         setMessages([])
-        toast.success("New chat initialized, Sir.")
+        toast.success("New compute session initialized.")
       }
     } catch (e) {
       console.error("Failed to create new session", e)
@@ -175,11 +254,11 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
 
   // Desktop App Events (WhatsApp QR)
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
-      (window as any).jarvisDesktop.onWhatsappQr((qr: string) => {
+    if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+      (window as any).aetheriaDesktop.onWhatsappQr((qr: string) => {
         setWhatsappQr(qr)
       })
-      ;(window as any).jarvisDesktop.whatsappReady().then((ready: any) => {
+      ;(window as any).aetheriaDesktop.whatsappReady().then((ready: any) => {
         if (ready) {
           setWhatsappQr(null)
           if (ready.myNumber) {
@@ -187,7 +266,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           }
         } else {
           // If not ready, ask for the current QR code immediately
-          ;(window as any).jarvisDesktop.getWhatsappQr().then((qr: string | null) => {
+          ;(window as any).aetheriaDesktop.getWhatsappQr().then((qr: string | null) => {
              if (qr) setWhatsappQr(qr);
           })
         }
@@ -212,26 +291,22 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
             if (!text) return
 
             if (isAwakeRef.current) {
-              // If the mic is currently active (either by manual click or previous wake word), 
-              // treat this transcript as a command and send it immediately.
               setIsAwake(false)
               isAwakeRef.current = false
               setIsListening(false)
               setInput(text)
               handleSendRef.current?.(text)
             } else {
-              // The mic is NOT active. Check if they said the wake word.
-              if (text.toLowerCase().includes('jarvis')) {
-                const parts = text.toLowerCase().split('jarvis')
-                const command = parts.slice(1).join('jarvis').trim()
-                
+              // Check for Aetheria wake word
+              if (text.toLowerCase().includes('aetheria')) {
+                const parts = text.toLowerCase().split('aetheria')
+                const command = parts.slice(1).join('aetheria').trim()
                 if (command.length > 0) {
-                  // They said "Jarvis do X" in one breath
-                  window.speechSynthesis.cancel() // Interrupt
+                  window.speechSynthesis.cancel()
                   setInput(command)
                   handleSendRef.current?.(command)
                 } else {
-                  // They just said "Jarvis", trigger wake word UI and wait for next phrase
+                  // Just "Aetheria" - activate and wait for command
                   setIsAwake(true)
                   isAwakeRef.current = true
                   setIsListening(true)
@@ -273,7 +348,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       playWakeBeep()
 
       // Web Fallback: Use MediaRecorder + /api/transcribe if not on Desktop
-      if (typeof window !== 'undefined' && !(window as any).jarvisDesktop) {
+      if (typeof window !== 'undefined' && !(window as any).aetheriaDesktop) {
         navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
           const mediaRecorder = new MediaRecorder(stream)
           mediaRecorderRef.current = mediaRecorder
@@ -384,7 +459,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
 
     // Route TTS to Local Python WebSocket if available (Desktop App Only)
     // NOTE: Commented out to use the browser TTS (Web Speech API) even in the Desktop App, as requested by the user.
-    // if (typeof window !== 'undefined' && (window as any).jarvisDesktop && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    // if (typeof window !== 'undefined' && (window as any).aetheriaDesktop && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
     //   wsRef.current.send(JSON.stringify({ type: 'speak', text: plainText }))
     //   return;
     // }
@@ -396,6 +471,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       const utterance = new SpeechSynthesisUtterance(plainText)
       utterance.rate = 1.05
       utterance.pitch = 1.1
+      utterance.volume = ambientVolumeRef.current // Dynamic Ambient Volume
 
       const voices = window.speechSynthesis.getVoices()
       // Look for a high quality female voice
@@ -421,8 +497,8 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     if (!textToSend.trim() || isLoading) return
 
     const getApiUrl = (path: string) => {
-      if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
-        return `https://neural-desk-three.vercel.app${path}`
+      if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+        return `https://aetheria-compute-node.vercel.app${path}`
       }
       return path
     }
@@ -469,11 +545,32 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
     setIsLoading(true)
 
     try {
-      // Inject OS Context
+      // Inject OS Context, Lexicon, and Memory
       let osContext = null
-      if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
-        osContext = await (window as any).jarvisDesktop.getOsContext()
+      let memoryContext = ''
+      
+      if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+        osContext = await (window as any).aetheriaDesktop.getOsContext()
+        
+        try {
+          const lexicon = await (window as any).aetheriaDesktop.getLexicon()
+          if (lexicon && lexicon.length > 0) {
+            memoryContext += `\nPersonal Lexicon (user's frequently used slang/words): ${lexicon.join(', ')}`
+          }
+          
+          const episodes = await (window as any).aetheriaDesktop.getEpisodes(15)
+          if (episodes && episodes.length > 0) {
+            memoryContext += `\n\nRecent User Activity (Episodic Memory - DO NOT mention this directly unless asked 'what was I just doing'):\n`
+            episodes.forEach((ep: any) => {
+              memoryContext += `- [${new Date(ep.timestamp).toLocaleTimeString()}] ${ep.window_title} ${ep.process_name ? `(${ep.process_name})` : ''}\n`
+            })
+          }
+        } catch(e) {
+          console.error("Failed to load local memory context", e)
+        }
       }
+
+      const finalContext = context + memoryContext
 
       const response = await fetch(getApiUrl('/api/ai'), {
         method: 'POST',
@@ -482,9 +579,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           message: textToSend,
           history: messages.slice(-5),
           provider,
-          context,
+          context: finalContext,
           osContext,
-          isDesktop: typeof window !== 'undefined' && !!(window as any).jarvisDesktop,
+          isDesktop: typeof window !== 'undefined' && !!(window as any).aetheriaDesktop,
         }),
       })
 
@@ -519,9 +616,15 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         const execPcMatch = assistantMessage.match(/<execute_pc_command>\s*(.*?)\s*<\/execute_pc_command>/is)
         const waSendMatch = assistantMessage.match(/<whatsapp_send>\s*(.*?)\s*<\/whatsapp_send>/is)
         const waReadMatch = assistantMessage.match(/<read_whatsapp>\s*(.*?)\s*<\/read_whatsapp>/is)
+        const storeMemoryMatch = assistantMessage.match(/<store_memory>\s*(.*?)\s*<\/store_memory>/is)
+        const freezeMatch = assistantMessage.match(/<freeze_process>\s*(.*?)\s*<\/freeze_process>/is)
+        const ghostMatch = assistantMessage.match(/<ghost_type>\s*(.*?)\s*<\/ghost_type>/is)
 
         if (actionMatch) {
           displayMessage = displayMessage.replace(actionMatch[0], '[EXECUTING PROTOCOL: CALENDAR...]')
+        }
+        if (storeMemoryMatch) {
+          displayMessage = displayMessage.replace(storeMemoryMatch[0], '')
         }
         if (mapMatch) {
           displayMessage = displayMessage.replace(mapMatch[0], '[EXECUTING PROTOCOL: MAPS...]')
@@ -550,6 +653,12 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         if (waReadMatch) {
           displayMessage = displayMessage.replace(waReadMatch[0], '[EXECUTING PROTOCOL: WHATSAPP READ...]')
         }
+        if (freezeMatch) {
+          displayMessage = displayMessage.replace(freezeMatch[0], '[EXECUTING PROTOCOL: RAM FREEZE...]')
+        }
+        if (ghostMatch) {
+          displayMessage = displayMessage.replace(ghostMatch[0], '[EXECUTING PROTOCOL: GHOST TYPE...]')
+        }
 
         setMessages((prev) => {
           const last = prev[prev.length - 1]
@@ -572,6 +681,9 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       const finalExecPc = assistantMessage.match(/<execute_pc_command>\s*(.*?)\s*<\/execute_pc_command>/is)
       const finalWaSend = assistantMessage.match(/<whatsapp_send>\s*(.*?)\s*<\/whatsapp_send>/is)
       const finalWaRead = assistantMessage.match(/<read_whatsapp>\s*(.*?)\s*<\/read_whatsapp>/is)
+      const finalStoreMemory = assistantMessage.match(/<store_memory>\s*(.*?)\s*<\/store_memory>/is)
+      const finalFreeze = assistantMessage.match(/<freeze_process>\s*(.*?)\s*<\/freeze_process>/is)
+      const finalGhost = assistantMessage.match(/<ghost_type>\s*(.*?)\s*<\/ghost_type>/is)
 
       let cleanMessage = assistantMessage.replace(/<thought>[\s\S]*?<\/thought>/gi, '').trim()
 
@@ -598,11 +710,11 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           .catch(err => console.error("Search failed", err))
       }
 
-      if (finalExecPc && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+      if (finalExecPc && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
         cleanMessage = cleanMessage.replace(finalExecPc[0], '[EXECUTING PROTOCOL: OS COMMAND...]').trim()
         const command = finalExecPc[1].trim()
         toast.success(`Protocol Complete: Executing OS Command.`, { icon: '💻' })
-        ;(window as any).jarvisDesktop.executeCommand(command).then((res: any) => {
+        ;(window as any).aetheriaDesktop.executeCommand(command).then((res: any) => {
           if (res.success) {
             handleSend(`[SYSTEM NOTIFICATION: Command executed successfully. Output: ${res.stdout}. Acknowledge this naturally.]`)
           } else {
@@ -611,7 +723,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         })
       }
 
-      if (finalWaSend && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+      if (finalWaSend && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
         cleanMessage = cleanMessage.replace(finalWaSend[0], '[EXECUTING PROTOCOL: WHATSAPP...]').trim()
         try {
           const content = finalWaSend[1].trim()
@@ -622,7 +734,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
             
             if (to && message) {
               toast.success(`Protocol Complete: Sending WhatsApp message.`, { icon: '💬' })
-              ;(window as any).jarvisDesktop.sendWhatsappMessage(to, message).then((res: any) => {
+              ;(window as any).aetheriaDesktop.sendWhatsappMessage(to, message).then((res: any) => {
                 if (res.success) {
                   handleSend(`[SYSTEM NOTIFICATION: WhatsApp message sent successfully to ${to}. Acknowledge this naturally.]`)
                 } else {
@@ -636,11 +748,11 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         }
       }
 
-      if (finalWaRead && typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+      if (finalWaRead && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
         cleanMessage = cleanMessage.replace(finalWaRead[0], '[EXECUTING PROTOCOL: WHATSAPP READ...]').trim()
         const contact = finalWaRead[1].trim()
         toast.success(`Protocol Complete: Reading WhatsApp chat with ${contact}.`, { icon: '📖' })
-        ;(window as any).jarvisDesktop.readWhatsappMessages(contact).then((res: any) => {
+        ;(window as any).aetheriaDesktop.readWhatsappMessages(contact).then((res: any) => {
           if (res.success) {
             const chatLog = res.messages.map((m: any) => `[${m.timestamp}] ${m.sender}: ${m.body}`).join('\n')
             handleSend(`[SYSTEM NOTIFICATION: Successfully fetched last 5 messages with ${res.chatName}:\n${chatLog}\n\nPlease summarize the recent messages or answer my previous question based on them. No internal thoughts!]`)
@@ -648,6 +760,41 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
             handleSend(`[SYSTEM NOTIFICATION: Failed to read WhatsApp messages. Error: ${res.error}. Inform the user.]`)
           }
         })
+      }
+
+      if (finalStoreMemory && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+        cleanMessage = cleanMessage.replace(finalStoreMemory[0], '').trim()
+        try {
+          const memData = JSON.parse(finalStoreMemory[1].trim())
+          ;(window as any).aetheriaDesktop.storeContext(memData)
+          console.log("[Memory DB] Stored fact:", memData)
+        } catch(e) {
+          console.error("Memory store parsing failed:", e)
+        }
+      }
+
+      if (finalFreeze && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+        cleanMessage = cleanMessage.replace(finalFreeze[0], '[EXECUTING PROTOCOL: RAM FREEZE...]').trim()
+        const proc = finalFreeze[1].trim()
+        toast.success(`Protocol Complete: Suspending ${proc}.`, { icon: '❄️' })
+        ;(window as any).aetheriaDesktop.suspendProcess(proc).then((res: any) => {
+          if (res.success) {
+            handleSend(`[SYSTEM NOTIFICATION: Successfully suspended ${proc}.]`)
+          } else {
+            handleSend(`[SYSTEM NOTIFICATION: Failed to suspend ${proc}. Error: ${res.error}.]`)
+          }
+        })
+      }
+
+      if (finalGhost && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+        cleanMessage = cleanMessage.replace(finalGhost[0], '[EXECUTING PROTOCOL: GHOST TYPE...]').trim()
+        const text = finalGhost[1].trim()
+        toast.success(`Protocol Complete: Ghost typing initialized (Anti-bot bypass).`, { icon: '⌨️' })
+        setTimeout(() => {
+          ;(window as any).aetheriaDesktop.ghostType(text).then((res: any) => {
+             // System notification optional
+          })
+        }, 2000) // Give user 2s to focus input
       }
 
       if (finalDirections) {
@@ -744,7 +891,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           })
         } catch (e) {
           console.error("Failed to parse AI action payload", e, "Payload was:", finalMatch[1])
-          toast.error('JARVIS attempted to schedule the event, but the command was malformed. Please try again.')
+          toast.error('Aetheria attempted to schedule the event, but the command was malformed. Please try again.')
         }
       }
 
@@ -857,14 +1004,14 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
         try {
           const content = finalEmail[1].trim()
           let to = ''
-          let subject = 'NeuralDesk Dispatch'
+          let subject = 'Aetheria Dispatch'
           let body = content
 
           if (content.startsWith('{') || content.startsWith('[')) {
             try {
               const payload = JSON.parse(content)
               to = payload.to || ''
-              subject = payload.subject || 'NeuralDesk Dispatch'
+              subject = payload.subject || 'Aetheria Dispatch'
               body = payload.body || content
             } catch (e) {}
           } else {
@@ -923,8 +1070,10 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
 
     // replaced toggles
 
+  const shouldFade = isIdle && !isAwake && !isListening && !isSpeaking;
+
   return (
-    <div className="w-full lg:max-w-2xl flex flex-col h-[85vh] lg:h-[65vh] max-h-[800px] lg:max-h-[600px] min-h-[400px] glass-panel lg:rounded-3xl rounded-t-3xl lg:overflow-hidden shadow-2xl transition-all duration-500 relative mt-auto lg:mt-0">
+    <div className={`w-full lg:max-w-2xl flex flex-col h-[85vh] lg:h-[65vh] max-h-[800px] lg:max-h-[600px] min-h-[400px] glass-panel lg:rounded-3xl rounded-t-3xl lg:overflow-hidden shadow-2xl transition-all duration-1000 relative mt-auto lg:mt-0 ${shouldFade ? 'opacity-20 blur-sm scale-[0.98]' : 'opacity-100 blur-none scale-100'}`}>
       {/* WhatsApp QR Modal */}
       <AnimatePresence>
         {whatsappQr && (
@@ -936,7 +1085,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           >
             <div className="bg-zinc-900 border border-white/10 p-8 rounded-2xl flex flex-col items-center gap-4 text-center max-w-sm">
               <h3 className="text-xl font-semibold text-zinc-100">Link WhatsApp</h3>
-              <p className="text-sm text-zinc-400">Open WhatsApp on your phone, go to Linked Devices, and scan this QR code to grant JARVIS background access.</p>
+              <p className="text-sm text-zinc-400">Open WhatsApp on your phone, go to Linked Devices, and scan this QR code to grant Aetheria background access.</p>
               <div className="bg-white p-4 rounded-xl mt-2">
                 <QRCodeSVG value={whatsappQr} size={200} />
               </div>
@@ -976,7 +1125,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       {/* Header */}
       <div className="p-4 border-b border-white/[0.05] flex justify-between items-center bg-white/[0.02]">
         <div className="flex gap-4 items-center flex-1">
-          <span className="text-xs font-semibold tracking-wide text-zinc-300">Neural Link</span>
+          <span className="text-xs font-semibold tracking-widest uppercase text-zinc-500">Aetheria</span>
           
           <div className="flex gap-2 items-center flex-1 max-w-[200px]">
             <select
@@ -999,11 +1148,11 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
             + New
           </button>
           
-          {typeof window !== 'undefined' && !!(window as any).jarvisDesktop && (
+          {typeof window !== 'undefined' && !!(window as any).aetheriaDesktop && (
             <button
               onClick={() => {
                 toast.loading("Resetting WhatsApp Connection...", { id: 'wa-logout' });
-                (window as any).jarvisDesktop.logoutWhatsapp().then((res: any) => {
+                (window as any).aetheriaDesktop.logoutWhatsapp().then((res: any) => {
                   if (res.success) {
                     toast.success("WhatsApp reset successfully. Please wait for the new QR code.", { id: 'wa-logout' });
                   } else {
@@ -1021,7 +1170,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
           <div className="flex gap-2 items-center ml-auto mr-2">
             <span className="flex items-center gap-1.5 text-[9px] tracking-wider text-emerald-400 font-bold bg-emerald-400/10 px-2 py-1 rounded-md border border-emerald-400/20">
               <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
-              SYSTEM ONLINE
+              ONLINE
             </span>
             <span className="text-[9px] text-zinc-500 font-mono tracking-widest">
               LATENCY: {latency > 0 ? `${latency}ms` : '--'}
@@ -1062,7 +1211,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
       >
         {messages.length === 0 && (
           <div className="h-full flex items-center justify-center text-zinc-500 text-sm font-medium text-center">
-            Ready for input.<br/>Click the microphone to speak.
+            Ready for input. Say "Aetheria" or click the orb to speak.
           </div>
         )}
         <AnimatePresence>
@@ -1083,7 +1232,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
               }`}>
                 <div className="flex items-center gap-2 mb-1.5 opacity-60">
                   {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
-                  <span className="text-[11px] font-semibold tracking-wide">{msg.role === 'user' ? 'Ankan' : 'JARVIS'}</span>
+                  <span className="text-[11px] font-semibold tracking-wide">{msg.role === 'user' ? userName || 'You' : 'Aetheria'}</span>
                 </div>
                 <div className="leading-relaxed font-medium prose prose-invert max-w-none prose-sm 
                   prose-p:leading-relaxed prose-p:mb-3 last:prose-p:mb-0
@@ -1130,7 +1279,7 @@ export default function ChatPanel({ onVoiceStateChange, context }: ChatPanelProp
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={isListening ? "Listening..." : "Message JARVIS..."}
+            placeholder={isListening ? "Listening..." : "Message Aetheria..."}
             className="flex-1 h-12 glass-input px-4 text-zinc-200 placeholder:text-zinc-600 text-sm focus-visible:ring-1 focus-visible:ring-indigo-500"
           />
           <Button 

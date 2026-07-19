@@ -27,8 +27,8 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
 
   useEffect(() => {
     async function fetchContacts() {
-      if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
-        const desktopContacts = await (window as any).jarvisDesktop.getWhatsappContacts()
+      if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+        const desktopContacts = await (window as any).aetheriaDesktop.getWhatsappContacts()
         const uniqueContacts = desktopContacts.filter((v: any, i: number, a: any[]) => a.findIndex(v2 => (v2.name === v.name)) === i)
         setContacts(uniqueContacts)
       } else {
@@ -50,15 +50,15 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
 
     setIsSending(true)
     try {
-      if (typeof window !== 'undefined' && (window as any).jarvisDesktop) {
+      if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
         // Desktop native whatsapp
-        const result = await (window as any).jarvisDesktop.sendWhatsappMessage(to, message)
+        const result = await (window as any).aetheriaDesktop.sendWhatsappMessage(to, message)
         if (result && result.success === false) {
            throw new Error(result.error)
         }
       } else {
         // Web fallback (Evolution API)
-        const instanceName = localStorage.getItem('jarvis_wa_instance')
+        const instanceName = localStorage.getItem('aetheria_wa_instance')
         const res = await fetch('/api/whatsapp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -110,7 +110,7 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
 
               <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-6 py-2 text-xs text-emerald-400/80 flex items-center gap-2 -mx-6 mb-4">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Mobile Sync Active: Ensure NeuralDesk Desktop is running on your home network for WhatsApp background services.
+                Mobile Sync Active: Ensure AetheriaCompute Desktop is running on your home network for WhatsApp background services.
               </div>
 
               <div className="grid grid-cols-2 gap-6">

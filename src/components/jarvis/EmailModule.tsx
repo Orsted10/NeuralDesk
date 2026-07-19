@@ -63,7 +63,7 @@ export default function EmailModule({ onClose, initialView = 'compose' }: { onCl
     }
   }
 
-  // Intercept any pending email drafted by JARVIS
+  // Intercept any pending email drafted by Aetheria
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).pendingEmailData) {
       const { to: pTo, subject: pSubject, body: pBody } = (window as any).pendingEmailData

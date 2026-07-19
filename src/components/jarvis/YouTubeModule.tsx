@@ -50,7 +50,7 @@ export default function YouTubeModule() {
     }
   }
 
-  // Intercept JARVIS event-based commands
+  // Intercept Aetheria event-based commands
   useEffect(() => {
     // Intercept mount query to avoid module switching race condition
     if (typeof window !== 'undefined' && (window as any).pendingYoutubeQuery) {

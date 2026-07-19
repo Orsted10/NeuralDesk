@@ -77,7 +77,7 @@ export default function DriveModule() {
     }
   }
 
-  // Intercept JARVIS event-based commands
+  // Intercept Aetheria event-based commands
   useEffect(() => {
     // Intercept mount data to avoid module switching race condition
     if (typeof window !== 'undefined' && (window as any).pendingDocData) {
