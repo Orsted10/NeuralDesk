@@ -86,6 +86,7 @@ export default function VoiceOrb({ isListening = false, isSpeaking = false, onCl
     }
   }, [isListening])
 
+  return (
     <div 
       onClick={handleClick}
       className="relative flex items-center justify-center w-64 h-64 cursor-pointer group active:scale-95 transition-transform"
