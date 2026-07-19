@@ -1083,13 +1083,13 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
           >
-            <div className="bg-zinc-900 border border-white/10 p-8 rounded-2xl flex flex-col items-center gap-4 text-center max-w-sm">
-              <h3 className="text-xl font-semibold text-zinc-100">Link WhatsApp</h3>
-              <p className="text-sm text-zinc-400">Open WhatsApp on your phone, go to Linked Devices, and scan this QR code to grant Aetheria background access.</p>
+            <div className="bg-card border border-border p-8 rounded-2xl flex flex-col items-center gap-4 text-center max-w-sm">
+              <h3 className="text-xl font-semibold text-foreground">Link WhatsApp</h3>
+              <p className="text-sm text-muted-foreground">Open WhatsApp on your phone, go to Linked Devices, and scan this QR code to grant Aetheria background access.</p>
               <div className="bg-white p-4 rounded-xl mt-2">
                 <QRCodeSVG value={whatsappQr} size={200} />
               </div>
-              <Button onClick={() => setWhatsappQr(null)} variant="ghost" className="mt-2 text-zinc-400 hover:text-white">
+              <Button onClick={() => setWhatsappQr(null)} variant="ghost" className="mt-2 text-muted-foreground hover:text-foreground">
                 Dismiss
               </Button>
             </div>
@@ -1105,17 +1105,18 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
             exit={{ opacity: 0, y: -20 }}
             className="absolute top-16 left-0 right-0 z-40 p-4 pointer-events-none"
           >
-            <div className="bg-black/90 backdrop-blur-xl rounded-2xl p-5 border border-indigo-500/40 shadow-[0_0_40px_rgba(99,102,241,0.2)]">
+            <div className="bg-card/90 backdrop-blur-xl rounded-2xl p-5 border border-border shadow-lg">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-semibold text-indigo-300 tracking-wider">
+                <span className="text-xs font-semibold text-foreground tracking-wider">
                   INITIALIZING NEURAL ENGINE ({downloadStatus.filename})
                 </span>
-                <span className="text-sm font-bold text-indigo-400">{downloadStatus.percent}%</span>
+                <span className="text-sm font-bold text-foreground">{downloadStatus.percent}%</span>
               </div>
-              <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden shadow-inner">
-                <div 
-                  className="bg-indigo-500 h-full rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(99,102,241,0.8)]" 
-                  style={{ width: `${downloadStatus.percent}%` }}
+              <div className="w-full bg-secondary rounded-full h-2 overflow-hidden shadow-inner">
+                <motion.div 
+                  initial={{ width: 0 }} 
+                  animate={{ width: `${downloadStatus.percent}%` }} 
+                  className="bg-primary h-full rounded-full transition-all duration-300 ease-out" 
                 />
               </div>
             </div>
@@ -1123,18 +1124,18 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
         )}
       </AnimatePresence>
       {/* Header */}
-      <div className="p-4 border-b border-white/[0.05] flex justify-between items-center bg-white/[0.02]">
+      <div className="p-4 border-b border-border flex justify-between items-center bg-card/10">
         <div className="flex gap-4 items-center flex-1">
-          <span className="text-xs font-semibold tracking-widest uppercase text-zinc-500">Aetheria</span>
+          <span className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">Aetheria</span>
           
           <div className="flex gap-2 items-center flex-1 max-w-[200px]">
             <select
               value={activeSessionId || ''}
               onChange={(e) => setActiveSessionId(e.target.value)}
-              className="glass-input text-zinc-300 text-xs px-3 py-1.5 focus:outline-none transition-all w-full cursor-pointer appearance-none"
+              className="glass-input text-foreground text-xs px-3 py-1.5 focus:outline-none transition-all w-full cursor-pointer appearance-none"
             >
               {sessions.map(s => (
-                <option key={s.id} value={s.id} className="bg-zinc-900 text-zinc-300">
+                <option key={s.id} value={s.id} className="bg-card text-foreground">
                   {s.title}
                 </option>
               ))}
@@ -1143,7 +1144,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
 
           <button
             onClick={() => createNewSession()}
-            className="text-xs font-medium border border-white/10 text-zinc-300 px-3 py-1.5 rounded-xl transition-all bg-white/[0.03] hover:bg-white/[0.08] active:scale-95 flex items-center gap-1"
+            className="text-xs font-medium border border-border text-foreground px-3 py-1.5 rounded-xl transition-all bg-card/50 hover:bg-card/80 active:scale-95 flex items-center gap-1"
           >
             + New
           </button>
@@ -1168,16 +1169,16 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
           )}
 
           <div className="flex gap-2 items-center ml-auto mr-2">
-            <span className="flex items-center gap-1.5 text-[9px] tracking-wider text-emerald-400 font-bold bg-emerald-400/10 px-2 py-1 rounded-md border border-emerald-400/20">
-              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
+            <span className="flex items-center gap-1.5 text-[9px] tracking-wider text-green-500 font-bold bg-green-500/10 px-2 py-1 rounded-md border border-green-500/20">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]"></div>
               ONLINE
             </span>
-            <span className="text-[9px] text-zinc-500 font-mono tracking-widest">
+            <span className="text-[9px] text-muted-foreground font-mono tracking-widest">
               LATENCY: {latency > 0 ? `${latency}ms` : '--'}
             </span>
           </div>
 
-          <div className="flex gap-1 bg-black/20 p-1 rounded-xl border border-white/5">
+          <div className="flex gap-1 bg-secondary/50 p-1 rounded-xl border border-border">
             {(['openrouter', 'groq'] as const).map((p) => (
               <button
                 key={p}
@@ -1197,20 +1198,20 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
            <button onClick={() => {
              setIsMuted(!isMuted);
              if (!isMuted && typeof window !== 'undefined') window.speechSynthesis.cancel();
-           }} className="text-zinc-500 hover:text-white transition-all cursor-pointer">
-             {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-indigo-400 animate-pulse' : 'text-zinc-500'}`} />}
+           }} className="text-muted-foreground hover:text-foreground transition-all cursor-pointer">
+             {isMuted ? <VolumeX className="w-4 h-4 text-destructive" /> : <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-primary animate-pulse' : 'text-muted-foreground'}`} />}
            </button>
-           <div className={`w-2 h-2 rounded-full ${isLoading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
+           <div className={`w-2 h-2 rounded-full ${isLoading ? 'bg-amber-400 animate-pulse' : 'bg-green-500'}`} />
         </div>
       </div>
 
       {/* Messages Area */}
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-white/10"
+        className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-border"
       >
         {messages.length === 0 && (
-          <div className="h-full flex items-center justify-center text-zinc-500 text-sm font-medium text-center">
+          <div className="h-full flex items-center justify-center text-muted-foreground text-sm font-medium text-center">
             Ready for input. Say "Aetheria" or click the orb to speak.
           </div>
         )}
@@ -1227,14 +1228,14 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
             >
               <div className={`max-w-[85%] px-5 py-3.5 shadow-sm text-sm ${
                 msg.role === 'user' 
-                  ? 'bg-indigo-500 text-white rounded-2xl rounded-tr-sm' 
-                  : 'glass-card border border-white/[0.05] text-zinc-200 rounded-2xl rounded-tl-sm'
+                  ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm' 
+                  : 'bg-card border border-border text-card-foreground rounded-2xl rounded-tl-sm'
               }`}>
                 <div className="flex items-center gap-2 mb-1.5 opacity-60">
                   {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
                   <span className="text-[11px] font-semibold tracking-wide">{msg.role === 'user' ? userName || 'You' : 'Aetheria'}</span>
                 </div>
-                <div className="leading-relaxed font-medium prose prose-invert max-w-none prose-sm 
+                <div className="leading-relaxed font-medium prose dark:prose-invert max-w-none prose-sm 
                   prose-p:leading-relaxed prose-p:mb-3 last:prose-p:mb-0
                   prose-a:text-indigo-400 hover:prose-a:text-indigo-300 prose-a:no-underline hover:prose-a:underline prose-a:transition-all
                   prose-strong:text-indigo-100 prose-strong:font-semibold
@@ -1254,7 +1255,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
         </AnimatePresence>
         {isLoading && messages[messages.length-1]?.role === 'user' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-             <div className="glass-card px-5 py-3.5 rounded-2xl rounded-tl-sm flex items-center gap-2 text-zinc-400">
+             <div className="glass-card px-5 py-3.5 rounded-2xl rounded-tl-sm flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span className="text-xs font-medium">Processing...</span>
              </div>
@@ -1263,14 +1264,14 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       </div>
 
       {/* Input Area */}
-      <div className="p-4 border-t border-white/[0.05] bg-white/[0.01] rounded-b-3xl">
+      <div className="p-4 border-t border-border bg-card/10 rounded-b-3xl">
         <div className="flex gap-3">
           <Button
             onClick={toggleListening}
             className={`transition-all duration-300 rounded-xl w-12 h-12 flex items-center justify-center ${
               isListening 
-                ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20 scale-105' 
-                : 'glass-input text-zinc-400 hover:text-zinc-200'
+                ? 'bg-destructive/20 text-destructive border border-destructive/30 animate-pulse' 
+                : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
             }`}
           >
             {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -1280,12 +1281,12 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder={isListening ? "Listening..." : "Message Aetheria..."}
-            className="flex-1 h-12 glass-input px-4 text-zinc-200 placeholder:text-zinc-600 text-sm focus-visible:ring-1 focus-visible:ring-indigo-500"
+            className="flex-1 h-12 glass-input px-4 text-foreground placeholder:text-muted-foreground text-sm focus-visible:ring-1 focus-visible:ring-primary"
           />
           <Button 
             onClick={() => handleSend()}
             disabled={isLoading}
-            className="h-12 w-12 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg transition-all"
+            className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all"
           >
             <Send className="w-4 h-4" />
           </Button>

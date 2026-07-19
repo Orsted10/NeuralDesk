@@ -208,12 +208,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <main className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col relative overflow-hidden font-sans">
-      <ParticleBackground />
-      <video ref={videoRef} className="hidden" muted playsInline />
-      <div className="gradient-blur-bg" />
-      <div className="absolute top-0 right-0 w-[40vw] h-[40vw] bg-indigo-500/10 rounded-full blur-[150px] pointer-events-none transform translate-x-1/4 -translate-y-1/4" />
-      <div className="absolute bottom-0 left-0 w-[30vw] h-[30vw] bg-purple-500/8 rounded-full blur-[120px] pointer-events-none transform -translate-x-1/4 translate-y-1/4" />
+    <main className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden font-sans">
 
       {/* Privacy Shield Overlay */}
       <AnimatePresence>
@@ -234,16 +229,16 @@ export default function DashboardPage() {
       </AnimatePresence>
 
       {/* Header */}
-      <header className="relative z-10 flex justify-between items-center px-6 py-4 border-b border-white/[0.04] flex-shrink-0">
+      <header className="relative z-10 flex justify-between items-center px-6 py-4 border-b border-border bg-card/40 backdrop-blur-md flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 glass-card rounded-xl flex items-center justify-center">
             <Zap className="w-4 h-4 text-indigo-400" />
           </div>
           <div>
             <div className="text-base font-bold tracking-tight leading-none">
-              <span className="premium-text">Aetheria</span><span className="text-zinc-300">Compute</span>
+              <span className="premium-text">Aetheria</span>
             </div>
-            <div className="text-[9px] font-medium text-zinc-600 tracking-widest uppercase mt-0.5">Ambient Compute Engine</div>
+            <div className="text-[10px] font-medium text-muted-foreground tracking-widest uppercase mt-0.5">Compute Engine</div>
           </div>
         </div>
 
@@ -262,10 +257,10 @@ export default function DashboardPage() {
           </button>
 
           <div className="hidden sm:block text-right">
-            <div className="text-lg font-semibold tracking-tight text-zinc-200 tabular-nums">
+            <div className="text-sm font-semibold tracking-tight text-foreground tabular-nums">
               {mounted ? formatTime(time) : '--:--:--'}
             </div>
-            <div className="text-[9px] font-medium text-zinc-600 mt-0.5">
+            <div className="text-xs font-medium text-muted-foreground mt-0.5">
               {mounted ? time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '...'}
             </div>
           </div>
@@ -280,15 +275,15 @@ export default function DashboardPage() {
       <div className="flex-1 flex overflow-hidden relative z-10">
 
         {/* Left Sidebar */}
-        <aside className="hidden lg:flex flex-col gap-1 w-16 border-r border-white/[0.04] py-4 px-2 items-center flex-shrink-0">
+        <aside className="hidden lg:flex flex-col gap-1 w-20 border-r border-border bg-card/20 py-4 px-2 items-center flex-shrink-0">
           {navItems.map((item) => (
             <motion.button key={item.id} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               onClick={() => setActiveModule(item.id === activeModule ? null : item.id)}
               className={`w-full p-2.5 flex flex-col items-center gap-1 rounded-xl transition-all ${
                 activeModule === item.id ? 'bg-white/10 shadow-md' : 'text-zinc-600 hover:text-zinc-200 hover:bg-white/5'}`}
               title={item.label}>
-              <item.icon className={`w-4 h-4 ${activeModule === item.id ? item.color : ''}`} />
-              <span className="text-[7px] font-bold tracking-wider text-current">{item.label.slice(0,5).toUpperCase()}</span>
+              <item.icon className={`w-5 h-5 ${activeModule === item.id ? 'text-primary' : ''}`} />
+              <span className="text-[9px] font-bold tracking-wider text-current mt-1">{item.label.slice(0,5).toUpperCase()}</span>
             </motion.button>
           ))}
           <div className="mt-auto">
@@ -332,8 +327,8 @@ export default function DashboardPage() {
                   />
                 </div>
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-8 text-center">
-                  <p className="text-zinc-700 text-[10px] tracking-widest uppercase font-semibold">Ambient Mode · Always Listening</p>
-                  <div className="mt-2 h-px w-20 mx-auto bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
+                  <p className="text-muted-foreground text-xs tracking-widest uppercase font-semibold">Ambient Mode · Always Listening</p>
+                  <div className="mt-2 h-px w-20 mx-auto bg-border" />
                 </motion.div>
               </motion.div>
             )}
@@ -341,14 +336,14 @@ export default function DashboardPage() {
         </section>
 
         {/* Right HUD Panel */}
-        <aside className="hidden xl:flex flex-col gap-3 w-64 border-l border-white/[0.04] p-4 overflow-y-auto flex-shrink-0">
+        <aside className="hidden xl:flex flex-col gap-4 w-72 border-l border-border bg-card/20 p-6 overflow-y-auto flex-shrink-0">
           <div className="glass-card p-3 rounded-2xl flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
               {userName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold text-zinc-200 truncate">{userName}</div>
-              <div className="text-[10px] text-zinc-500 truncate">{userEmail || 'Authenticated'}</div>
+              <div className="text-sm font-semibold text-foreground truncate">{userName}</div>
+              <div className="text-xs text-muted-foreground truncate">{userEmail || 'Authenticated'}</div>
             </div>
             <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] flex-shrink-0" />
           </div>
@@ -359,16 +354,16 @@ export default function DashboardPage() {
                 <div className="flex justify-between text-[10px] text-zinc-500">
                   <span>CPU</span><span className="text-zinc-300 font-medium">{stats.cpu}%</span>
                 </div>
-                <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
-                  <motion.div animate={{ width: `${stats.cpu}%` }} className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" />
+                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <motion.div animate={{ width: `${stats.cpu}%` }} className="h-full bg-foreground rounded-full" />
                 </div>
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between text-[10px] text-zinc-500">
                   <span>Memory</span><span className="text-zinc-300 font-medium">{stats.ram}/{stats.totalRam}GB</span>
                 </div>
-                <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
-                  <motion.div animate={{ width: `${stats.ramPercent}%` }} className="h-full bg-gradient-to-r from-blue-500 to-indigo-400 rounded-full" />
+                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <motion.div animate={{ width: `${stats.ramPercent}%` }} className="h-full bg-muted-foreground rounded-full" />
                 </div>
               </div>
               <div className="flex items-center gap-1.5 text-[9px] text-zinc-600 truncate">

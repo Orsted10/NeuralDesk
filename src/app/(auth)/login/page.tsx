@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card'
 
 export default function LoginPage() {
   const [text, setText] = useState('')
-  const fullText = 'JARVIS SYSTEM ONLINE'
+  const fullText = 'AETHERIA COMPUTE ONLINE'
   const supabase = createClient()
 
   useEffect(() => {
@@ -49,55 +49,37 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0f] relative overflow-hidden grid-bg">
-      {/* Scanline effect */}
-      <div className="scanline" />
+    <main className="min-h-screen w-full flex items-center justify-center bg-background relative overflow-hidden">
+      {/* Sleek abstract background element */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
 
-      {/* Animated HUD Rings */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-          className="absolute w-[500px] h-[500px] border-[1px] border-cyan-500/20 rounded-full border-dashed"
-        />
-        <motion.div
-          animate={{ rotate: -360 }}
-          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-          className="absolute w-[400px] h-[400px] border-[2px] border-cyan-500/30 rounded-full border-dotted"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-[300px] h-[300px] border-[1px] border-cyan-500/10 rounded-full bg-cyan-500/5 shadow-[0_0_50px_rgba(0,242,255,0.05)]"
-        />
-      </div>
-
-      <Card className="relative z-20 w-full max-w-md p-8 bg-black/40 backdrop-blur-md border-cyan-500/50 glow-border flex flex-col items-center gap-8">
+      <Card className="relative z-20 w-full max-w-md p-8 glass-panel flex flex-col items-center gap-8 shadow-2xl border-border">
         <div className="text-center space-y-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-xs uppercase tracking-[0.5em] text-cyan-500/60 mb-2"
+            className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-2"
           >
             Authentication Required
           </motion.div>
-          <h1 className="text-3xl font-bold tracking-tighter glow-text h-10">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground h-10">
             {text}
             <motion.span
               animate={{ opacity: [1, 0] }}
               transition={{ duration: 0.5, repeat: Infinity }}
-              className="inline-block w-1 h-8 bg-cyan-400 ml-1 align-middle"
+              className="inline-block w-1 h-8 bg-primary ml-1 align-middle"
             />
           </h1>
-          <p className="text-cyan-500/40 text-sm">Welcome back, Sir. Please identify yourself.</p>
+          <p className="text-muted-foreground text-sm">Welcome back. Please identify yourself.</p>
         </div>
 
         <div className="w-full space-y-4">
           <Button
             onClick={handleLogin}
-            className="w-full bg-transparent border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 transition-all duration-300 glow-border py-6 text-lg tracking-widest uppercase font-bold"
+            variant="outline"
+            className="w-full h-14 text-base font-semibold hover:bg-accent hover:text-accent-foreground transition-all duration-300 rounded-xl"
           >
-            <span className="mr-2">Initiate Google Login</span>
+            <span className="mr-2">Continue with Google</span>
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -107,17 +89,11 @@ export default function LoginPage() {
           </Button>
         </div>
 
-        <div className="flex gap-4 w-full text-[10px] uppercase tracking-widest text-cyan-500/30 justify-between">
+        <div className="flex gap-4 w-full text-[10px] uppercase tracking-widest text-muted-foreground justify-between">
           <span>Encrypted Session</span>
-          <span>SRV-7700-JARVIS</span>
+          <span>SRV-7700-AETHERIA</span>
         </div>
       </Card>
-
-      {/* Decorative corner brackets */}
-      <div className="absolute top-10 left-10 w-20 h-20 border-t-2 border-l-2 border-cyan-500/30" />
-      <div className="absolute top-10 right-10 w-20 h-20 border-t-2 border-r-2 border-cyan-500/30" />
-      <div className="absolute bottom-10 left-10 w-20 h-20 border-b-2 border-l-2 border-cyan-500/30" />
-      <div className="absolute bottom-10 right-10 w-20 h-20 border-b-2 border-r-2 border-cyan-500/30" />
     </main>
   )
 }

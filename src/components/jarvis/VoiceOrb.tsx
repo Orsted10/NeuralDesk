@@ -86,62 +86,51 @@ export default function VoiceOrb({ isListening = false, isSpeaking = false, onCl
     }
   }, [isListening])
 
-  return (
     <div 
       onClick={handleClick}
       className="relative flex items-center justify-center w-64 h-64 cursor-pointer group active:scale-95 transition-transform"
     >
-      {/* Siri / Apple Intelligence Style Gradient Glows */}
+      {/* Siri / Apple Intelligence Style Organic Mesh Glows */}
       <AnimatePresence>
         {(isListening || isSpeaking) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: isListening ? 1.2 + (micVolume / 150) : 1.1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.5 }}
-            className="absolute inset-0 flex items-center justify-center"
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none"
           >
-            {/* Layer 1: Pink/Purple */}
+            {/* Layer 1: Core Brightness */}
             <motion.div
               animate={{ rotate: 360, scale: isSpeaking ? [1, 1.05, 1] : 1 }}
-              transition={{ rotate: { duration: 4, repeat: Infinity, ease: "linear" }, scale: { duration: 0.8, repeat: Infinity } }}
-              className="absolute w-40 h-40 bg-fuchsia-500/40 rounded-full mix-blend-screen filter blur-2xl origin-bottom-right"
+              transition={{ rotate: { duration: 8, repeat: Infinity, ease: "linear" }, scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut" } }}
+              className="absolute w-40 h-40 bg-white/30 dark:bg-zinc-100/10 rounded-full mix-blend-screen dark:mix-blend-lighten filter blur-3xl origin-bottom-right"
             />
-            {/* Layer 2: Blue/Cyan */}
+            {/* Layer 2: Subtle Accent */}
             <motion.div
               animate={{ rotate: -360, scale: isSpeaking ? [1, 1.1, 1] : 1 }}
-              transition={{ rotate: { duration: 5, repeat: Infinity, ease: "linear" }, scale: { duration: 1, repeat: Infinity } }}
-              className="absolute w-40 h-40 bg-cyan-500/40 rounded-full mix-blend-screen filter blur-2xl origin-top-left"
-            />
-            {/* Layer 3: Indigo */}
-            <motion.div
-              animate={{ rotate: 360, scale: isSpeaking ? [1, 1.15, 1] : 1 }}
-              transition={{ rotate: { duration: 6, repeat: Infinity, ease: "linear" }, scale: { duration: 1.2, repeat: Infinity } }}
-              className="absolute w-40 h-40 bg-indigo-500/40 rounded-full mix-blend-screen filter blur-2xl origin-bottom-left"
+              transition={{ rotate: { duration: 12, repeat: Infinity, ease: "linear" }, scale: { duration: 2, repeat: Infinity, ease: "easeInOut" } }}
+              className="absolute w-48 h-48 bg-primary/20 dark:bg-primary/30 rounded-[40%_60%_70%_30%] mix-blend-overlay filter blur-3xl origin-top-left"
             />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Outer Rotating Ring (Subtle) */}
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-        className="absolute w-48 h-48 border-[1px] border-white/5 rounded-full border-dashed pointer-events-none"
-      />
-
-      {/* Inner Glow Orb Core */}
+      {/* Inner Organic Core Orb */}
       <motion.div
         animate={{
-          scale: isSpeaking ? [1, 1.05, 1] : 1,
+          scale: isSpeaking ? [1, 1.02, 1] : 1,
           boxShadow: isListening 
-            ? `0 0 ${30 + micVolume}px rgba(99, 102, 241, ${0.4 + (micVolume / 60)})` 
-            : "0 0 20px rgba(99, 102, 241, 0.15)"
+            ? `0 0 ${40 + micVolume * 2}px rgba(255, 255, 255, ${0.1 + (micVolume / 100)})` 
+            : "0 20px 40px rgba(0, 0, 0, 0.1)"
         }}
-        transition={{ scale: { duration: 0.5, repeat: Infinity } }}
-        className="relative w-32 h-32 bg-gradient-to-br from-indigo-900/80 to-black/90 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/10 transition-all duration-75 shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] z-10"
+        transition={{ scale: { duration: 2, repeat: Infinity, ease: "easeInOut" } }}
+        className="relative w-32 h-32 bg-gradient-to-br from-background/90 to-background/50 dark:from-zinc-800/90 dark:to-zinc-950/90 rounded-full flex items-center justify-center backdrop-blur-2xl border border-border shadow-2xl z-10 overflow-hidden"
       >
-        <div className="w-20 h-20 rounded-full bg-black/40 border border-white/5 flex items-center justify-center overflow-hidden">
+        {/* Subtle glass reflection */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 dark:from-white/0 dark:via-white/5 dark:to-white/0 opacity-50" />
+        
+        <div className="w-16 h-16 rounded-full flex items-center justify-center relative z-20 mix-blend-difference text-white">
           {/* Real Animated Waveform Driven by Physical Mic */}
           <div className="flex gap-1 items-center">
             {waveHeights.map((h, i) => (
@@ -149,7 +138,7 @@ export default function VoiceOrb({ isListening = false, isSpeaking = false, onCl
                 key={i}
                 animate={{ height: isListening ? h : (isSpeaking ? [8, 24, 8][i % 3] : 4) }}
                 transition={isSpeaking ? { duration: 0.5, repeat: Infinity, delay: i * 0.1 } : { duration: 0.1 }}
-                className="w-1 bg-white/80 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                className="w-1 bg-current rounded-full"
               />
             ))}
           </div>
