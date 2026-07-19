@@ -1073,7 +1073,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
   const shouldFade = isIdle && !isAwake && !isListening && !isSpeaking;
 
   return (
-    <div className={`w-full lg:max-w-2xl flex flex-col h-[85vh] lg:h-[65vh] max-h-[800px] lg:max-h-[600px] min-h-[400px] glass-panel lg:rounded-3xl rounded-t-3xl lg:overflow-hidden shadow-2xl transition-all duration-1000 relative mt-auto lg:mt-0 ${shouldFade ? 'opacity-20 blur-sm scale-[0.98]' : 'opacity-100 blur-none scale-100'}`}>
+    <div className={`w-full lg:max-w-4xl flex flex-col h-full max-h-[85vh] min-h-[500px] glass-panel lg:rounded-3xl rounded-t-3xl lg:overflow-hidden shadow-2xl transition-all duration-1000 relative mt-auto lg:mt-0 ${shouldFade ? 'opacity-20 blur-sm scale-[0.98]' : 'opacity-100 blur-none scale-100'}`}>
       {/* WhatsApp QR Modal */}
       <AnimatePresence>
         {whatsappQr && (

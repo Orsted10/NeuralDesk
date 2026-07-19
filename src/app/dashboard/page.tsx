@@ -275,21 +275,21 @@ export default function DashboardPage() {
       <div className="flex-1 flex overflow-hidden relative z-10">
 
         {/* Left Sidebar */}
-        <aside className="hidden lg:flex flex-col gap-1 w-20 border-r border-border bg-card/20 py-4 px-2 items-center flex-shrink-0">
+        <aside className="hidden lg:flex flex-col gap-2 w-24 border-r border-border bg-card/20 py-4 px-2 items-center flex-shrink-0">
           {navItems.map((item) => (
             <motion.button key={item.id} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               onClick={() => setActiveModule(item.id === activeModule ? null : item.id)}
-              className={`w-full p-2.5 flex flex-col items-center gap-1 rounded-xl transition-all ${
-                activeModule === item.id ? 'bg-white/10 shadow-md' : 'text-zinc-600 hover:text-zinc-200 hover:bg-white/5'}`}
+              className={`w-full p-3 flex flex-col items-center gap-1.5 rounded-xl transition-all ${
+                activeModule === item.id ? 'bg-primary/10 shadow-md text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'}`}
               title={item.label}>
-              <item.icon className={`w-5 h-5 ${activeModule === item.id ? 'text-primary' : ''}`} />
-              <span className="text-[9px] font-bold tracking-wider text-current mt-1">{item.label.slice(0,5).toUpperCase()}</span>
+              <item.icon className={`w-6 h-6 ${activeModule === item.id ? 'text-primary' : ''}`} />
+              <span className="text-[10px] font-bold tracking-wider text-current text-center leading-tight">{item.label.toUpperCase()}</span>
             </motion.button>
           ))}
           <div className="mt-auto">
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              className="w-full p-2.5 text-zinc-700 hover:text-zinc-300 hover:bg-white/5 rounded-xl transition-all">
-              <Settings className="w-4 h-4 mx-auto" />
+              className="w-full p-3 text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-xl transition-all">
+              <Settings className="w-5 h-5 mx-auto" />
             </motion.button>
           </div>
         </aside>
@@ -317,16 +317,18 @@ export default function DashboardPage() {
               </motion.div>
             ) : (
               <motion.div key="main" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="w-full flex flex-col items-center justify-center py-10 px-4">
-                <VoiceOrb isListening={voiceState.isListening} isSpeaking={voiceState.isSpeaking} />
-                <div className="mt-8 w-full flex justify-center">
+                className="w-full h-full flex flex-col items-center justify-center py-6 px-4">
+                <div className="transform scale-90 mb-4">
+                  <VoiceOrb isListening={voiceState.isListening} isSpeaking={voiceState.isSpeaking} />
+                </div>
+                <div className="w-full flex justify-center flex-1 min-h-0">
                   <ChatPanel
                     onVoiceStateChange={setVoiceState}
                     userName={userName}
                     context={`User: ${userName}. Email: ${userEmail || 'Unknown'}. WhatsApp Self: "${userName} (You)"${typeof window !== 'undefined' && (window as any).whatsappSelfNumber ? ` or "+${(window as any).whatsappSelfNumber}"` : ''}. Date/Time: ${time.toString()}. Location: LAT ${location.lat}, LONG ${location.long}. System: ${stats.cpu}% CPU, ${stats.ram}GB RAM. Weather: ${weather.temp}, ${weather.status}. Events: ${events.map(e => `[ID: ${e.id}] ${e.time} - ${e.title}`).join(', ') || 'None'}. Emails: ${typeof window !== 'undefined' ? (window as any).unreadEmailsContext || 'None' : 'None'}.`}
                   />
                 </div>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-8 text-center">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-4 text-center">
                   <p className="text-muted-foreground text-xs tracking-widest uppercase font-semibold">Ambient Mode · Always Listening</p>
                   <div className="mt-2 h-px w-20 mx-auto bg-border" />
                 </motion.div>
@@ -336,14 +338,14 @@ export default function DashboardPage() {
         </section>
 
         {/* Right HUD Panel */}
-        <aside className="hidden xl:flex flex-col gap-4 w-72 border-l border-border bg-card/20 p-6 overflow-y-auto flex-shrink-0">
+        <aside className="hidden xl:flex flex-col gap-6 w-80 border-l border-border bg-card/20 p-6 overflow-y-auto flex-shrink-0 scrollbar-thin scrollbar-thumb-border">
           <div className="glass-card p-3 rounded-2xl flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-lg font-bold text-primary-foreground flex-shrink-0 shadow-lg">
               {userName.charAt(0).toUpperCase()}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold text-foreground truncate">{userName}</div>
-              <div className="text-xs text-muted-foreground truncate">{userEmail || 'Authenticated'}</div>
+            <div className="min-w-0 flex-1 ml-1">
+              <div className="text-base font-semibold text-foreground truncate">{userName}</div>
+              <div className="text-sm text-muted-foreground truncate">{userEmail || 'Authenticated'}</div>
             </div>
             <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] flex-shrink-0" />
           </div>
@@ -430,9 +432,9 @@ export default function DashboardPage() {
         {navItems.slice(0, 5).map((item) => (
           <motion.button key={item.id} whileTap={{ scale: 0.9 }}
             onClick={() => setActiveModule(item.id === activeModule ? null : item.id)}
-            className={`p-2.5 rounded-xl flex flex-col items-center gap-1 transition-all ${activeModule === item.id ? 'bg-white/10' : 'text-zinc-600'}`}>
-            <item.icon className={`w-5 h-5 ${activeModule === item.id ? item.color : ''}`} />
-            <span className="text-[8px] font-bold tracking-wider">{item.label.toUpperCase().slice(0,4)}</span>
+            className={`p-2.5 rounded-xl flex flex-col items-center gap-1 transition-all ${activeModule === item.id ? 'bg-primary/20 text-primary' : 'text-muted-foreground'}`}>
+            <item.icon className={`w-5 h-5 ${activeModule === item.id ? 'text-primary' : ''}`} />
+            <span className="text-[9px] font-bold tracking-wider">{item.label.toUpperCase()}</span>
           </motion.button>
         ))}
         <motion.button whileTap={{ scale: 0.9 }} onClick={handleLogout} className="p-2.5 rounded-xl text-zinc-600 hover:text-rose-400 transition-colors">
