@@ -217,7 +217,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="flex h-screen bg-[#050505] text-foreground font-sans overflow-hidden relative selection:bg-indigo-500/30">
+    <div className="flex flex-col h-screen bg-[#050505] text-foreground font-sans overflow-hidden relative selection:bg-indigo-500/30">
       <ParticleBackground />
       <AmbientSensor />
       <VisionCore />
