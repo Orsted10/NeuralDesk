@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     }
 
     // Dynamically import vector-store to prevent ONNX/Webpack issues from crashing the challenge response
-    const { upsertKnowledge } = await import('@/lib/vector-store');
+    // const { upsertKnowledge } = await import('@/lib/vector-store');
 
     // 2. Handle actual Slack messages
     if (body.event && body.event.type === 'message' && !body.event.bot_id) {
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       };
 
       // Store in vector DB
-      await upsertKnowledge(content, metadata);
+      // await upsertKnowledge(content, metadata);
 
       console.log(`[SLACK-INGEST] Indexed message from channel ${channelId}`);
     }
