@@ -7,11 +7,22 @@ export default function FinanceModule({ onClose }: { onClose?: () => void }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Fetch top 10 crypto assets for free from CoinCap API
-    fetch('https://api.coincap.io/v2/assets?limit=10')
+    // Fetch top crypto assets using Binance (highly reliable, no CORS issues)
+    fetch('https://api.binance.com/api/v3/ticker/24hr')
       .then(res => res.json())
       .then(data => {
-        setAssets(data.data)
+        const topSymbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT'];
+        const filtered = data.filter((d: any) => topSymbols.includes(d.symbol));
+        // Sort according to topSymbols order
+        filtered.sort((a: any, b: any) => topSymbols.indexOf(a.symbol) - topSymbols.indexOf(b.symbol));
+        
+        setAssets(filtered.map((item: any, idx: number) => ({
+          name: item.symbol.replace('USDT', ''),
+          symbol: item.symbol.replace('USDT', ''),
+          priceUsd: item.lastPrice,
+          changePercent24Hr: item.priceChangePercent,
+          rank: idx + 1
+        })))
         setLoading(false)
       })
       .catch(() => setLoading(false))

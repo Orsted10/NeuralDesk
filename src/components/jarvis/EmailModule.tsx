@@ -140,42 +140,53 @@ export default function EmailModule({ onClose, initialView = 'compose' }: { onCl
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="w-full max-w-2xl"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="w-full h-full glass-panel rounded-t-3xl lg:rounded-3xl shadow-2xl flex flex-col relative overflow-hidden mt-auto lg:mt-0 border-none"
     >
-      <HUDCard title="Email Dispatch System">
-        <div className="space-y-4 p-2">
-           <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-3">
-             <div className="flex gap-4">
-               <button 
-                 onClick={() => setView('compose')} 
-                 className={`text-xs font-semibold px-4 py-2 rounded-xl transition-all ${view === 'compose' ? 'bg-indigo-500 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}
-               >
-                 Compose
-               </button>
-               <button 
-                 onClick={() => setView('inbox')} 
-                 className={`text-xs font-semibold px-4 py-2 rounded-xl transition-all ${view === 'inbox' ? 'bg-indigo-500 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}
-               >
-                 Inbox (Unread)
-               </button>
-             </div>
-             {onClose && (
-               <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 hover:bg-white/10 p-2 rounded-full transition-all">
-                 <X className="w-4 h-4" />
-               </button>
-             )}
+      <div className="p-6 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+            <Mail className="w-5 h-5 text-indigo-400" />
           </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Email Dispatch System</h2>
+            <p className="text-xs text-muted-foreground">Secure Communications</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setView('compose')} 
+            className={`text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl transition-all ${view === 'compose' ? 'bg-indigo-500 text-white shadow-md' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'}`}
+          >
+            Compose
+          </button>
+          <button 
+            onClick={() => setView('inbox')} 
+            className={`text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl transition-all ${view === 'inbox' ? 'bg-indigo-500 text-white shadow-md' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'}`}
+          >
+            Inbox (Unread)
+          </button>
+          {onClose && (
+            <button onClick={onClose} className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-lg transition-all">
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-thin scrollbar-thumb-border flex flex-col">
+        <div className="flex-1 glass-card rounded-2xl p-6">
 
           {view === 'inbox' ? (
-            <div className="space-y-4 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-2">
+            <div className="space-y-4 h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border pr-2">
               {isLoadingEmails ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
                 </div>
               ) : emails.length === 0 ? (
-                <div className="text-center text-sm text-zinc-500 font-medium py-8">
+                <div className="text-center text-sm text-muted-foreground font-medium py-8 uppercase tracking-wider">
                   Inbox is clear.
                 </div>
               ) : (
@@ -257,7 +268,7 @@ export default function EmailModule({ onClose, initialView = 'compose' }: { onCl
             </div>
           )}
         </div>
-      </HUDCard>
+      </div>
     </motion.div>
   )
 }

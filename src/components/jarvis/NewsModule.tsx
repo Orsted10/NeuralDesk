@@ -6,6 +6,21 @@ export default function NewsModule({ onClose }: { onClose?: () => void }) {
   const [news, setNews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return `1 day ago`;
+    return `${diffInDays} days ago`;
+  };
+
   const [category, setCategory] = useState<string>('WORLD')
 
   useEffect(() => {
@@ -93,10 +108,10 @@ export default function NewsModule({ onClose }: { onClose?: () => void }) {
                   </div>
                   <p className="text-xs text-muted-foreground mt-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: item.description?.replace(/<[^>]+>/g, '') }} />
                 </div>
-                <div className="mt-4 flex items-center gap-3 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                  <span>{new Date(item.pubDate).toLocaleDateString()}</span>
+                <div className="mt-4 flex items-center gap-3 text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
+                  <span>{formatRelativeTime(item.pubDate)}</span>
                   <span className="w-1 h-1 rounded-full bg-border" />
-                  <span>{item.author || 'Google News'}</span>
+                  <span className="text-muted-foreground">{item.author || 'Google News'}</span>
                 </div>
               </div>
             </motion.a>
