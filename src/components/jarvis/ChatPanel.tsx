@@ -1228,7 +1228,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
             >
               <div className={`max-w-[85%] px-5 py-3.5 shadow-sm text-sm ${
                 msg.role === 'user' 
-                  ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm' 
+                  ? 'bg-secondary text-secondary-foreground rounded-2xl rounded-tr-sm' 
                   : 'bg-card border border-border text-card-foreground rounded-2xl rounded-tl-sm'
               }`}>
                 <div className="flex items-center gap-2 mb-1.5 opacity-60">
