@@ -249,8 +249,34 @@ export default function MapsModule() {
     setLoading(true)
 
     try {
+      let resolvedOrigin: any = origin
+
+      // If AI or User specifies current location, fetch live GPS telemetry
+      if (origin.toLowerCase().includes('current') || origin.toLowerCase().includes('my location')) {
+        if (!navigator.geolocation) {
+          toast.error('Geolocation is not supported by your browser, Sir.')
+          setLoading(false)
+          return
+        }
+
+        // Wrap geolocation in a promise to await it
+        resolvedOrigin = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              resolve({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              })
+            },
+            (err) => reject(err),
+            { enableHighAccuracy: true, timeout: 5000 }
+          )
+        })
+        toast.success('Live coordinate locked for routing.', { icon: '📍' })
+      }
+
       const response = await directionsService.route({
-        origin: origin,
+        origin: resolvedOrigin,
         destination: destination,
         travelMode: google.maps.TravelMode.DRIVING
       })
