@@ -453,6 +453,6 @@ export default function DashboardPage() {
           <LogOut className="w-5 h-5" />
         </motion.button>
       </nav>
-    </main>
+    </div>
   )
 }
