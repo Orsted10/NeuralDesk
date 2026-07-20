@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { upsertKnowledge } from '@/lib/vector-store';
 
 export async function POST(req: Request) {
   try {
@@ -7,8 +6,14 @@ export async function POST(req: Request) {
 
     // 1. URL Verification Challenge (Slack requirement when setting up webhooks)
     if (body.type === 'url_verification') {
-      return NextResponse.json({ challenge: body.challenge });
+      return new Response(body.challenge, {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain' }
+      });
     }
+
+    // Dynamically import vector-store to prevent ONNX/Webpack issues from crashing the challenge response
+    const { upsertKnowledge } = await import('@/lib/vector-store');
 
     // 2. Handle actual Slack messages
     if (body.event && body.event.type === 'message' && !body.event.bot_id) {
