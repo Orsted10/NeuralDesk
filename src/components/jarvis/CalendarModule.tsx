@@ -172,34 +172,7 @@ export default function CalendarModule({ onClose }: { onClose?: () => void }) {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 scrollbar-thin scrollbar-thumb-border flex flex-col">
-        <div className="flex-1 glass-card rounded-2xl p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
-              <Popover>
-                <PopoverTrigger className="flex items-center rounded-xl border border-white/10 h-9 w-40 justify-start text-left font-medium bg-white/5 text-zinc-200 hover:bg-white/10 hover:text-zinc-100 text-xs px-3 transition-all">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {viewDate ? format(viewDate, "PPP") : <span>Pick a date</span>}
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 glass-card text-zinc-200 border-white/10 rounded-2xl shadow-xl" align="end">
-                  <CalendarUI
-                    mode="single"
-                    selected={viewDate}
-                    onSelect={(day) => day && setViewDate(day)}
-                    className="glass-card text-zinc-200 rounded-2xl"
-                  />
-                </PopoverContent>
-              </Popover>
-
-              <button onClick={fetchEvents} className="text-zinc-400 hover:text-zinc-200 hover:bg-white/5 p-2 rounded-lg transition-all" disabled={isLoading}>
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              </button>
-              {onClose && (
-                <button onClick={onClose} className="text-zinc-400 hover:text-zinc-200 hover:bg-white/5 p-2 rounded-lg transition-all">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Timeline View */}
+        {/* Timeline View */}
           <div className="glass-card rounded-2xl p-6 h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
             {isLoading ? (
               <div className="h-full flex items-center justify-center text-sm font-medium text-zinc-500 animate-pulse">
