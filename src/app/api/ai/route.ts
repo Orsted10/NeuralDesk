@@ -1,7 +1,8 @@
 import OpenAI from 'openai'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { queryKnowledge } from '@/lib/vector-store'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs' // Xenova/transformers needs nodejs runtime for local model caching in most environments
 
 const systemPrompt = `You are Aetheria, an ambient compute intelligence built by AetheriaCompute. 
 You are elegant, precise, and fiercely capable. You operate as an invisible layer woven into the user's entire digital life.
@@ -26,6 +27,17 @@ export async function POST(req: Request) {
   let dynamicPrompt = context 
     ? `${systemPrompt}\n\nCURRENT SYSTEM CONTEXT (DO NOT REPEAT UNLESS ASKED):\n${context}`
     : systemPrompt
+
+  // Query Enterprise Knowledge Graph
+  try {
+    const knowledgeDocs = await queryKnowledge(message, 3, 0.7);
+    if (knowledgeDocs && knowledgeDocs.length > 0) {
+      const knowledgeContext = knowledgeDocs.map((doc: any) => `[Source: ${doc.metadata?.source || 'Internal System'}] ${doc.content}`).join('\n');
+      dynamicPrompt += `\n\n[ENTERPRISE KNOWLEDGE GRAPH CONTEXT]\nThe following internal knowledge was retrieved from the user's connected systems (Slack, Docs, etc.) that matches their request. Use this exact context to answer the user if relevant:\n${knowledgeContext}\n\n`;
+    }
+  } catch (err) {
+    console.warn("[KNOWLEDGE-GRAPH] Failed to query vector DB:", err);
+  }
 
   if (isDesktop) {
     dynamicPrompt += `\n\n[SYSTEM OVERRIDE]: DESKTOP GOD-MODE ENABLED. You are running in a native PC environment. You have full OS access and WhatsApp Web automation capabilities.`
