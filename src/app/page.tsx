@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import AuthRedirect from '@/components/jarvis/AuthRedirect'
+import AuthRedirect from '@/components/aetheria/AuthRedirect'
 
 export default async function Home() {
   const supabase = await createClient()

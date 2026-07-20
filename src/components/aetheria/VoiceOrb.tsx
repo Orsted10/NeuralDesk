@@ -10,6 +10,27 @@ interface VoiceOrbProps {
 export default function VoiceOrb({ isListening = false, isSpeaking = false, onClick }: VoiceOrbProps) {
   const [micVolume, setMicVolume] = useState(0)
   const [waveHeights, setWaveHeights] = useState([8, 8, 8, 8, 8])
+  
+  // Aetheria Category A: Ambient Sensors
+  const [ambientVolume, setAmbientVolume] = useState(0)
+  const [isGazeLocked, setIsGazeLocked] = useState(true)
+
+  useEffect(() => {
+    const handleAmbientNoise = (e: any) => {
+      setAmbientVolume(Math.min(20, e.detail.level / 5)) // Smooth subtle volume
+    }
+    const handleGaze = (e: any) => {
+      setIsGazeLocked(e.detail.active)
+    }
+
+    window.addEventListener('aetheria-ambient-noise', handleAmbientNoise)
+    window.addEventListener('aetheria-gaze-state', handleGaze)
+
+    return () => {
+      window.removeEventListener('aetheria-ambient-noise', handleAmbientNoise)
+      window.removeEventListener('aetheria-gaze-state', handleGaze)
+    }
+  }, [])
 
   const handleClick = () => {
     if (onClick) onClick()
@@ -89,14 +110,14 @@ export default function VoiceOrb({ isListening = false, isSpeaking = false, onCl
   return (
     <div 
       onClick={handleClick}
-      className="relative flex items-center justify-center w-64 h-64 cursor-pointer group active:scale-95 transition-transform"
+      className={`relative flex items-center justify-center w-64 h-64 cursor-pointer group active:scale-95 transition-all duration-1000 ${isGazeLocked ? 'opacity-100' : 'opacity-40 scale-90 blur-sm hover:opacity-100 hover:blur-none hover:scale-100'}`}
     >
       {/* Siri / Apple Intelligence Style Organic Mesh Glows */}
       <AnimatePresence>
-        {(isListening || isSpeaking) && (
+        {(isListening || isSpeaking || ambientVolume > 5) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: isListening ? 1.2 + (micVolume / 150) : 1.1 }}
+            animate={{ opacity: isListening || isSpeaking ? 1 : 0.4, scale: isListening ? 1.2 + (micVolume / 150) : 1.05 + (ambientVolume / 100) }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
@@ -132,16 +153,20 @@ export default function VoiceOrb({ isListening = false, isSpeaking = false, onCl
         <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 dark:from-white/0 dark:via-white/5 dark:to-white/0 opacity-50" />
         
         <div className="w-16 h-16 rounded-full flex items-center justify-center relative z-20 mix-blend-difference text-white">
-          {/* Real Animated Waveform Driven by Physical Mic */}
+          {/* Real Animated Waveform Driven by Physical Mic or Ambient Mic */}
           <div className="flex gap-1 items-center">
-            {waveHeights.map((h, i) => (
-              <motion.div
-                key={i}
-                animate={{ height: isListening ? h : (isSpeaking ? [8, 24, 8][i % 3] : 4) }}
-                transition={isSpeaking ? { duration: 0.5, repeat: Infinity, delay: i * 0.1 } : { duration: 0.1 }}
-                className="w-1 bg-current rounded-full"
-              />
-            ))}
+            {waveHeights.map((h, i) => {
+              // If not actively listening/speaking, pulse slightly to ambient noise
+              const idleHeight = 4 + (ambientVolume * (i % 2 === 0 ? 0.8 : 0.4))
+              return (
+                <motion.div
+                  key={i}
+                  animate={{ height: isListening ? h : (isSpeaking ? [8, 24, 8][i % 3] : idleHeight) }}
+                  transition={isSpeaking ? { duration: 0.5, repeat: Infinity, delay: i * 0.1 } : { duration: 0.2 }}
+                  className="w-1 bg-current rounded-full"
+                />
+              )
+            })}
           </div>
         </div>
       </motion.div>

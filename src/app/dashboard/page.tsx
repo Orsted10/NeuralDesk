@@ -24,17 +24,19 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import VoiceOrb from '@/components/jarvis/VoiceOrb'
-import ChatPanel from '@/components/jarvis/ChatPanel'
-import EmailModule from '@/components/jarvis/EmailModule'
-import WhatsAppModule from '@/components/jarvis/WhatsAppModule'
-import CalendarModule from '@/components/jarvis/CalendarModule'
-import MapsModule from '@/components/jarvis/MapsModule'
-import DriveModule from '@/components/jarvis/DriveModule'
-import YouTubeModule from '@/components/jarvis/YouTubeModule'
-import NewsModule from '@/components/jarvis/NewsModule'
-import FinanceModule from '@/components/jarvis/FinanceModule'
-import { HUDCard, StatusIndicator, ParticleBackground } from '@/components/jarvis/HUD'
+import VoiceOrb from '@/components/aetheria/VoiceOrb'
+import ChatPanel from '@/components/aetheria/ChatPanel'
+import EmailModule from '@/components/aetheria/EmailModule'
+import WhatsAppModule from '@/components/aetheria/WhatsAppModule'
+import CalendarModule from '@/components/aetheria/CalendarModule'
+import MapsModule from '@/components/aetheria/MapsModule'
+import DriveModule from '@/components/aetheria/DriveModule'
+import YouTubeModule from '@/components/aetheria/YouTubeModule'
+import NewsModule from '@/components/aetheria/NewsModule'
+import FinanceModule from '@/components/aetheria/FinanceModule'
+import AmbientSensor from '@/components/aetheria/AmbientSensor'
+import VisionCore from '@/components/aetheria/VisionCore'
+import { HUDCard, StatusIndicator, ParticleBackground } from '@/components/aetheria/HUD'
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false)
@@ -208,7 +210,10 @@ export default function DashboardPage() {
   ]
 
   return (
-    <main className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden font-sans">
+    <div className="flex h-screen bg-[#050505] text-foreground font-sans overflow-hidden relative selection:bg-indigo-500/30">
+      <ParticleBackground />
+      <AmbientSensor />
+      <VisionCore />
 
       {/* Privacy Shield Overlay */}
       <AnimatePresence>

@@ -13,8 +13,8 @@ export async function POST(req: Request) {
 
     if (mode === 'bridge') {
       // Use the dynamic instance name from the user's browser session
-      // Default to 'jarvis_main' if none provided
-      const activeInstance = instanceName || 'jarvis_main'
+      // Default to 'aetheria_main' if none provided
+      const activeInstance = instanceName || 'aetheria_main'
 
       const response = await fetch(`${apiUrl}/message/sendText/${activeInstance}`, {
         method: 'POST',
