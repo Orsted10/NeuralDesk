@@ -304,11 +304,21 @@ export default function MapsModule() {
     const currentMap = mapInstance || mapInstanceRef.current
     const currentMarker = marker || markerRef.current
 
-    if (currentMap && currentMarker && typeof window !== 'undefined' && (window as any).pendingMapQuery) {
-      const query = (window as any).pendingMapQuery
-      ;(window as any).pendingMapQuery = undefined // Clear immediately
-      setSearchQuery(query)
-      handleSearch(query)
+    if (currentMap && currentMarker && typeof window !== 'undefined') {
+      if ((window as any).pendingMapQuery) {
+        const query = (window as any).pendingMapQuery
+        ;(window as any).pendingMapQuery = undefined // Clear immediately
+        setSearchQuery(query)
+        handleSearch(query)
+      }
+      
+      if ((window as any).pendingDirections) {
+        const { origin, destination } = (window as any).pendingDirections
+        ;(window as any).pendingDirections = undefined // Clear immediately
+        setSearchQuery(`To: ${destination}`)
+        // Set a tiny timeout to ensure map initialization is fully complete before making the heavy directions API call
+        setTimeout(() => handleDirections(origin, destination), 100)
+      }
     }
   }, [mapInstance, marker])
 

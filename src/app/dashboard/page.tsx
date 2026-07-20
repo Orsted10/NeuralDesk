@@ -173,7 +173,13 @@ export default function DashboardPage() {
     const handleEmailInbox = () => { setEmailView('inbox'); setActiveModule('email') }
     const handleCalendarUpdate = () => loadCalendarEvents()
     const handleOpenModule = (e: any) => setActiveModule(e.detail)
+    const handleDirectionsTrigger = (e: any) => {
+      ;(window as any).pendingDirections = e.detail
+      setActiveModule('maps')
+    }
+    
     window.addEventListener('show-map', handleMapSwitch)
+    window.addEventListener('get-directions', handleDirectionsTrigger)
     window.addEventListener('create-doc', handleDriveSwitch)
     window.addEventListener('play-video', handleYoutubeSwitch)
     window.addEventListener('fetch_news', handleNewsSwitch)
@@ -185,6 +191,7 @@ export default function DashboardPage() {
     return () => {
       clearInterval(timer); clearInterval(statsTimer)
       window.removeEventListener('show-map', handleMapSwitch)
+      window.removeEventListener('get-directions', handleDirectionsTrigger)
       window.removeEventListener('create-doc', handleDriveSwitch)
       window.removeEventListener('play-video', handleYoutubeSwitch)
       window.removeEventListener('fetch_news', handleNewsSwitch)
