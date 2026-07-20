@@ -6,10 +6,7 @@ export async function POST(req: Request) {
 
     // 1. URL Verification Challenge (Slack requirement when setting up webhooks)
     if (body.type === 'url_verification') {
-      return new Response(body.challenge, {
-        status: 200,
-        headers: { 'Content-Type': 'text/plain' }
-      });
+      return NextResponse.json({ challenge: body.challenge });
     }
 
     // Dynamically import vector-store to prevent ONNX/Webpack issues from crashing the challenge response
