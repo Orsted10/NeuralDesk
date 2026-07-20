@@ -105,7 +105,7 @@ export default function VisionCore() {
 
   // Small stealth UI to show it's active
   return (
-    <div className="fixed top-6 right-6 z-50 pointer-events-none flex items-center gap-2">
+    <div className="fixed bottom-6 left-32 z-50 pointer-events-none flex items-center gap-2">
       {/* Hidden video element for processing */}
       <video ref={videoRef} className="hidden" playsInline muted />
       
