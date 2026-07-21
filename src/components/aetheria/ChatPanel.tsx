@@ -371,7 +371,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
               })
               const data = await res.json()
               const transcribedText = (data.text || "").trim()
-              const isHallucination = /^(thank you|thanks for watching|thanks|thank you\.|thanks\.|thanks for watching\.)$/i.test(transcribedText)
+              const isHallucination = /^(thank you|thanks for watching|thanks|thank you\.|thanks\.|thanks for watching\.|you|you\.|hello\.|hello)$/i.test(transcribedText)
               
               if (transcribedText && !isHallucination) {
                 toast.success("Voice recognized", { id: "transcribe" })
