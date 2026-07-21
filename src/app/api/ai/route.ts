@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   // Query Enterprise Knowledge Graph (The Living Brain)
   try {
     const { queryBrain } = await import('@/lib/brain/embedding-pipeline');
-    const knowledgeDocs = await queryBrain(message, 5, 0.6); // get top 5 chunks with at least 0.6 similarity
+    const knowledgeDocs = await queryBrain(message, 5, 0.3); // lowered threshold for local embeddings
     if (knowledgeDocs && knowledgeDocs.length > 0) {
       const knowledgeContext = knowledgeDocs.map((doc: any) => `[Source: ${doc.source_platform.toUpperCase()}] ${doc.content_chunk}`).join('\n\n');
       dynamicPrompt += `\n\n[LIVING BRAIN ENTERPRISE CONTEXT]\nThe following internal knowledge was retrieved from the user's connected systems (Slack, Docs, HubSpot, etc.) that matches their request. Use this exact context to answer the user if relevant:\n\n${knowledgeContext}\n\n`;

@@ -20,8 +20,8 @@ export async function POST(req: Request) {
       if (event.type === 'message' && !event.bot_id && event.text) {
         console.log(`[Living Brain] Captured Slack Message in channel ${event.channel}`)
         
-        // Push the message to the embedding pipeline (async so we don't block Slack's timeout)
-        ingestToBrain({
+        // Await the ingestion so Vercel Serverless doesn't terminate the process early
+        await ingestToBrain({
           sourcePlatform: 'slack',
           sourceId: event.ts,
           content: event.text,
