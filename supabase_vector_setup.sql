@@ -8,7 +8,7 @@ create table public.company_knowledge (
   source_id text not null,       -- ID of the message/doc in the source platform
   content_chunk text not null,   -- The actual chunk of text
   metadata jsonb default '{}'::jsonb, -- Author, timestamps, channel name, URLs, etc.
-  embedding vector(768),        -- using Google Gemini text-embedding-004 which is 768 dimensional
+  embedding vector(1536),        -- using OpenAI text-embedding-3-small which is 1536 dimensional
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
@@ -30,7 +30,7 @@ create policy "Service roles can insert company knowledge" on company_knowledge
 
 -- Function to match embeddings using Cosine Similarity
 create or replace function public.match_company_knowledge (
-  query_embedding vector(768),
+  query_embedding vector(1536),
   match_threshold float,
   match_count int,
   filter_platform text default null
