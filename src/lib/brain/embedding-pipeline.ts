@@ -1,10 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import OpenAI from 'openai'
-
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+import { generateEmbedding } from '@/lib/vector-store'
 
 // Initialize Supabase (Admin client for inserting knowledge)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -55,14 +50,8 @@ export async function ingestToBrain(data: IngestionData) {
     const chunks = chunkText(data.content)
     
     for (const chunk of chunks) {
-      // 1. Generate Embedding using OpenAI text-embedding-3-small
-      const embeddingResponse = await openai.embeddings.create({
-        model: 'text-embedding-3-small',
-        input: chunk,
-        encoding_format: 'float',
-      })
-      
-      const embedding = embeddingResponse.data[0].embedding
+      // 1. Generate Embedding using local gte-small (384 dimensions)
+      const embedding = await generateEmbedding(chunk)
 
       // 2. Upsert into Supabase pgvector table
       const { error } = await supabase
@@ -92,13 +81,8 @@ export async function ingestToBrain(data: IngestionData) {
  */
 export async function queryBrain(query: string, matchCount: number = 5, matchThreshold: number = 0.5) {
   try {
-    // Generate embedding for the question
-    const embeddingResponse = await openai.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: query,
-      encoding_format: 'float',
-    })
-    const queryEmbedding = embeddingResponse.data[0].embedding
+    // Generate embedding for the question using local gte-small
+    const queryEmbedding = await generateEmbedding(query)
 
     // Search pgvector
     const { data, error } = await supabase.rpc('match_company_knowledge', {
