@@ -174,8 +174,13 @@ export default function DashboardPage() {
     const handleCalendarUpdate = () => loadCalendarEvents()
     const handleOpenModule = (e: any) => setActiveModule(e.detail)
     const handleDirectionsTrigger = (e: any) => {
-      ;(window as any).pendingDirections = e.detail
-      setActiveModule('maps')
+      setActiveModule((prev) => {
+        if (prev !== 'maps') {
+          ;(window as any).pendingDirections = e.detail
+          return 'maps'
+        }
+        return prev
+      })
     }
     
     window.addEventListener('show-map', handleMapSwitch)

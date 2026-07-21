@@ -370,12 +370,15 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
                 body: formData
               })
               const data = await res.json()
-              if (data.text) {
+              const transcribedText = (data.text || "").trim()
+              const isHallucination = /^(thank you|thanks for watching|thanks|thank you\.|thanks\.|thanks for watching\.)$/i.test(transcribedText)
+              
+              if (transcribedText && !isHallucination) {
                 toast.success("Voice recognized", { id: "transcribe" })
-                setInput(data.text)
-                handleSendRef.current?.(data.text)
+                setInput(transcribedText)
+                handleSendRef.current?.(transcribedText)
               } else {
-                toast.error(data.error || "Could not recognize voice", { id: "transcribe" })
+                toast.dismiss("transcribe")
               }
             } catch (e) {
               console.error('Transcription error', e)
@@ -390,6 +393,13 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
 
           mediaRecorder.start()
           toast.success("Listening... Click the orb again to send.")
+          
+          // Auto-stop after 15 seconds if user forgets to close
+          setTimeout(() => {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+              mediaRecorderRef.current.stop()
+            }
+          }, 15000)
         }).catch(err => {
           toast.error("Microphone access denied.")
           setIsAwake(false)
