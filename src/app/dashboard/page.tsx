@@ -20,7 +20,9 @@ import {
   Eye,
   EyeOff,
   Zap,
-  Wifi
+  Wifi,
+  X,
+  Maximize2
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -46,6 +48,13 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ cpu: 5, ram: 8, totalRam: 32, ramPercent: 25, cpuModel: 'Detecting CPU...' })
   const [weather, setWeather] = useState({ temp: '--', humidity: '--', wind: '--', status: 'Updating...' })
   const [activeModule, setActiveModule] = useState<string | null>(null)
+  const [aiPopupModule, setAiPopupModule] = useState<string | null>(null)
+  const activeModuleRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    activeModuleRef.current = activeModule
+    if (activeModule) setAiPopupModule(null) // clear popup if manually opened
+  }, [activeModule])
   const [emailView, setEmailView] = useState<'compose' | 'inbox'>('compose')
   const [events, setEvents] = useState<any[]>([])
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -164,23 +173,23 @@ export default function DashboardPage() {
       } catch {}
     }
     loadEmails()
-    const handleMapSwitch = () => setActiveModule('maps')
-    const handleDriveSwitch = () => setActiveModule('drive')
-    const handleYoutubeSwitch = () => setActiveModule('youtube')
-    const handleNewsSwitch = () => setActiveModule('news')
-    const handleFinanceSwitch = () => setActiveModule('finance')
-    const handleEmailCompose = () => { setEmailView('compose'); setActiveModule('email') }
-    const handleEmailInbox = () => { setEmailView('inbox'); setActiveModule('email') }
+    const handleMapSwitch = () => { if (activeModuleRef.current !== 'maps') setAiPopupModule('maps') }
+    const handleDriveSwitch = () => { if (activeModuleRef.current !== 'drive') setAiPopupModule('drive') }
+    const handleYoutubeSwitch = () => { if (activeModuleRef.current !== 'youtube') setAiPopupModule('youtube') }
+    const handleNewsSwitch = () => { if (activeModuleRef.current !== 'news') setAiPopupModule('news') }
+    const handleFinanceSwitch = () => { if (activeModuleRef.current !== 'finance') setAiPopupModule('finance') }
+    const handleEmailCompose = () => { setEmailView('compose'); if (activeModuleRef.current !== 'email') setAiPopupModule('email') }
+    const handleEmailInbox = () => { setEmailView('inbox'); if (activeModuleRef.current !== 'email') setAiPopupModule('email') }
     const handleCalendarUpdate = () => loadCalendarEvents()
-    const handleOpenModule = (e: any) => setActiveModule(e.detail)
+    const handleOpenModule = (e: any) => { if (activeModuleRef.current !== e.detail) setAiPopupModule(e.detail) }
     const handleDirectionsTrigger = (e: any) => {
-      setActiveModule((prev) => {
-        if (prev !== 'maps') {
-          ;(window as any).pendingDirections = e.detail
-          return 'maps'
-        }
-        return prev
-      })
+      if (activeModuleRef.current !== 'maps') {
+        ;(window as any).pendingDirections = e.detail
+        setAiPopupModule('maps')
+      } else {
+        // If already active, the MapsModule handles it itself
+        ;(window as any).pendingDirections = e.detail
+      }
     }
     
     window.addEventListener('show-map', handleMapSwitch)
@@ -458,6 +467,67 @@ export default function DashboardPage() {
           <LogOut className="w-5 h-5" />
         </motion.button>
       </nav>
+
+      {/* AI Picture-in-Picture Popup */}
+      <AnimatePresence>
+        {aiPopupModule && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 50, x: 50 }}
+            animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 50, x: 50 }}
+            drag
+            dragMomentum={false}
+            className="fixed bottom-28 right-8 z-[100] w-[400px] h-[550px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-8rem)] rounded-3xl overflow-hidden shadow-2xl border border-white/20 bg-black/40 backdrop-blur-3xl flex flex-col cursor-move"
+          >
+            {/* Popup Header */}
+            <div className="flex justify-between items-center px-4 py-3 border-b border-white/10 bg-white/5 backdrop-blur-md">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.8)] animate-pulse" />
+                <span className="text-xs font-bold tracking-widest text-zinc-300 uppercase">
+                  Aetheria: {aiPopupModule}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => {
+                    setActiveModule(aiPopupModule)
+                    setAiPopupModule(null)
+                  }}
+                  title="Expand to full screen"
+                  className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </button>
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => setAiPopupModule(null)}
+                  title="Close popup"
+                  className="p-1.5 rounded-md hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Popup Content */}
+            <div 
+              className="flex-1 overflow-auto bg-black/20" 
+              onPointerDown={(e) => e.stopPropagation()} // Stop dragging when interacting with the module
+            >
+              {aiPopupModule === 'email' && <EmailModule onClose={() => setAiPopupModule(null)} initialView={emailView} />}
+              {aiPopupModule === 'whatsapp' && <WhatsAppModule onClose={() => setAiPopupModule(null)} />}
+              {aiPopupModule === 'calendar' && <CalendarModule onClose={() => setAiPopupModule(null)} />}
+              {aiPopupModule === 'maps' && <MapsModule />}
+              {aiPopupModule === 'drive' && <DriveModule />}
+              {aiPopupModule === 'youtube' && <YouTubeModule />}
+              {aiPopupModule === 'news' && <NewsModule onClose={() => setAiPopupModule(null)} />}
+              {aiPopupModule === 'finance' && <FinanceModule onClose={() => setAiPopupModule(null)} />}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   )
 }
