@@ -143,105 +143,19 @@ Always output the appropriate tag inside your response, outside of any markdown 
 
     const finalMessage = `${message}${actionProtocol}`
 
-    const tryProvider = async (p: string) => {
-
-
-      if (p === 'grok' || p === 'groq') {
-        const apiKey = p === 'groq' ? process.env.GROQ_API_KEY : process.env.GROK_API_KEY
-        if (!apiKey) throw new Error(`Missing ${p.toUpperCase()}_API_KEY`)
-        const baseURL = p === 'groq' ? 'https://api.groq.com/openai/v1' : 'https://api.x.ai/v1'
-        
-        const grok = new OpenAI({
-          apiKey: apiKey,
-          baseURL: baseURL,
-        })
-
-        const groqModels = p === 'groq' 
-          ? ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768', 'llama-3.1-8b-instant'] 
-          : ['grok-beta']
-
-        let response: any
-        let lastGroqError: any
-        
-        for (const modelName of groqModels) {
-          try {
-            console.log(`[AI-ROUTER] Attempting ${p} model: ${modelName}`)
-            response = await grok.chat.completions.create({
-              model: modelName,
-              stream: true,
-              messages: [
-              { role: 'system', content: dynamicPrompt },
-                ...history,
-                { role: 'user', content: finalMessage },
-              ],
-            })
-            // If successful, break out of model loop
-            break
-          } catch (err: any) {
-            console.warn(`[AI-ROUTER] ${p} model ${modelName} failed:`, err.message)
-            lastGroqError = err
-            // If it's a Grok specific error, or we exhausted models, it continues to next model
-          }
-        }
-        
-        if (!response) {
-          throw lastGroqError || new Error(`All ${p} models failed.`)
-        }
-
-        const stream = new ReadableStream({
-          async start(controller) {
-            for await (const chunk of response) {
-              controller.enqueue(new TextEncoder().encode(chunk.choices[0]?.delta?.content || '') as Uint8Array<ArrayBuffer>)
-            }
-            controller.close()
-          },
-        })
-        return new Response(stream)
-      }
-
-      if (p === 'openrouter') {
-        const apiKey = process.env.OPENROUTER_API_KEY
-        if (!apiKey) throw new Error('Missing OPENROUTER_API_KEY')
-        const openrouter = new OpenAI({
-          apiKey: apiKey,
-          baseURL: 'https://openrouter.ai/api/v1',
-          defaultHeaders: {
-            'HTTP-Referer': 'https://aetheriacompute.ai',
-            'X-Title': 'AetheriaCompute',
-          }
-        })
-
-        const response = await openrouter.chat.completions.create({
-          model: 'nvidia/nemotron-3-nano-30b-a3b:free',
-          stream: true,
-          max_tokens: 1500,
-          messages: [
-            { role: 'system', content: dynamicPrompt },
-            ...history,
-            { role: 'user', content: finalMessage },
-          ],
-        })
-
-        const stream = new ReadableStream({
-          async start(controller) {
-            for await (const chunk of response) {
-              controller.enqueue(new TextEncoder().encode(chunk.choices[0]?.delta?.content || '') as Uint8Array<ArrayBuffer>)
-            }
-            controller.close()
-          },
-        })
-        return new Response(stream)
-      }
-
-      // Default: OpenAI
-      const apiKey = process.env.OPENAI_API_KEY
-      if (!apiKey) throw new Error('Missing OPENAI_API_KEY')
-      const openai = new OpenAI({
+    // Only use Groq Paid Tier as requested, optimizing for efficiency
+    try {
+      const apiKey = process.env.GROQ_API_KEY
+      if (!apiKey) throw new Error('Missing GROQ_API_KEY')
+      
+      const groq = new OpenAI({
         apiKey: apiKey,
+        baseURL: 'https://api.groq.com/openai/v1',
       })
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+      // We use llama-3.3-70b-versatile exclusively for maximum performance
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
         stream: true,
         messages: [
           { role: 'system', content: dynamicPrompt },
@@ -259,30 +173,6 @@ Always output the appropriate tag inside your response, outside of any markdown 
         },
       })
       return new Response(stream)
-    }
-
-    try {
-      const allProviders = ['openrouter', 'groq']
-      // Push the requested provider to the front of the queue
-      const providersToTry = [provider, ...allProviders.filter(p => p !== provider)]
-      
-      let lastError: any = null
-
-      for (const p of providersToTry) {
-        try {
-          console.log(`[AI-ROUTER] Attempting provider: ${p}`)
-          const res = await tryProvider(p)
-          if (res) return res
-        } catch (err: any) {
-          console.error(`[AI-ROUTER] Provider ${p} failed:`, err.message || err)
-          lastError = err
-          // Continue to next provider in the loop!
-        }
-      }
-
-      // If we exhaust the entire list, throw the final error
-      throw lastError || new Error('All AI providers exhausted.')
-
     } catch (error: any) {
       console.error('Final AI API Error:', error)
       return new Response(
