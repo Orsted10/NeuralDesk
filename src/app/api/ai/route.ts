@@ -32,7 +32,11 @@ export async function POST(req: Request) {
   try {
     const { queryBrain } = await import('@/lib/brain/embedding-pipeline');
     const knowledgeDocs = await queryBrain(message, 5, 0.3); // lowered threshold for local embeddings
+    
+    console.log(`[LIVING BRAIN] Retrieved ${knowledgeDocs?.length || 0} documents for query: "${message}"`);
+    
     if (knowledgeDocs && knowledgeDocs.length > 0) {
+      console.log(`[LIVING BRAIN] Top match:`, knowledgeDocs[0]);
       const knowledgeContext = knowledgeDocs.map((doc: any) => `[Source: ${doc.source_platform.toUpperCase()}] ${doc.content_chunk}`).join('\n\n');
       dynamicPrompt += `\n\n[LIVING BRAIN ENTERPRISE CONTEXT]\nThe following internal knowledge was retrieved from the user's connected systems (Slack, Docs, HubSpot, etc.) that matches their request. Use this exact context to answer the user if relevant:\n\n${knowledgeContext}\n\n`;
     }

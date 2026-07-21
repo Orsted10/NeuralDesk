@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 // Configuration for Transformers.js in Node environment
 // Disable local models to fetch weights from HuggingFace directly, unless you download them
 env.allowLocalModels = false;
+env.cacheDir = '/tmp/.cache';
 
 // Using a lightweight embedding model that yields 384-dimensional vectors
 const MODEL_NAME = 'Supabase/gte-small';
