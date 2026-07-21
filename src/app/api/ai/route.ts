@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { queryKnowledge } from '@/lib/vector-store'
+// import { queryKnowledge } from '@/lib/vector-store'
 
 export const runtime = 'nodejs' // Xenova/transformers needs nodejs runtime for local model caching in most environments
 
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
 
   // Query Enterprise Knowledge Graph
   try {
+    const { queryKnowledge } = await import('@/lib/vector-store');
     const knowledgeDocs = await queryKnowledge(message, 3, 0.7);
     if (knowledgeDocs && knowledgeDocs.length > 0) {
       const knowledgeContext = knowledgeDocs.map((doc: any) => `[Source: ${doc.metadata?.source || 'Internal System'}] ${doc.content}`).join('\n');
