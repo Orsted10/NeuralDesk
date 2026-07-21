@@ -1,10 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
-import { generateEmbedding } from '@/lib/vector-store'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // Initialize Supabase (Admin client for inserting knowledge)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 interface IngestionData {
   sourcePlatform: 'slack' | 'notion' | 'gmail' | 'github' | 'linear' | 'hubspot'
@@ -50,8 +53,10 @@ export async function ingestToBrain(data: IngestionData) {
     const chunks = chunkText(data.content)
     
     for (const chunk of chunks) {
-      // 1. Generate Embedding using local gte-small (384 dimensions)
-      const embedding = await generateEmbedding(chunk)
+      // 1. Generate Embedding using Gemini text-embedding-004 (768 dimensions)
+      const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+      const result = await model.embedContent(chunk);
+      const embedding = result.embedding.values;
 
       // 2. Upsert into Supabase pgvector table
       const { error } = await supabase
@@ -81,8 +86,10 @@ export async function ingestToBrain(data: IngestionData) {
  */
 export async function queryBrain(query: string, matchCount: number = 5, matchThreshold: number = 0.5) {
   try {
-    // Generate embedding for the question using local gte-small
-    const queryEmbedding = await generateEmbedding(query)
+    // Generate embedding for the question using Gemini text-embedding-004
+    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const result = await model.embedContent(query);
+    const queryEmbedding = result.embedding.values;
 
     // Search pgvector
     const { data, error } = await supabase.rpc('match_company_knowledge', {
