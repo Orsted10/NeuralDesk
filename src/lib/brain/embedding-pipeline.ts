@@ -1,13 +1,25 @@
 import { createClient } from '@supabase/supabase-js'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // Initialize Supabase (Admin client for inserting knowledge)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// Raw fetch embedding using gemini-embedding-2 (3072 dims) — works with AQ. key type
+async function getEmbedding(text: string): Promise<number[]> {
+  const apiKey = process.env.GEMINI_API_KEY || ''
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: { parts: [{ text }] } })
+    }
+  )
+  const data = await response.json()
+  if (data.error) throw new Error(`Gemini embedding error: ${JSON.stringify(data.error)}`)
+  return data.embedding.values
+}
 
 interface IngestionData {
   sourcePlatform: 'slack' | 'notion' | 'gmail' | 'github' | 'linear' | 'hubspot'
@@ -53,10 +65,8 @@ export async function ingestToBrain(data: IngestionData) {
     const chunks = chunkText(data.content)
     
     for (const chunk of chunks) {
-      // 1. Generate Embedding using Gemini text-embedding-004 (768 dimensions)
-      const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
-      const result = await model.embedContent(chunk);
-      const embedding = result.embedding.values;
+      // 1. Generate Embedding using gemini-embedding-2 (3072 dimensions)
+      const embedding = await getEmbedding(chunk);
 
       // 2. Upsert into Supabase pgvector table
       const { error } = await supabase
@@ -86,10 +96,8 @@ export async function ingestToBrain(data: IngestionData) {
  */
 export async function queryBrain(query: string, matchCount: number = 5, matchThreshold: number = 0.5) {
   try {
-    // Generate embedding for the question using Gemini text-embedding-004
-    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
-    const result = await model.embedContent(query);
-    const queryEmbedding = result.embedding.values;
+    // Generate embedding for the question using gemini-embedding-2
+    const queryEmbedding = await getEmbedding(query);
 
     // Search pgvector
     const { data, error } = await supabase.rpc('match_company_knowledge', {
