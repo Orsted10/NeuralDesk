@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { ingestToBrain } from '@/lib/brain/embedding-pipeline';
 
 export async function POST(req: Request) {
   try {
@@ -9,31 +10,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ challenge: body.challenge });
     }
 
-    // Dynamically import vector-store to prevent ONNX/Webpack issues from crashing the challenge response
-    const { upsertKnowledge } = await import('@/lib/vector-store');
-
     // 2. Handle actual Slack messages
-    if (body.event && body.event.type === 'message' && !body.event.bot_id) {
-      const message = body.event.text;
-      const channelId = body.event.channel;
-      const userId = body.event.user;
-      const ts = body.event.ts;
+    if (body.event && body.event.type === 'message' && !body.event.bot_id && body.event.text) {
+      const { text, channel, user, ts, thread_ts } = body.event;
 
-      // Extract raw meaning or metadata. In a real system, we could query the Slack API to get the channel name.
-      const content = `Slack Message in channel ${channelId} by user ${userId}: ${message}`;
-      
-      const metadata = {
-        source: 'slack',
-        channelId,
-        userId,
-        timestamp: ts,
-        url: `slack://channel?id=${channelId}&message=${ts}`
-      };
+      console.log(`[Living Brain] Captured Slack Message in channel ${channel}`);
 
-      // Store in vector DB
-      await upsertKnowledge(content, metadata);
-
-      console.log(`[SLACK-INGEST] Indexed message from channel ${channelId}`);
+      // Use the Living Brain pipeline with Gemini embeddings
+      await ingestToBrain({
+        sourcePlatform: 'slack',
+        sourceId: ts,
+        content: text,
+        metadata: {
+          user,
+          channel,
+          thread_ts: thread_ts || null,
+          url: `slack://channel?id=${channel}&message=${ts}`
+        }
+      }).catch(err => console.error('[Living Brain] Ingestion failed:', err));
     }
 
     return NextResponse.json({ status: 'ok' });
