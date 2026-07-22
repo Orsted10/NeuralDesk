@@ -14,8 +14,10 @@ create table public.company_knowledge (
 );
 
 -- Create a generic index for pgvector performance (hnsw is faster but requires pgvector 0.5+)
-create index on public.company_knowledge using ivfflat (embedding vector_cosine_ops)
-with (lists = 100);
+-- NOTE: pgvector ivfflat/hnsw indices only support up to 2000 dimensions. Since we are using 3072, 
+-- we will omit the index for this prototype (exact nearest neighbor search without index works fine for small datasets).
+-- create index on public.company_knowledge using ivfflat (embedding vector_cosine_ops)
+-- with (lists = 100);
 
 -- Enable RLS (Assuming users need permission to read their company's data)
 alter table public.company_knowledge enable row level security;
