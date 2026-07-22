@@ -42,7 +42,7 @@ async function getPageText(notion: Client, blockId: string): Promise<string> {
   return text;
 }
 
-export async function POST(req: Request) {
+export async function GET(req: Request) {
   try {
     // 1. Authenticate (optional simple security, e.g., Bearer token checking)
     const authHeader = req.headers.get('authorization');
