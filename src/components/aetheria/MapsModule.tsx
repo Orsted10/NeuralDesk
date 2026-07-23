@@ -178,10 +178,6 @@ export default function MapsModule() {
           currentMarker.setPosition(userCoords);
           currentMarker.setTitle('Live User Location');
 
-          // Elegant animation bounce on locate
-          currentMarker.setAnimation(google.maps.Animation.BOUNCE)
-          setTimeout(() => currentMarker.setAnimation(null), 1500)
-
           toast.success('Live coordinate links established, Sir!', { icon: '📍' })
         }
         setLocating(false)
@@ -197,44 +193,48 @@ export default function MapsModule() {
 
   const handleSearch = async (forcedQuery?: string) => {
     const activeQuery = forcedQuery || searchQuery
-    if (!activeQuery.trim()) return
+    if (typeof activeQuery !== 'string' || !activeQuery.trim()) return
 
     setLoading(true)
     try {
       if (!window.google || !window.google.maps) {
         toast.error('Google Maps SDK not yet loaded, Sir.')
+        setLoading(false)
         return
       }
 
       const geocoder = new google.maps.Geocoder()
       geocoder.geocode({ address: activeQuery }, (results, status) => {
-        setLoading(false)
-        if (status === 'OK' && results && results[0]) {
-          const location = results[0].geometry.location
-          const formattedAddress = results[0].formatted_address
+        try {
+          setLoading(false)
+          if (status === 'OK' && results && results[0]) {
+            const location = results[0].geometry.location
+            const formattedAddress = results[0].formatted_address
 
-          const currentMap = mapInstance || mapInstanceRef.current
-          const currentMarker = marker || markerRef.current
+            const currentMap = mapInstance || mapInstanceRef.current
+            const currentMarker = marker || markerRef.current
 
-          if (currentMap && currentMarker) {
-            currentMap.setCenter(location)
-            currentMap.setZoom(15)
-            currentMarker.setPosition(location)
-            currentMarker.setTitle(formattedAddress)
+            if (currentMap && currentMarker) {
+              currentMap.setCenter(location)
+              currentMap.setZoom(15)
+              currentMarker.setPosition(location)
+              currentMarker.setTitle(formattedAddress)
 
-            // Smooth animation bounce
-            currentMarker.setAnimation(google.maps.Animation.BOUNCE)
-            setTimeout(() => currentMarker.setAnimation(null), 1500)
-
-            toast.success(`Centered target: ${formattedAddress}`, { icon: '📍' })
+              toast.success(`Centered target: ${formattedAddress}`, { icon: '📍' })
+            } else {
+              toast.error('Map instances not found in memory.')
+            }
+          } else {
+            toast.error(`Location scan failed: ${status}`, { icon: '⚠️' })
           }
-        } else {
-          toast.error(`Location scan failed: ${status}`, { icon: '⚠️' })
+        } catch (innerErr: any) {
+          console.error("Geocoding callback error:", innerErr)
+          toast.error(`Error applying location: ${innerErr.message}`)
         }
       })
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
-      toast.error('Failed to locate coordinates.')
+      toast.error(`Failed to locate coordinates: ${e.message}`)
       setLoading(false)
     }
   }
