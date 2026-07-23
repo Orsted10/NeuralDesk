@@ -62,7 +62,7 @@ export default function LoginPage() {
           >
             Authentication Required
           </motion.div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground h-10">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground min-h-[3rem] flex flex-wrap justify-center items-center">
             {text}
             <motion.span
               animate={{ opacity: [1, 0] }}
