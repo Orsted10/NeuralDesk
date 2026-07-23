@@ -23,9 +23,14 @@ export default async function Home() {
       </div>
       
       {/* Top Navbar */}
-      <nav className="absolute top-0 w-full p-6 flex justify-between items-center z-50">
+      <nav className="absolute top-0 w-full p-6 flex justify-between items-center z-50 max-w-7xl mx-auto left-1/2 -translate-x-1/2">
         <div className="font-bold text-xl tracking-tight">Aetheria</div>
-        <a href="/login" className="text-sm font-medium hover:text-primary transition-colors">Sign In</a>
+        <div className="hidden md:flex gap-8 text-sm font-medium text-muted-foreground">
+          <a href="/about" className="hover:text-foreground transition-colors">About</a>
+          <a href="#architecture" className="hover:text-foreground transition-colors">Features</a>
+          <a href="/#team" className="hover:text-foreground transition-colors">Team</a>
+        </div>
+        <a href="/login" className="text-sm font-medium hover:text-primary transition-colors bg-secondary/50 px-4 py-2 rounded-full backdrop-blur-md border border-border/50">Sign In</a>
       </nav>
 
       {/* Landing Page Content */}
