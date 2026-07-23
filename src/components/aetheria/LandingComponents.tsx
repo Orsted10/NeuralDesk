@@ -30,7 +30,7 @@ export function HeroSection() {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link 
             href="/login" 
-            className="w-full sm:w-auto px-8 py-4 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.25)] hover:-translate-y-0.5 text-lg"
+            className="group relative inline-flex items-center justify-center w-full sm:w-auto px-10 py-5 bg-foreground text-background font-bold rounded-full overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] text-xl"
           >
             Initialize Node
           </Link>
@@ -177,17 +177,66 @@ export function PricingSection() {
   )
 }
 
+export function MotivesSection() {
+  return (
+    <section className="py-24 px-4 max-w-4xl mx-auto text-center space-y-8">
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+        <span>Our Mission</span>
+      </div>
+      <h2 className="text-3xl md:text-5xl font-bold tracking-tight">Post-Screen Computing</h2>
+      <p className="text-muted-foreground text-lg md:text-xl leading-relaxed">
+        We believe the era of manually typing commands into a chat box is ending. 
+        Aetheria was built with a singular motive: to create an AI that lives entirely in the background, continuously ingesting your context across Slack, Notion, and your local OS. 
+        It anticipates your needs rather than waiting for your prompt, acting as a true "Ambient Compute Engine."
+      </p>
+    </section>
+  )
+}
+
+export function TeamSection() {
+  const team = [
+    { name: "Unnati Mishra", role: "AI Infrastructure" },
+    { name: "Ankan Bhattacharjee", role: "Systems Architecture" },
+    { name: "Shivam Kumar Tiwari", role: "Frontend & UX" },
+    { name: "Rishi Kumar Singh", role: "Backend Engineering" },
+  ]
+
+  return (
+    <section id="team" className="py-24 px-4 max-w-6xl mx-auto text-center">
+      <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">The Architect Node</h2>
+      <p className="text-muted-foreground text-lg mb-16">The team behind Aetheria Compute.</p>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+        {team.map((member) => (
+          <div key={member.name} className="glass-card p-6 rounded-3xl flex flex-col items-center justify-center space-y-4 hover:scale-105 transition-transform duration-300">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-blue-500/20 border border-primary/10 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+              <span className="text-2xl font-bold text-foreground">
+                {member.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+              </span>
+            </div>
+            <div>
+              <h3 className="font-bold text-lg">{member.name}</h3>
+              <p className="text-sm text-muted-foreground">{member.role}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export function FooterSection() {
   return (
-    <footer className="py-12 border-t border-border mt-20">
+    <footer className="py-12 border-t border-border mt-20 relative z-20">
       <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-2">
           <span className="font-bold tracking-tight text-xl">Aetheria</span>
         </div>
-        <div className="flex gap-8 text-sm text-muted-foreground">
-          <a href="#" className="hover:text-foreground transition-colors">Documentation</a>
-          <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
-          <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
+        <div className="flex flex-wrap justify-center gap-8 text-sm text-muted-foreground">
+          <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
+          <Link href="/#team" className="hover:text-foreground transition-colors">Team</Link>
+          <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
         </div>
         <div className="text-sm text-muted-foreground">
           &copy; {new Date().getFullYear()} AetheriaCompute. All rights reserved.

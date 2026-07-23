@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AuthRedirect from '@/components/aetheria/AuthRedirect'
-import { HeroSection, FeaturesBentoGrid, PricingSection, FooterSection } from '@/components/aetheria/LandingComponents'
+import { HeroSection, FeaturesBentoGrid, MotivesSection, TeamSection, PricingSection, FooterSection } from '@/components/aetheria/LandingComponents'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -12,7 +12,7 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen relative overflow-hidden font-sans bg-background text-foreground">
+    <main className="min-h-screen relative font-sans bg-background text-foreground">
       <AuthRedirect />
 
       {/* Ambient Global Background */}
@@ -29,10 +29,14 @@ export default async function Home() {
       </nav>
 
       {/* Landing Page Content */}
-      <HeroSection />
-      <FeaturesBentoGrid />
-      <PricingSection />
-      <FooterSection />
+      <div className="relative z-10">
+        <HeroSection />
+        <FeaturesBentoGrid />
+        <MotivesSection />
+        <TeamSection />
+        <PricingSection />
+        <FooterSection />
+      </div>
       
     </main>
   )
