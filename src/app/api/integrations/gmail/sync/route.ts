@@ -32,10 +32,10 @@ export async function GET(req: Request) {
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    // Fetch the last 20 emails
+    // Fetch the last 5 emails (to avoid Gemini Free Tier 15 RPM limit and Vercel timeout)
     const res = await gmail.users.messages.list({
       userId: 'me',
-      maxResults: 20,
+      maxResults: 5,
     });
 
     const messages = res.data.messages;
