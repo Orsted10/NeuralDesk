@@ -720,91 +720,103 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
           .catch(err => console.error("Search failed", err))
       }
 
-      if (finalExecPc && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+      if (finalExecPc) {
         cleanMessage = cleanMessage.replace(finalExecPc[0], '').trim()
-        const command = finalExecPc[1].trim()
-        toast.success(`Protocol Complete: Executing OS Command.`, { icon: '💻' })
-        ;(window as any).aetheriaDesktop.executeCommand(command).then((res: any) => {
-          if (res.success) {
-            handleSend(`[SYSTEM NOTIFICATION: Command executed successfully. Output: ${res.stdout}. Acknowledge this naturally.]`)
-          } else {
-            handleSend(`[SYSTEM NOTIFICATION: Command failed. Error: ${res.error}. Inform the user naturally.]`)
-          }
-        })
-      }
-
-      if (finalWaSend && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        cleanMessage = cleanMessage.replace(finalWaSend[0], '').trim()
-        try {
-          const content = finalWaSend[1].trim()
-          const pipeIndex = content.indexOf('|')
-          if (pipeIndex !== -1) {
-            const to = content.substring(0, pipeIndex).trim()
-            const message = content.substring(pipeIndex + 1).trim()
-            
-            if (to && message) {
-              toast.success(`Protocol Complete: Sending WhatsApp message.`, { icon: '💬' })
-              ;(window as any).aetheriaDesktop.sendWhatsappMessage(to, message).then((res: any) => {
-                if (res.success) {
-                  handleSend(`[SYSTEM NOTIFICATION: WhatsApp message sent successfully to ${to}. Acknowledge this naturally.]`)
-                } else {
-                  handleSend(`[SYSTEM NOTIFICATION: Failed to send WhatsApp message. Error: ${res.error}. Inform the user.]`)
-                }
-              })
+        if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+          const command = finalExecPc[1].trim()
+          toast.success(`Protocol Complete: Executing OS Command.`, { icon: '💻' })
+          ;(window as any).aetheriaDesktop.executeCommand(command).then((res: any) => {
+            if (res.success) {
+              handleSend(`[SYSTEM NOTIFICATION: Command executed successfully. Output: ${res.stdout}. Acknowledge this naturally.]`)
+            } else {
+              handleSend(`[SYSTEM NOTIFICATION: Command failed. Error: ${res.error}. Inform the user naturally.]`)
             }
-          }
-        } catch (e) {
-          console.error("Failed to parse whatsapp_send payload", e)
-        }
-      }
-
-      if (finalWaRead && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        cleanMessage = cleanMessage.replace(finalWaRead[0], '').trim()
-        const contact = finalWaRead[1].trim()
-        toast.success(`Protocol Complete: Reading WhatsApp chat with ${contact}.`, { icon: '📖' })
-        ;(window as any).aetheriaDesktop.readWhatsappMessages(contact).then((res: any) => {
-          if (res.success) {
-            const chatLog = res.messages.map((m: any) => `[${m.timestamp}] ${m.sender}: ${m.body}`).join('\n')
-            handleSend(`[SYSTEM NOTIFICATION: Successfully fetched last 5 messages with ${res.chatName}:\n${chatLog}\n\nPlease summarize the recent messages or answer my previous question based on them. No internal thoughts!]`)
-          } else {
-            handleSend(`[SYSTEM NOTIFICATION: Failed to read WhatsApp messages. Error: ${res.error}. Inform the user.]`)
-          }
-        })
-      }
-
-      if (finalStoreMemory && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        cleanMessage = cleanMessage.replace(finalStoreMemory[0], '').trim()
-        try {
-          const memData = JSON.parse(finalStoreMemory[1].trim())
-          ;(window as any).aetheriaDesktop.storeContext(memData)
-          console.log("[Memory DB] Stored fact:", memData)
-        } catch(e) {
-          console.error("Memory store parsing failed:", e)
-        }
-      }
-
-      if (finalFreeze && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        cleanMessage = cleanMessage.replace(finalFreeze[0], '').trim()
-        const proc = finalFreeze[1].trim()
-        toast.success(`Protocol Complete: Suspending ${proc}.`, { icon: '❄️' })
-        ;(window as any).aetheriaDesktop.suspendProcess(proc).then((res: any) => {
-          if (res.success) {
-            handleSend(`[SYSTEM NOTIFICATION: Successfully suspended ${proc}.]`)
-          } else {
-            handleSend(`[SYSTEM NOTIFICATION: Failed to suspend ${proc}. Error: ${res.error}.]`)
-          }
-        })
-      }
-
-      if (finalGhost && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        cleanMessage = cleanMessage.replace(finalGhost[0], '').trim()
-        const text = finalGhost[1].trim()
-        toast.success(`Protocol Complete: Ghost typing initialized (Anti-bot bypass).`, { icon: '⌨️' })
-        setTimeout(() => {
-          ;(window as any).aetheriaDesktop.ghostType(text).then((res: any) => {
-             // System notification optional
           })
-        }, 2000) // Give user 2s to focus input
+        }
+      }
+
+      if (finalWaSend) {
+        cleanMessage = cleanMessage.replace(finalWaSend[0], '').trim()
+        if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+          try {
+            const content = finalWaSend[1].trim()
+            const pipeIndex = content.indexOf('|')
+            if (pipeIndex !== -1) {
+              const to = content.substring(0, pipeIndex).trim()
+              const message = content.substring(pipeIndex + 1).trim()
+              
+              if (to && message) {
+                toast.success(`Protocol Complete: Sending WhatsApp message.`, { icon: '💬' })
+                ;(window as any).aetheriaDesktop.sendWhatsappMessage(to, message).then((res: any) => {
+                  if (res.success) {
+                    handleSend(`[SYSTEM NOTIFICATION: WhatsApp message sent successfully to ${to}. Acknowledge this naturally.]`)
+                  } else {
+                    handleSend(`[SYSTEM NOTIFICATION: Failed to send WhatsApp message. Error: ${res.error}. Inform the user.]`)
+                  }
+                })
+              }
+            }
+          } catch (e) {
+            console.error("Failed to parse whatsapp_send payload", e)
+          }
+        }
+      }
+
+      if (finalWaRead) {
+        cleanMessage = cleanMessage.replace(finalWaRead[0], '').trim()
+        if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+          const contact = finalWaRead[1].trim()
+          toast.success(`Protocol Complete: Reading WhatsApp chat with ${contact}.`, { icon: '📖' })
+          ;(window as any).aetheriaDesktop.readWhatsappMessages(contact).then((res: any) => {
+            if (res.success) {
+              const chatLog = res.messages.map((m: any) => `[${m.timestamp}] ${m.sender}: ${m.body}`).join('\n')
+              handleSend(`[SYSTEM NOTIFICATION: Successfully fetched last 5 messages with ${res.chatName}:\n${chatLog}\n\nPlease summarize the recent messages or answer my previous question based on them. No internal thoughts!]`)
+            } else {
+              handleSend(`[SYSTEM NOTIFICATION: Failed to read WhatsApp messages. Error: ${res.error}. Inform the user.]`)
+            }
+          })
+        }
+      }
+
+      if (finalStoreMemory) {
+        cleanMessage = cleanMessage.replace(finalStoreMemory[0], '').trim()
+        if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+          try {
+            const memData = JSON.parse(finalStoreMemory[1].trim())
+            ;(window as any).aetheriaDesktop.storeContext(memData)
+            console.log("[Memory DB] Stored fact:", memData)
+          } catch(e) {
+            console.error("Memory store parsing failed:", e)
+          }
+        }
+      }
+
+      if (finalFreeze) {
+        cleanMessage = cleanMessage.replace(finalFreeze[0], '').trim()
+        if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+          const proc = finalFreeze[1].trim()
+          toast.success(`Protocol Complete: Suspending ${proc}.`, { icon: '❄️' })
+          ;(window as any).aetheriaDesktop.suspendProcess(proc).then((res: any) => {
+            if (res.success) {
+              handleSend(`[SYSTEM NOTIFICATION: Successfully suspended ${proc}.]`)
+            } else {
+              handleSend(`[SYSTEM NOTIFICATION: Failed to suspend ${proc}. Error: ${res.error}.]`)
+            }
+          })
+        }
+      }
+
+      if (finalGhost) {
+        cleanMessage = cleanMessage.replace(finalGhost[0], '').trim()
+        if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+          const text = finalGhost[1].trim()
+          toast.success(`Protocol Complete: Ghost typing initialized (Anti-bot bypass).`, { icon: '⌨️' })
+          setTimeout(() => {
+            ;(window as any).aetheriaDesktop.ghostType(text).then((res: any) => {
+               // System notification optional
+            })
+          }, 2000) // Give user 2s to focus input
+        }
       }
 
       if (finalDirections) {
