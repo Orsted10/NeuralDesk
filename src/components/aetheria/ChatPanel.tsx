@@ -631,43 +631,43 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
         const ghostMatch = assistantMessage.match(/<ghost_type>\s*(.*?)\s*<\/ghost_type>/is)
 
         if (actionMatch) {
-          displayMessage = displayMessage.replace(actionMatch[0], '[EXECUTING PROTOCOL: CALENDAR...]')
+          displayMessage = displayMessage.replace(actionMatch[0], '')
         }
         if (storeMemoryMatch) {
           displayMessage = displayMessage.replace(storeMemoryMatch[0], '')
         }
         if (mapMatch) {
-          displayMessage = displayMessage.replace(mapMatch[0], '[EXECUTING PROTOCOL: MAPS...]')
+          displayMessage = displayMessage.replace(mapMatch[0], '')
         }
         if (docMatch || sheetMatch || slideMatch) {
-          displayMessage = displayMessage.replace(docMatch?.[0] || sheetMatch?.[0] || slideMatch?.[0] || '', '[EXECUTING PROTOCOL: DRIVE...]')
+          displayMessage = displayMessage.replace(docMatch?.[0] || sheetMatch?.[0] || slideMatch?.[0] || '', '')
         }
         if (youtubeMatch) {
-          displayMessage = displayMessage.replace(youtubeMatch[0], '[EXECUTING PROTOCOL: YOUTUBE...]')
+          displayMessage = displayMessage.replace(youtubeMatch[0], '')
         }
         if (emailMatch) {
-          displayMessage = displayMessage.replace(emailMatch[0], '[EXECUTING PROTOCOL: EMAIL...]')
+          displayMessage = displayMessage.replace(emailMatch[0], '')
         }
         if (readEmailsMatch) {
-          displayMessage = displayMessage.replace(readEmailsMatch[0], '[EXECUTING PROTOCOL: INBOX...]')
+          displayMessage = displayMessage.replace(readEmailsMatch[0], '')
         }
         if (searchMatch) {
-          displayMessage = displayMessage.replace(searchMatch[0], '[EXECUTING PROTOCOL: WEB SEARCH...]')
+          displayMessage = displayMessage.replace(searchMatch[0], '')
         }
         if (execPcMatch) {
-          displayMessage = displayMessage.replace(execPcMatch[0], '[EXECUTING PROTOCOL: OS COMMAND...]')
+          displayMessage = displayMessage.replace(execPcMatch[0], '')
         }
         if (waSendMatch) {
-          displayMessage = displayMessage.replace(waSendMatch[0], '[EXECUTING PROTOCOL: WHATSAPP...]')
+          displayMessage = displayMessage.replace(waSendMatch[0], '')
         }
         if (waReadMatch) {
-          displayMessage = displayMessage.replace(waReadMatch[0], '[EXECUTING PROTOCOL: WHATSAPP READ...]')
+          displayMessage = displayMessage.replace(waReadMatch[0], '')
         }
         if (freezeMatch) {
-          displayMessage = displayMessage.replace(freezeMatch[0], '[EXECUTING PROTOCOL: RAM FREEZE...]')
+          displayMessage = displayMessage.replace(freezeMatch[0], '')
         }
         if (ghostMatch) {
-          displayMessage = displayMessage.replace(ghostMatch[0], '[EXECUTING PROTOCOL: GHOST TYPE...]')
+          displayMessage = displayMessage.replace(ghostMatch[0], '')
         }
 
         setMessages((prev) => {
@@ -698,7 +698,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       let cleanMessage = assistantMessage.replace(/<thought>[\s\S]*?<\/thought>/gi, '').trim()
 
       if (finalSearch) {
-        cleanMessage = cleanMessage.replace(finalSearch[0], '[EXECUTING PROTOCOL: WEB SEARCH...]').trim()
+        cleanMessage = cleanMessage.replace(finalSearch[0], '').trim()
         const query = finalSearch[1].trim()
         toast.success(`Protocol Complete: Searching the web for "${query}".`, { icon: '🔍' })
         
@@ -721,7 +721,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       }
 
       if (finalExecPc && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        cleanMessage = cleanMessage.replace(finalExecPc[0], '[EXECUTING PROTOCOL: OS COMMAND...]').trim()
+        cleanMessage = cleanMessage.replace(finalExecPc[0], '').trim()
         const command = finalExecPc[1].trim()
         toast.success(`Protocol Complete: Executing OS Command.`, { icon: '💻' })
         ;(window as any).aetheriaDesktop.executeCommand(command).then((res: any) => {
@@ -734,7 +734,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       }
 
       if (finalWaSend && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        cleanMessage = cleanMessage.replace(finalWaSend[0], '[EXECUTING PROTOCOL: WHATSAPP...]').trim()
+        cleanMessage = cleanMessage.replace(finalWaSend[0], '').trim()
         try {
           const content = finalWaSend[1].trim()
           const pipeIndex = content.indexOf('|')
@@ -759,7 +759,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       }
 
       if (finalWaRead && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        cleanMessage = cleanMessage.replace(finalWaRead[0], '[EXECUTING PROTOCOL: WHATSAPP READ...]').trim()
+        cleanMessage = cleanMessage.replace(finalWaRead[0], '').trim()
         const contact = finalWaRead[1].trim()
         toast.success(`Protocol Complete: Reading WhatsApp chat with ${contact}.`, { icon: '📖' })
         ;(window as any).aetheriaDesktop.readWhatsappMessages(contact).then((res: any) => {
@@ -784,7 +784,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       }
 
       if (finalFreeze && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        cleanMessage = cleanMessage.replace(finalFreeze[0], '[EXECUTING PROTOCOL: RAM FREEZE...]').trim()
+        cleanMessage = cleanMessage.replace(finalFreeze[0], '').trim()
         const proc = finalFreeze[1].trim()
         toast.success(`Protocol Complete: Suspending ${proc}.`, { icon: '❄️' })
         ;(window as any).aetheriaDesktop.suspendProcess(proc).then((res: any) => {
@@ -797,7 +797,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       }
 
       if (finalGhost && typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        cleanMessage = cleanMessage.replace(finalGhost[0], '[EXECUTING PROTOCOL: GHOST TYPE...]').trim()
+        cleanMessage = cleanMessage.replace(finalGhost[0], '').trim()
         const text = finalGhost[1].trim()
         toast.success(`Protocol Complete: Ghost typing initialized (Anti-bot bypass).`, { icon: '⌨️' })
         setTimeout(() => {
@@ -808,7 +808,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       }
 
       if (finalDirections) {
-        cleanMessage = cleanMessage.replace(finalDirections[0], '[EXECUTING PROTOCOL: MAPS DIRECTIONS...]').trim()
+        cleanMessage = cleanMessage.replace(finalDirections[0], '').trim()
         try {
           const payload = JSON.parse(finalDirections[1].trim())
           if (payload.origin && payload.destination) {
@@ -821,7 +821,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       }
 
       if (finalReadEmails) {
-        cleanMessage = cleanMessage.replace(finalReadEmails[0], '[EXECUTING PROTOCOL: INBOX...]').trim()
+        cleanMessage = cleanMessage.replace(finalReadEmails[0], '').trim()
         try {
           toast.success('Protocol Complete: Accessing Inbox.', { icon: '📬' })
           window.dispatchEvent(new CustomEvent('open-module', { detail: 'email' }))
@@ -830,13 +830,13 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
 
       const finalOpenModule = assistantMessage.match(/<open_module>\s*(.*?)\s*<\/open_module>/is)
       if (finalOpenModule) {
-        cleanMessage = cleanMessage.replace(finalOpenModule[0], '[EXECUTING PROTOCOL: INTERFACE NAVIGATION...]').trim()
+        cleanMessage = cleanMessage.replace(finalOpenModule[0], '').trim()
         const moduleName = finalOpenModule[1].trim().toLowerCase()
         window.dispatchEvent(new CustomEvent('open-module', { detail: moduleName }))
       }
 
       if (finalMatch) {
-        cleanMessage = cleanMessage.replace(finalMatch[0], '[EXECUTING PROTOCOL: CALENDAR...]').trim()
+        cleanMessage = cleanMessage.replace(finalMatch[0], '').trim()
         try {
           const payloadString = finalMatch[1].trim()
           let title = "Event"
@@ -907,7 +907,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
 
       if (finalDeleteMatches.length > 0) {
         finalDeleteMatches.forEach(match => {
-          cleanMessage = cleanMessage.replace(match[0], '[EXECUTING PROTOCOL: CALENDAR DELETE...]').trim()
+          cleanMessage = cleanMessage.replace(match[0], '').trim()
           try {
             let eventId = match[1].trim()
             
@@ -939,7 +939,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       }
 
       if (finalMap) {
-        cleanMessage = cleanMessage.replace(finalMap[0], '[EXECUTING PROTOCOL: MAPS...]').trim()
+        cleanMessage = cleanMessage.replace(finalMap[0], '').trim()
         try {
           const content = finalMap[1].trim()
           let query = content
@@ -961,7 +961,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
         const match = finalDoc || finalSheet || finalSlide
         const type = finalSheet ? 'sheet' : finalSlide ? 'slide' : 'doc'
         if (match) {
-          cleanMessage = cleanMessage.replace(match[0], '[EXECUTING PROTOCOL: DRIVE...]').trim()
+          cleanMessage = cleanMessage.replace(match[0], '').trim()
           try {
             const content = match[1].trim()
             let title = 'New File'
@@ -991,7 +991,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       }
 
       if (finalYoutube) {
-        cleanMessage = cleanMessage.replace(finalYoutube[0], '[EXECUTING PROTOCOL: YOUTUBE...]').trim()
+        cleanMessage = cleanMessage.replace(finalYoutube[0], '').trim()
         try {
           const content = finalYoutube[1].trim()
           let query = content
@@ -1010,7 +1010,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       }
 
       if (finalEmail) {
-        cleanMessage = cleanMessage.replace(finalEmail[0], '[EXECUTING PROTOCOL: EMAIL...]').trim()
+        cleanMessage = cleanMessage.replace(finalEmail[0], '').trim()
         try {
           const content = finalEmail[1].trim()
           let to = ''
