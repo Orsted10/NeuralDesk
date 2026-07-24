@@ -31,14 +31,34 @@ export async function POST(req: Request) {
   // Query Enterprise Knowledge Graph (The Living Brain)
   try {
     const { queryBrain } = await import('@/lib/brain/embedding-pipeline');
-    const knowledgeDocs = await queryBrain(message, 5, 0.3); // lowered threshold for local embeddings
     
-    console.log(`[LIVING BRAIN] Retrieved ${knowledgeDocs?.length || 0} documents for query: "${message}"`);
+    // Simple heuristic for platform filtering
+    const platforms: any[] = [
+      'slack', 'notion', 'gmail', 'github', 'linear', 'hubspot', 'discord', 
+      'whatsapp', 'telegram', 'zoom', 'meet', 'gitlab', 'jira', 'vercel', 
+      'sentry', 'salesforce', 'zendesk', 'intercom', 'stripe', 'figma', 
+      'drive', 'onedrive', 'asana', 'trello', 'clickup', 'reddit', 'twitter', 'linkedin'
+    ];
+    const words = message.toLowerCase().split(/\s+/);
+    const filterPlatform = platforms.find(p => words.includes(p));
+
+    // Request up to 10 matches, then dynamically filter
+    const rawDocs = await queryBrain(message, 10, 0.35, filterPlatform);
     
-    if (knowledgeDocs && knowledgeDocs.length > 0) {
-      console.log(`[LIVING BRAIN] Top match:`, knowledgeDocs[0]);
-      const knowledgeContext = knowledgeDocs.map((doc: any) => `[Source: ${doc.source_platform.toUpperCase()}] ${doc.content_chunk}`).join('\n\n');
-      dynamicPrompt += `\n\n[LIVING BRAIN ENTERPRISE CONTEXT]\nThe following internal knowledge was retrieved from the user's connected systems (Slack, Docs, HubSpot, etc.) that matches their request. Use this exact context to answer the user if relevant:\n\n${knowledgeContext}\n\n`;
+    console.log(`[LIVING BRAIN] Retrieved ${rawDocs?.length || 0} raw documents for query: "${message}"`);
+    
+    if (rawDocs && rawDocs.length > 0) {
+      // Dynamic Thresholding: Only keep docs within 15% of the best match to prevent context dilution
+      const topSimilarity = rawDocs[0].similarity;
+      const dynamicThreshold = Math.max(0.35, topSimilarity * 0.85); 
+      
+      const knowledgeDocs = rawDocs.filter((doc: any) => doc.similarity >= dynamicThreshold);
+      
+      console.log(`[LIVING BRAIN] Filtered to ${knowledgeDocs.length} highly relevant documents (Dynamic Threshold: ${dynamicThreshold.toFixed(3)})`);
+      console.log(`[LIVING BRAIN] Top match [${knowledgeDocs[0].source_platform}]:`, knowledgeDocs[0].content_chunk.substring(0, 100) + '...');
+
+      const knowledgeContext = knowledgeDocs.map((doc: any) => `[Source: ${doc.source_platform.toUpperCase()} | Match: ${(doc.similarity * 100).toFixed(1)}%] ${doc.content_chunk}`).join('\n\n');
+      dynamicPrompt += `\n\n[LIVING BRAIN ENTERPRISE CONTEXT]\nThe following internal knowledge was retrieved from the user's connected systems that matches their request. Use this exact context to answer the user if relevant:\n\n${knowledgeContext}\n\n`;
     }
   } catch (err) {
     console.warn("[LIVING-BRAIN] Failed to query vector DB:", err);
