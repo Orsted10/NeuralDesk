@@ -39,6 +39,8 @@ export async function proxy(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/auth') &&
     !request.nextUrl.pathname.startsWith('/privacy') &&
     !request.nextUrl.pathname.startsWith('/terms') &&
+    !request.nextUrl.pathname.startsWith('/about') &&
+    !request.nextUrl.pathname.startsWith('/team') &&
     !request.nextUrl.pathname.startsWith('/api/webhooks') &&
     !request.nextUrl.pathname.endsWith('.html')
   ) {
