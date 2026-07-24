@@ -257,7 +257,7 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="relative z-10 flex justify-between items-center px-6 py-4 border-b border-border bg-card/40 backdrop-blur-md flex-shrink-0">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Aetheria Logo" className="w-8 h-8 object-contain" />
+          <img src="/AetheriaAPP.png" alt="Aetheria Logo" className="w-8 h-8 object-contain" />
           <div>
             <div className="text-base font-bold tracking-tight leading-none">
               <span className="premium-text">Aetheria</span>

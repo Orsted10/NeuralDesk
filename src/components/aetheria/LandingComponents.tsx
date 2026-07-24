@@ -231,7 +231,7 @@ export function FooterSection() {
       <div className="max-w-7xl mx-auto flex flex-col items-center">
         <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Aetheria Logo" className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all" />
+            <img src="/AetheriaAPP.png" alt="Aetheria Logo" className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all" />
             <span className="font-bold tracking-tight text-xl">Aetheria</span>
           </div>
         </div>
