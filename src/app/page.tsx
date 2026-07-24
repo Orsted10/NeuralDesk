@@ -24,7 +24,10 @@ export default async function Home() {
       
       {/* Top Navbar */}
       <nav className="absolute top-0 w-full p-6 flex justify-between items-center z-50 max-w-7xl mx-auto left-1/2 -translate-x-1/2">
-        <div className="font-bold text-xl tracking-tight">Aetheria</div>
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="Aetheria Logo" className="h-8 w-auto object-contain" />
+          <span className="font-bold text-xl tracking-tight ml-2">Aetheria</span>
+        </div>
         <div className="hidden md:flex gap-8 text-sm font-medium text-muted-foreground">
           <a href="/about" className="hover:text-foreground transition-colors">About</a>
           <a href="#architecture" className="hover:text-foreground transition-colors">Features</a>

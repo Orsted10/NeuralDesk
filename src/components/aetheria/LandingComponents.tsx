@@ -228,9 +228,12 @@ export function TeamSection() {
 export function FooterSection() {
   return (
     <footer className="py-12 border-t border-border mt-20 relative z-20">
-      <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex items-center gap-2">
-          <span className="font-bold tracking-tight text-xl">Aetheria</span>
+      <div className="max-w-7xl mx-auto flex flex-col items-center">
+        <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="Aetheria Logo" className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all" />
+            <span className="font-bold tracking-tight text-xl">Aetheria</span>
+          </div>
         </div>
         <div className="flex flex-wrap justify-center gap-8 text-sm text-muted-foreground">
           <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
