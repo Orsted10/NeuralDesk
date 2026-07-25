@@ -368,9 +368,9 @@ ipcMain.handle('whatsapp-get-recent-chats', async () => {
     );
     const messages = results
       .filter(r => r.status === 'fulfilled' && r.value)
-      .map(r => (r as PromiseFulfilledResult<any>).value);
+      .map(r => r.value);
     return { success: true, messages };
-  } catch(e) { return { success: false, error: (e as any).message }; }
+  } catch(e) { return { success: false, error: e.message }; }
 });
 
 ipcMain.handle('whatsapp-read', async (event, contactName) => {
