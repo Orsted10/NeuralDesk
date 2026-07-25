@@ -117,7 +117,7 @@ function initializeWhatsApp() {
   if (executablePath) puppeteerOptions.executablePath = executablePath;
 
   whatsappClient = new Client({
-    authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '.wwebjs_auth') }),
+    authStrategy: new LocalAuth({ dataPath: path.join(app.getPath('userData'), '.wwebjs_auth') }),
     puppeteer: puppeteerOptions
   });
 

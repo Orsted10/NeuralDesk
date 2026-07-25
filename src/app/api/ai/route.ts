@@ -137,6 +137,8 @@ If the user asks you to open or view their calendar, maps, drive, whatsapp, or e
 <open_module>drive</open_module>
 <open_module>whatsapp</open_module>
 <open_module>email</open_module>
+<open_module>github</open_module>
+<open_module>codebase</open_module>
 
 12. LIVING BRAIN & INTEGRATIONS (CRITICAL):
 If you are answering based on data retrieved from the [LIVING BRAIN KNOWLEDGE GRAPH] (e.g., GitHub deployments, Vercel status, Slack messages, Notion docs), you MUST simply reply naturally in plain text. 
