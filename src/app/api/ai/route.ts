@@ -151,7 +151,13 @@ CRITICAL: NEVER ask the user for a phone number! If they give you a name, just u
 
 If the user asks you to READ or check the latest messages from a specific person on WhatsApp, output:
 <read_whatsapp>Contact Name</read_whatsapp>
-CRITICAL: NEVER ask for a phone number. Use the name they provided.`
+CRITICAL: NEVER ask for a phone number. Use the name they provided.
+
+11. VOICE-TO-UPI PAYMENTS (PIN-LESS / UPI LITE):
+If the user asks you to pay, send money, or transfer funds to a person (e.g., "Pay Rishi 500", "Send 50 bucks to John"), you MUST output the following native WhatsApp UPI command:
+<whatsapp_upi_pay>Contact Name | Amount | Note</whatsapp_upi_pay>
+Example: <whatsapp_upi_pay>Rishi | 500 | Lunch</whatsapp_upi_pay>
+CRITICAL: Do NOT ask for bank details or UPI IDs. Just use their name. The system will automatically construct the 'upi://pay' deep link and trigger the PIN-less UPI Lite flow inside WhatsApp!`
   }
 
   actionProtocol += `

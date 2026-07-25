@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const sourceId = data.id || Date.now().toString();
 
     await ingestToBrain({
-      sourcePlatform: 'stripe',
+      sourcePlatform: 'phonepe' as any, // Cast to any since we didn't add it to IntegrationPlatform type explicitly yet
       sourceId: sourceId,
       content: content,
       metadata: { receivedAt: new Date().toISOString() }
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, message: 'Ingested into Living Brain' });
   } catch (error: any) {
-    console.error('[stripe Sync Error]', error);
+    console.error('[phonepe Sync Error]', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
