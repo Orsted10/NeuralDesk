@@ -207,6 +207,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
         setSessions(prev => [data.session, ...prev])
         setActiveSessionId(data.session.id)
         setMessages([])
+        setIsLoading(false)
         toast.success("New compute session initialized.")
       }
     } catch (e) {

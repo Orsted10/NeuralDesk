@@ -1,10 +1,67 @@
 const { app, BrowserWindow, ipcMain, session, clipboard, Notification } = require('electron');
 const path = require('path');
 const { exec, spawn } = require('child_process');
+const express = require('express');
+const cors = require('cors');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const os = require('os');
 const fs = require('fs');
 const memoryDB = require('./memory_db');
+
+// --- Local Server Bridge ---
+const expressApp = express();
+expressApp.use(cors());
+expressApp.use(express.json());
+
+expressApp.get('/ping', (req, res) => res.json({ alive: true }));
+
+expressApp.post('/api/whatsapp/send', async (req, res) => {
+  if (!whatsappReady || !whatsappClient) return res.status(503).json({ error: 'WhatsApp not ready' });
+  const { to, message } = req.body;
+  try {
+    let targetId = to;
+    if (!/^\+?\d+$/.test(to.replace(/[-\s()]/g, ''))) {
+      const s = to.toLowerCase();
+      if (s.includes('myself') || s === 'me') { targetId = whatsappClient.info.wid._serialized; }
+      else {
+        const contacts = await whatsappClient.getContacts();
+        const contact = contacts.find(c => (c.name || c.pushname || '').toLowerCase().includes(s));
+        if (!contact) return res.status(404).json({ error: 'Contact not found' });
+        targetId = contact.id._serialized;
+      }
+    } else { targetId = to.replace(/[-\s()]/g, '') + '@c.us'; }
+    await whatsappClient.sendMessage(targetId, message);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+expressApp.get('/api/whatsapp/chats', async (req, res) => {
+  if (!whatsappReady || !whatsappClient) return res.status(503).json({ error: 'WhatsApp not ready' });
+  try {
+    const chats = await whatsappClient.getChats();
+    const recent = chats.filter(c => !c.isGroup).slice(0, 30);
+    const results = await Promise.allSettled(
+      recent.map(async (chat) => {
+        const fetchPromise = chat.fetchMessages({ limit: 1 });
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2000));
+        const msgs = await Promise.race([fetchPromise, timeoutPromise]);
+        if (msgs.length === 0) return null;
+        const lastMsg = msgs[msgs.length - 1];
+        return {
+          sender: chat.name || chat.id.user,
+          body: lastMsg.body || (lastMsg.hasMedia ? '[Media]' : '[Message]'),
+          timestamp: new Date(lastMsg.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          unread: chat.unreadCount || 0
+        };
+      })
+    );
+    const messages = results.filter(r => r.status === 'fulfilled' && r.value).map(r => r.value);
+    res.json({ success: true, messages });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+expressApp.listen(3333, () => console.log('Local Bridge running on port 3333'));
+// ---------------------------
 
 // Safe require for optional native modules
 let activeWin;
@@ -382,7 +439,9 @@ ipcMain.handle('whatsapp-get-recent-chats', async () => {
     // Parallel fetch for MAXIMUM speed
     const results = await Promise.allSettled(
       recent.map(async (chat) => {
-        const msgs = await chat.fetchMessages({ limit: 1 });
+        const fetchPromise = chat.fetchMessages({ limit: 1 });
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2000));
+        const msgs = await Promise.race([fetchPromise, timeoutPromise]);
         if (msgs.length === 0) return null;
         const lastMsg = msgs[msgs.length - 1];
         return {

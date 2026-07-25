@@ -43,6 +43,9 @@ export async function middleware(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/team') &&
     !request.nextUrl.pathname.startsWith('/api/webhooks') &&
     !request.nextUrl.pathname.startsWith('/api/integrations') &&
+    !request.nextUrl.pathname.startsWith('/api/ai') &&
+    !request.nextUrl.pathname.startsWith('/api/chat') &&
+    !request.nextUrl.pathname.startsWith('/api/execute') &&
     !request.nextUrl.pathname.endsWith('.html')
   ) {
     // no user, potentially respond by redirecting the user to the login page

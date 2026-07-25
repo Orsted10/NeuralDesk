@@ -80,12 +80,20 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
 
   // Load chats FAST — parallel using Promise.allSettled
   const loadChats = async () => {
-    if (typeof window === 'undefined' || !(window as any).aetheriaDesktop) return
     setIsLoadingChats(true)
     try {
-      const res = await (window as any).aetheriaDesktop.getWhatsappRecentChats()
-      if (res?.success) setChats(res.messages || [])
-      else toast.error('Sync failed: ' + (res?.error || 'unknown'))
+      if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+        const res = await (window as any).aetheriaDesktop.getWhatsappRecentChats()
+        if (res?.success) setChats(res.messages || [])
+        else toast.error('Sync failed: ' + (res?.error || 'unknown'))
+      } else {
+        // Try local bridge for Web
+        const ping = await fetch('http://localhost:3333/ping').catch(() => null)
+        if (ping && ping.ok) {
+          const res = await fetch('http://localhost:3333/api/whatsapp/chats').then(r => r.json())
+          if (res.success) setChats(res.messages || [])
+        }
+      }
     } catch(e) { toast.error('Could not reach WhatsApp engine') }
     setIsLoadingChats(false)
   }
@@ -112,14 +120,30 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
            throw new Error(result.error)
         }
       } else {
-        // Web fallback (Evolution API)
-        const instanceName = localStorage.getItem('aetheria_wa_instance')
-        const res = await fetch('/api/whatsapp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to, message, instanceName }),
-        })
-        if (!res.ok) throw new Error('Communication link failure.')
+        // Web fallback - try local bridge first
+        let usedBridge = false
+        try {
+          const ping = await fetch('http://localhost:3333/ping').catch(() => null)
+          if (ping && ping.ok) {
+            const bridgeRes = await fetch('http://localhost:3333/api/whatsapp/send', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ to, message })
+            })
+            if (!bridgeRes.ok) throw new Error('Local bridge failed')
+            usedBridge = true
+          }
+        } catch(e) { console.warn('Local bridge not available') }
+
+        if (!usedBridge) {
+          const instanceName = localStorage.getItem('aetheria_wa_instance')
+          const res = await fetch('/api/whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to, message, instanceName }),
+          })
+          if (!res.ok) throw new Error('Communication link failure.')
+        }
       }
 
       toast.success('WhatsApp dispatched, Sir.')
@@ -226,11 +250,11 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                     {showContactDropdown && filteredContacts.length > 0 && (
                       <div className="absolute z-50 top-full mt-1 w-full bg-zinc-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                         {filteredContacts.map((c, i) => (
-                          <button key={i} onClick={() => {
-                            setTo(c.name)
-                            setContactSearch(c.name)
-                            setShowContactDropdown(false)
-                          }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 border-b border-white/5 last:border-0 transition-colors">
+                            <button key={i} onClick={() => {
+                              setTo(c.name)
+                              setContactSearch('') // Clear search to prevent useEffect from reopening dropdown
+                              setShowContactDropdown(false)
+                            }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 border-b border-white/5 last:border-0 transition-colors">
                             <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-sm flex-shrink-0">
                               {c.name.charAt(0).toUpperCase()}
                             </div>
@@ -393,18 +417,25 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                         )
                       })()}
                       <div>
-                        <label className="text-xs text-zinc-500 block mb-1">UPI ID (auto-filled or enter manually):</label>
-                        <input
-                          value={upiManualId || (() => {
+                        <label className="text-xs text-zinc-500 block mb-1">Select UPI ID or enter manually:</label>
+                        <div className="flex gap-2 mb-2 overflow-x-auto pb-1 scrollbar-thin">
+                          {(() => {
                             const rawNum = upiContactObj?.number || upiContactObj?.id?.replace('@c.us', '') || ''
                             const phone10 = rawNum.startsWith('91') && rawNum.length === 12 ? rawNum.slice(2) : rawNum.length === 10 ? rawNum : ''
-                            return phone10 ? `${phone10}@ybl` : ''
+                            if (!phone10) return null
+                            return ['@ybl', '@paytm', '@oksbi', '@okhdfcbank', '@okicici', '@ibl'].map(handle => (
+                              <button key={handle} onClick={() => setUpiManualId(`${phone10}${handle}`)} className="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1 rounded border border-white/10 whitespace-nowrap transition-colors">
+                                {phone10}{handle}
+                              </button>
+                            ))
                           })()}
+                        </div>
+                        <input
+                          value={upiManualId}
                           onChange={e => setUpiManualId(e.target.value)}
                           placeholder="e.g. 9876543210@ybl or name@paytm"
                           className="w-full h-10 px-3 rounded-lg text-foreground bg-black/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm font-mono"
                         />
-                        <p className="text-[10px] text-zinc-600 mt-1">Common handles: @ybl (PhonePe), @paytm, @oksbi, @okhdfcbank, @okicici, @okaxis</p>
                       </div>
                     </div>
                   )}
@@ -428,28 +459,19 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                         const phone10 = rawNum.startsWith('91') && rawNum.length === 12 ? rawNum.slice(2) : rawNum.length === 10 ? rawNum : ''
                         finalVpa = phone10 ? `${phone10}@ybl` : ''  // default to PhonePe (most common in India)
                       }
-                      if (!finalVpa) return toast.error('Could not determine UPI ID. Please enter it manually.')
+                      if (!finalVpa) return toast.error('Could not determine UPI ID. Please enter or select it manually.')
 
-                      if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-                        // Desktop: send via WhatsApp with UPI deep link
-                        const link = `upi://pay?pa=${encodeURIComponent(finalVpa)}&pn=${encodeURIComponent(upiContact)}&am=${upiAmount}&cu=INR&tn=${encodeURIComponent(upiNote || 'Payment via Aetheria')}`
-                        ;(window as any).aetheriaDesktop.sendWhatsappMessage(upiContact,
-                          `💸 *Payment Request via Aetheria*\n\nAmount: ₹${upiAmount}\nNote: ${upiNote || 'Payment'}\n\nPay here (UPI Lite — no PIN needed):\n${link}`
-                        ).then((res: any) => {
-                          if (res?.success) toast.success(`₹${upiAmount} UPI link sent to ${upiContact}!`)
-                          else toast.error(res?.error || 'Failed to send')
-                        })
-                      } else {
-                        // Web: build link and attach to compose
-                        const link = `upi://pay?pa=${encodeURIComponent(finalVpa)}&pn=${encodeURIComponent(upiContact)}&am=${upiAmount}&cu=INR&tn=${encodeURIComponent(upiNote || 'Payment via Aetheria')}`
-                        setMessage(`💸 *Payment via Aetheria*\nAmount: ₹${upiAmount}\n\nPay here: ${link}`)
-                        setActiveTab('compose')
-                        toast.success('UPI link attached to message!')
-                      }
+                      const link = `upi://pay?pa=${encodeURIComponent(finalVpa)}&pn=${encodeURIComponent(upiContact)}&am=${upiAmount}&cu=INR&tn=${encodeURIComponent(upiNote || 'Payment')}`
+                      
+                      // Trigger direct payment intent
+                      window.location.href = link;
+                      
+                      toast.success(`Opening UPI App to pay ₹${upiAmount} to ${upiContact}!`)
                     }}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold py-6 rounded-xl shadow-lg"
+                    className="w-full mt-6 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] font-semibold tracking-wide transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                   >
-                    <CreditCard className="w-4 h-4 mr-2" /> Send Payment Link via WhatsApp
+                    <CreditCard className="w-4 h-4" />
+                    Pay Now
                   </Button>
                 </motion.div>
               )}
