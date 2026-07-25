@@ -178,15 +178,18 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                       <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
                         <User className="w-3.5 h-3.5" /> Contacts Directory
                       </label>
-                      <select 
+                      <input 
+                        list="contacts-list"
+                        value={to} 
                         onChange={(e) => setTo(e.target.value)}
-                        className="w-full glass-input h-12 px-4 rounded-xl text-foreground bg-background focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none cursor-pointer"
-                      >
-                        <option value="">{isLoadingContacts ? 'Loading contacts...' : 'Select Contact'}</option>
+                        placeholder={isLoadingContacts ? 'Loading contacts...' : 'Type to search...'}
+                        className="glass-input mt-1 w-full h-12 px-4 rounded-xl text-foreground bg-background focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                      <datalist id="contacts-list">
                         {contacts.map(c => (
-                          <option key={c.id || c.number} value={c.number || c.phone}>{c.name} {c.relationship ? `(${c.relationship})` : ''}</option>
+                          <option key={c.id || c.name} value={c.name || c.id} />
                         ))}
-                      </select>
+                      </datalist>
                     </div>
                   </div>
 

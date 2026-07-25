@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('aetheriaDesktop', {
   whatsappReady:        () => ipcRenderer.invoke('whatsapp-ready'),
   getWhatsappQr:        () => ipcRenderer.invoke('whatsapp-get-qr'),
   getWhatsappContacts:  () => ipcRenderer.invoke('whatsapp-get-contacts'),
+  getWhatsappRecentChats: () => ipcRenderer.invoke('whatsapp-get-recent-chats'),
   logoutWhatsapp:       () => ipcRenderer.invoke('whatsapp-logout'),
   sendWhatsappMessage:  (to, message) => ipcRenderer.invoke('whatsapp-send', { to, message }),
   readWhatsappMessages: (contactName) => ipcRenderer.invoke('whatsapp-read', contactName),

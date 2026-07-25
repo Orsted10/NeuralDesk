@@ -338,6 +338,26 @@ ipcMain.handle('whatsapp-send', async (event, { to, message }) => {
   } catch (error) { return { success: false, error: error.message }; }
 });
 
+ipcMain.handle('whatsapp-get-recent-chats', async () => {
+  if (!whatsappReady || !whatsappClient) return { success: false, error: 'Not connected' };
+  try {
+    const chats = await whatsappClient.getChats();
+    const recent = chats.slice(0, 10);
+    const result = [];
+    for (const chat of recent) {
+      const msgs = await chat.fetchMessages({ limit: 1 });
+      if (msgs.length > 0) {
+        result.push({
+          sender: chat.name || chat.id.user,
+          body: msgs[0].body,
+          timestamp: new Date(msgs[0].timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+      }
+    }
+    return { success: true, messages: result };
+  } catch(e) { return { success: false, error: e.message }; }
+});
+
 ipcMain.handle('whatsapp-read', async (event, contactName) => {
   try {
     const chats = await whatsappClient.getChats();

@@ -183,7 +183,16 @@ export default function DashboardPage() {
     const handleEmailCompose = () => { setEmailView('compose'); if (activeModuleRef.current !== 'email') setAiPopupModule('email') }
     const handleEmailInbox = () => { setEmailView('inbox'); if (activeModuleRef.current !== 'email') setAiPopupModule('email') }
     const handleCalendarUpdate = () => loadCalendarEvents()
-    const handleOpenModule = (e: any) => { if (activeModuleRef.current !== e.detail) setAiPopupModule(e.detail) }
+    const handleOpenModule = (e: any) => { 
+      if (activeModuleRef.current !== e.detail) {
+        if (['codebase', 'github'].includes(e.detail)) {
+          setActiveModule(e.detail)
+          setAiPopupModule(null)
+        } else {
+          setAiPopupModule(e.detail) 
+        }
+      }
+    }
     const handleDirectionsTrigger = (e: any) => {
       if (activeModuleRef.current !== 'maps') {
         ;(window as any).pendingDirections = e.detail
