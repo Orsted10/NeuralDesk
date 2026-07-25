@@ -273,9 +273,9 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                      <Button 
                        onClick={() => {
                          if(!upiVpa || !upiName || !upiAmount) return toast.error('Fill all fields.')
-                         const link = \`upi://pay?pa=\${encodeURIComponent(upiVpa)}&pn=\${encodeURIComponent(upiName)}&am=\${encodeURIComponent(upiAmount)}&cu=INR\`
+                         const link = `upi://pay?pa=${encodeURIComponent(upiVpa)}&pn=${encodeURIComponent(upiName)}&am=${encodeURIComponent(upiAmount)}&cu=INR`
                          setUpiLink(link)
-                         setMessage(\`Hey! Here is the payment link for ₹\${upiAmount}: \${link}\`)
+                         setMessage(`Hey! Here is the payment link for ₹${upiAmount}: ${link}`)
                          setActiveTab('compose')
                          toast.success('UPI link generated and attached to message!')
                        }}
