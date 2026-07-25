@@ -36,6 +36,8 @@ import DriveModule from '@/components/aetheria/DriveModule'
 import YouTubeModule from '@/components/aetheria/YouTubeModule'
 import NewsModule from '@/components/aetheria/NewsModule'
 import FinanceModule from '@/components/aetheria/FinanceModule'
+import GitHubModule from '@/components/aetheria/GitHubModule'
+import CodebaseModule from '@/components/aetheria/CodebaseModule'
 import AmbientSensor from '@/components/aetheria/AmbientSensor'
 import VisionCore from '@/components/aetheria/VisionCore'
 import { HUDCard, StatusIndicator, ParticleBackground } from '@/components/aetheria/HUD'
@@ -332,6 +334,8 @@ export default function DashboardPage() {
                 {activeModule === 'youtube' && <YouTubeModule />}
                 {activeModule === 'news' && <NewsModule onClose={() => setActiveModule(null)} />}
                 {activeModule === 'finance' && <FinanceModule onClose={() => setActiveModule(null)} />}
+                {activeModule === 'github' && <GitHubModule onClose={() => setActiveModule(null)} />}
+                {activeModule === 'codebase' && <CodebaseModule onClose={() => setActiveModule(null)} />}
                 <div className="fixed bottom-24 lg:bottom-8 right-8 z-50 transform scale-75 hover:scale-100 transition-all cursor-pointer group">
                   <VoiceOrb isListening={voiceState.isListening} isSpeaking={voiceState.isSpeaking} onClick={() => setActiveModule(null)} />
                   <div className="absolute -top-8 right-1/2 translate-x-1/2 bg-black/80 text-zinc-300 text-[10px] px-2 py-1 rounded-lg font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -521,6 +525,8 @@ export default function DashboardPage() {
               {aiPopupModule === 'youtube' && <YouTubeModule />}
               {aiPopupModule === 'news' && <NewsModule onClose={() => setAiPopupModule(null)} />}
               {aiPopupModule === 'finance' && <FinanceModule onClose={() => setAiPopupModule(null)} />}
+              {aiPopupModule === 'github' && <GitHubModule onClose={() => setAiPopupModule(null)} />}
+              {aiPopupModule === 'codebase' && <CodebaseModule onClose={() => setAiPopupModule(null)} />}
             </div>
           </motion.div>
         )}

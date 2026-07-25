@@ -50,3 +50,7 @@ desktop-app/models/
 
 desktop-app/bin/
 
+test-*.js
+test-*.mjs
+list-models.*
+check-db.js

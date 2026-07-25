@@ -32,23 +32,17 @@
             "x64"
           ]
         }
-      ],
-      "icon": "build/icon.ico"
+      ]
     },
     "mac": {
-      "target": "dmg",
-      "icon": "build/icon.icns"
+      "target": "dmg"
     },
     "linux": {
-      "target": "AppImage",
-      "icon": "build/icon.png"
+      "target": "AppImage"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico",
-      "installerHeaderIcon": "build/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "AetheriaCompute"

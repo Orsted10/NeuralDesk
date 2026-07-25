@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'AetheriaCompute',
   webDir: 'public',
   server: {
-    url: 'https://aetheria-compute-node.vercel.app',
+    url: 'https://www.aetheriacompute.me',
     cleartext: true
   }
 };
