@@ -67,20 +67,23 @@ function recursiveChunkText(text: string, chunkSize = 1000, chunkOverlap = 200):
     let end = i + chunkSize;
     
     if (end < cleanText.length) {
-      // Try to find a good breaking point (period, newline, or space)
+      // Try to find a good breaking point (period or space)
+      // Must be > i + chunkOverlap to guarantee forward progress!
       let breakPoint = cleanText.lastIndexOf('. ', end);
-      if (breakPoint <= i) breakPoint = cleanText.lastIndexOf(' ', end);
-      if (breakPoint > i) end = breakPoint + 1;
+      if (breakPoint <= i + chunkOverlap) {
+        breakPoint = cleanText.lastIndexOf(' ', end);
+      }
+      
+      if (breakPoint > i + chunkOverlap) {
+        end = breakPoint + 1;
+      }
+      // Else, we just hard-cut at i + chunkSize
     }
 
     chunks.push(cleanText.substring(i, end).trim());
     
     // Step forward by chunkSize minus overlap to maintain context
     i = end - chunkOverlap;
-    
-    // Safety check to prevent infinite loops if overlap > chunkSize
-    if (i <= chunks.length - 1 && i <= 0) break; 
-    if (end >= cleanText.length) break;
   }
 
   return chunks.filter(c => c.length > 20); // filter out tiny artifacts
