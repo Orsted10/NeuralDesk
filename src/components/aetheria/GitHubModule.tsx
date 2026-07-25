@@ -299,6 +299,7 @@ export default function GitHubModule({ onClose }: { onClose?: () => void }) {
           )}
           </AnimatePresence>
         )}
+          </div>
         </div>
       </motion.div>
     </div>
