@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { GitBranch, GitCommit, Search, RefreshCw, CheckCircle2, XCircle, Clock, Check, X, Code2 } from 'lucide-react'
+import { GitBranch, GitCommit, Search, RefreshCw, CheckCircle2, XCircle, Clock, Check, X, Code2, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { HUDCard } from './HUD'
