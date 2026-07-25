@@ -93,13 +93,27 @@ export default function CodebaseModule({ onClose }: { onClose?: () => void }) {
   const activeFile = findFile(files, activeFileId)
   const activeLang = activeFile?.language || language
 
-  // ── Run via server-side proxy (avoids CORS/whitelist) ────────────────────
+  // ── Run via server-side proxy or locally ───────────────────────────────────
   const runCode = async () => {
     if (!activeFile?.content) return
     setIsRunning(true)
-    setOutput('⏳ Compiling and executing in cloud sandbox...\n')
+    setOutput('⏳ Executing...\n')
     try {
-      // Use our own API proxy which runs server-side (no CORS, no whitelist)
+      // 1. If running in desktop app, try local execution first (fast, native, offline)
+      if (typeof window !== 'undefined' && (window as any).aetheriaDesktop && (window as any).aetheriaDesktop.executeCodeLocal) {
+        setOutput('⏳ Executing locally via Aetheria Desktop Engine...\n')
+        const res = await (window as any).aetheriaDesktop.executeCodeLocal(activeFile.content, activeLang)
+        if (res) {
+          const out = res.stdout || res.stderr || res.error || 'No output.'
+          setOutput(out)
+          if (res.error || res.stderr) toast.error('Runtime error — check output.')
+          else toast.success('Execution complete.', { icon: '✨' })
+          return // Exit early, local execution succeeded
+        }
+      }
+
+      // 2. Fallback to Cloud API Proxy
+      setOutput('⏳ Compiling and executing in cloud sandbox...\n')
       const apiBase = typeof window !== 'undefined' && (window as any).aetheriaDesktop
         ? 'https://aetheria-compute.vercel.app'
         : ''
@@ -117,7 +131,7 @@ export default function CodebaseModule({ onClose }: { onClose?: () => void }) {
         toast.success('Execution complete.', { icon: '✨' })
       }
     } catch(e: any) {
-      setOutput(`❌ Failed to reach execution engine.\n${e.message}`)
+      setOutput(`❌ Failed to execute code. Engine unavailable.\n${e.message}`)
       toast.error('Execution failed.')
     } finally {
       setIsRunning(false)

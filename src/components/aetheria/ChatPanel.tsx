@@ -1104,11 +1104,12 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       // Speak the final response
       speak(cleanMessage)
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat Error:', error)
-      const errorMsg = 'I apologize, Sir. My connection seems to be interrupted.'
+      const errorDetails = error?.message || 'Unknown error'
+      const errorMsg = `I apologize, Sir. My connection seems to be interrupted.\n\n[SYSTEM: ${errorDetails}]`
       setMessages((prev) => [...prev, { role: 'assistant', content: errorMsg }])
-      speak(errorMsg)
+      speak("I apologize, Sir. My connection seems to be interrupted.")
     } finally {
       setIsLoading(false)
     }

@@ -301,8 +301,35 @@ ipcMain.handle('execute-command', async (event, command) => {
     if (process.platform === 'win32' && safeCommand.toLowerCase().startsWith('open ')) {
       safeCommand = `start "" "${safeCommand.substring(5).trim()}"`;
     }
-    exec(safeCommand, (error, stdout, stderr) => resolve(error ? { success: false, error: error.message } : { success: true, stdout, stderr }));
+    exec(safeCommand, (error, stdout, stderr) => resolve(error ? { success: false, error: error.message, stderr: error.message, stdout: stdout || '' } : { success: true, stdout, stderr }));
   });
+});
+
+ipcMain.handle('execute-code-local', async (event, { code, language }) => {
+  return new Promise((resolve) => {
+    try {
+      const extMap = { python: 'py', javascript: 'js', typescript: 'ts', cpp: 'cpp', c: 'c', rust: 'rs', go: 'go', java: 'java', bash: 'sh' }
+      const ext = extMap[language] || 'txt'
+      const tmpPath = path.join(app.getPath('temp'), `aetheria_run_${Date.now()}.${ext}`)
+      fs.writeFileSync(tmpPath, code)
+
+      let cmd = ''
+      if (language === 'python') cmd = `python "${tmpPath}"`
+      else if (language === 'javascript') cmd = `node "${tmpPath}"`
+      else if (language === 'typescript') cmd = `npx ts-node "${tmpPath}"`
+      else if (language === 'bash') cmd = `bash "${tmpPath}"`
+      
+      if (!cmd) return resolve({ success: false, error: `Local execution not supported for ${language}` })
+
+      exec(cmd, { timeout: 15000 }, (error, stdout, stderr) => {
+        fs.unlinkSync(tmpPath)
+        if (error) resolve({ success: false, error: error.message, stderr, stdout })
+        else resolve({ success: true, stdout, stderr })
+      })
+    } catch(e) {
+      resolve({ success: false, error: e.message })
+    }
+  })
 });
 
 ipcMain.handle('flow-state-active', async (event, data) => {
@@ -386,7 +413,7 @@ ipcMain.handle('whatsapp-read', async (event, contactName) => {
 ipcMain.handle('whatsapp-logout', async () => {
   try {
     if (whatsappClient) await whatsappClient.destroy();
-    const authPath = path.join(__dirname, '.wwebjs_auth');
+    const authPath = path.join(app.getPath('userData'), '.wwebjs_auth');
     if (fs.existsSync(authPath)) fs.rmSync(authPath, { recursive: true, force: true });
     currentWhatsappQr = null; whatsappReady = false;
     initializeWhatsApp();
