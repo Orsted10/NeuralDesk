@@ -2,7 +2,17 @@ import OpenAI from 'openai'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 // import { queryKnowledge } from '@/lib/vector-store'
 
-export const runtime = 'nodejs' // Xenova/transformers needs nodejs runtime for local model caching in most environments
+export const runtime = 'nodejs'
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+export async function OPTIONS() {
+  return new Response(null, { status: 200, headers: CORS })
+}
 
 const systemPrompt = `You are Aetheria, an ambient compute intelligence built by AetheriaCompute. 
 You are elegant, precise, and fiercely capable. You operate as an invisible layer woven into the user's entire digital life.
@@ -217,7 +227,7 @@ Always output the appropriate tag inside your response, outside of any markdown 
           controller.close()
         },
       })
-      return new Response(stream)
+      return new Response(stream, { headers: { ...CORS, 'Content-Type': 'text/plain' } })
     } catch (error: any) {
       console.error('Final AI API Error:', error)
       return new Response(
@@ -227,7 +237,7 @@ Always output the appropriate tag inside your response, outside of any markdown 
         }), 
         { 
           status: 500,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { ...CORS, 'Content-Type': 'application/json' }
         }
       )
   }

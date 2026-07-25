@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Terminal, Play, Download, X, Code2, Folder, File, Plus, FolderPlus, FilePlus, Trash2, Loader2, Share2, ChevronRight, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -42,15 +42,38 @@ const defaultFiles: FileNode[] = [
   }
 ]
 
+const STORAGE_KEY = 'aetheria_ide_workspace'
+
 export default function CodebaseModule({ onClose }: { onClose?: () => void }) {
-  const [files, setFiles] = useState<FileNode[]>(defaultFiles)
-  const [activeFileId, setActiveFileId] = useState<string>(defaultFiles[0].children![0].id)
+  // Load from localStorage or use defaults (persists across open/close)
+  const [files, setFiles] = useState<FileNode[]>(() => {
+    if (typeof window === 'undefined') return defaultFiles
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : defaultFiles
+    } catch { return defaultFiles }
+  })
+  const [activeFileId, setActiveFileId] = useState<string>(() => {
+    if (typeof window === 'undefined') return defaultFiles[0].children![0].id
+    try {
+      return localStorage.getItem('aetheria_ide_active') || defaultFiles[0].children![0].id
+    } catch { return defaultFiles[0].children![0].id }
+  })
   const [language, setLanguage] = useState('python')
   const [output, setOutput] = useState('System Initialized. Ready for input.\n')
   const [isRunning, setIsRunning] = useState(false)
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['root']))
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
+
+  // Auto-save to localStorage whenever files change
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(files)) } catch {}
+  }, [files])
+
+  useEffect(() => {
+    try { localStorage.setItem('aetheria_ide_active', activeFileId) } catch {}
+  }, [activeFileId])
 
   // ── Get / update active file ───────────────────────────────────────────────
   const findFile = useCallback((nodes: FileNode[], id: string): FileNode | null => {
@@ -70,73 +93,34 @@ export default function CodebaseModule({ onClose }: { onClose?: () => void }) {
   const activeFile = findFile(files, activeFileId)
   const activeLang = activeFile?.language || language
 
-  // ── Run via Judge0 CE (free, no whitelist) ─────────────────────────────────
+  // ── Run via server-side proxy (avoids CORS/whitelist) ────────────────────
   const runCode = async () => {
     if (!activeFile?.content) return
     setIsRunning(true)
     setOutput('⏳ Compiling and executing in cloud sandbox...\n')
     try {
-      const langConf = LANGUAGES[activeLang]
-      if (!langConf) { setOutput('Language not supported for execution.'); return }
-
-      // Submit to Judge0 CE (free public instance)
-      const submitRes = await fetch('https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true', {
+      // Use our own API proxy which runs server-side (no CORS, no whitelist)
+      const apiBase = typeof window !== 'undefined' && (window as any).aetheriaDesktop
+        ? 'https://aetheria-compute.vercel.app'
+        : ''
+      const res = await fetch(`${apiBase}/api/execute`, {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'X-RapidAPI-Key': process.env.NEXT_PUBLIC_JUDGE0_KEY || 'demo',
-          'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
-        },
-        body: JSON.stringify({
-          language_id: langConf.judge0Id,
-          source_code: activeFile.content,
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: activeFile.content, language: activeLang })
       })
-
-      if (!submitRes.ok) {
-        // Fallback to free Glot.io API
-        await runViaGlot(activeFile.content, activeLang)
-        return
-      }
-
-      const result = await submitRes.json()
-      const out = result.stdout || result.stderr || result.compile_output || 'No output.'
+      const data = await res.json()
+      const out = data.stdout || data.stderr || 'No output.'
       setOutput(out)
-      if (result.stderr || result.status?.id > 3) {
-        toast.error(`Exit code: ${result.status?.description || 'Error'}`)
+      if (data.stderr && !data.stdout) {
+        toast.error('Runtime error — check the Output Console.')
       } else {
         toast.success('Execution complete.', { icon: '✨' })
       }
-    } catch(e) {
-      // Ultimate fallback: Glot.io free API
-      await runViaGlot(activeFile?.content || '', activeLang)
+    } catch(e: any) {
+      setOutput(`❌ Failed to reach execution engine.\n${e.message}`)
+      toast.error('Execution failed.')
     } finally {
       setIsRunning(false)
-    }
-  }
-
-  // Fallback executor: Glot.io (free, no key required)
-  const runViaGlot = async (code: string, lang: string) => {
-    const glotLang: Record<string, string> = {
-      python: 'python', javascript: 'javascript', typescript: 'typescript',
-      cpp: 'cpp', c: 'c', rust: 'rust', go: 'go', java: 'java', bash: 'bash'
-    }
-    const gLang = glotLang[lang]
-    if (!gLang) { setOutput('Language not supported in fallback engine.'); return }
-    try {
-      const res = await fetch(`https://glot.io/api/run/${gLang}/latest`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files: [{ name: `main.${LANGUAGES[lang]?.ext || 'txt'}`, content: code }] })
-      })
-      const data = await res.json()
-      const out = data.stdout || data.stderr || data.error || 'No output.'
-      setOutput(out)
-      if (data.stderr || data.error) toast.error('Runtime error detected.')
-      else toast.success('Execution complete.', { icon: '✨' })
-    } catch {
-      setOutput('❌ Both execution engines offline. Check internet connection.')
-      toast.error('Execution failed — all engines unreachable.')
     }
   }
 

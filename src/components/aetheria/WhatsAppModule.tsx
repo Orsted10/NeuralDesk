@@ -25,10 +25,12 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
   
   // UPI State — auto-populated from contact
   const [upiContact, setUpiContact] = useState('')
+  const [upiContactObj, setUpiContactObj] = useState<any>(null)  // stores full contact {name, number, id}
   const [upiContactSearch, setUpiContactSearch] = useState('')
   const [showUpiDropdown, setShowUpiDropdown] = useState(false)
   const [upiAmount, setUpiAmount] = useState('')
   const [upiNote, setUpiNote] = useState('')
+  const [upiManualId, setUpiManualId] = useState('')  // for manual UPI ID override
 
   const quickTemplates = [
     "Sounds good, see you soon!",
@@ -87,6 +89,13 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
     } catch(e) { toast.error('Could not reach WhatsApp engine') }
     setIsLoadingChats(false)
   }
+
+  // Auto-load chats when contacts are ready (desktop only)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+      loadChats()
+    }
+  }, [])
 
   const handleSend = async () => {
     if (!to || !message) {
@@ -320,7 +329,7 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                       <CreditCard className="w-4 h-4 text-emerald-400" />
                       <h3 className="text-xs font-bold text-emerald-400 uppercase">Aetheria UPI Smart Pay</h3>
                     </div>
-                    <p className="text-xs text-zinc-400">Search a contact — Aetheria auto-fetches their UPI ID. Just enter amount and pay.</p>
+                    <p className="text-xs text-zinc-400">Search a contact by name. Aetheria builds the UPI link from their phone number. Enter amount and pay instantly.</p>
                   </div>
 
                   {/* Smart contact search for UPI */}
@@ -335,25 +344,30 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                     {showUpiDropdown && upiFilteredContacts.length > 0 && (
                       <div className="absolute z-50 top-full mt-1 w-full bg-zinc-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                         {upiFilteredContacts.map((c, i) => {
-                          // Auto-build VPA from number if available (phone@bank format from WA)
-                          const autoVpa = c.upi_id || (c.number ? `${c.number}@ybl` : null)
+                          // Build proper 10-digit UPI phone number (strip 91 country code)
+                          const rawNum = c.number || c.id?.replace('@c.us', '') || ''
+                          const phone10 = rawNum.startsWith('91') && rawNum.length === 12
+                            ? rawNum.slice(2)   // 919140135843 -> 9140135843
+                            : rawNum.length === 10 ? rawNum : ''
+                          const hasPhone = phone10.length === 10
                           return (
                             <button key={i} onClick={() => {
                               setUpiContactSearch(c.name)
                               setUpiContact(c.name)
+                              setUpiContactObj(c)
                               setShowUpiDropdown(false)
-                              // Pre-fill message recipient too
                               setTo(c.name)
                               setContactSearch(c.name)
-                              if (autoVpa) toast.success(`UPI ID auto-fetched: ${autoVpa}`)
-                              else toast.info('UPI ID not on file — will use WhatsApp Pay link')
+                              setUpiManualId('')  // clear any previous manual ID
+                              if (hasPhone) toast.success(`Contact found — phone: ${phone10}`)
+                              else toast.info('No phone on file — enter UPI ID manually below.')
                             }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 border-b border-white/5 last:border-0">
                               <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-sm flex-shrink-0">
                                 {c.name.charAt(0).toUpperCase()}
                               </div>
                               <div>
                                 <div className="text-sm font-medium">{c.name}</div>
-                                <div className="text-xs text-zinc-500">{autoVpa ? `🔗 ${autoVpa}` : 'No UPI ID on file'}</div>
+                                <div className="text-xs text-zinc-500">{hasPhone ? `📱 ${phone10}` : 'No phone — enter UPI ID manually'}</div>
                               </div>
                             </button>
                           )
@@ -361,6 +375,39 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                       </div>
                     )}
                   </div>
+
+                  {/* Manual UPI ID override — always visible after contact selection */}
+                  {upiContact && (
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                      <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider">ℹ️ Confirm Payment Details</div>
+                      {(() => {
+                        const rawNum = upiContactObj?.number || upiContactObj?.id?.replace('@c.us', '') || ''
+                        const phone10 = rawNum.startsWith('91') && rawNum.length === 12 ? rawNum.slice(2) : rawNum.length === 10 ? rawNum : ''
+                        return (
+                          <div className="text-xs text-zinc-400 space-y-1">
+                            <div>Contact: <span className="text-white font-semibold">{upiContact}</span></div>
+                            {phone10 ? (
+                              <div>Detected phone: <span className="text-emerald-400 font-mono">{phone10}</span></div>
+                            ) : null}
+                          </div>
+                        )
+                      })()}
+                      <div>
+                        <label className="text-xs text-zinc-500 block mb-1">UPI ID (auto-filled or enter manually):</label>
+                        <input
+                          value={upiManualId || (() => {
+                            const rawNum = upiContactObj?.number || upiContactObj?.id?.replace('@c.us', '') || ''
+                            const phone10 = rawNum.startsWith('91') && rawNum.length === 12 ? rawNum.slice(2) : rawNum.length === 10 ? rawNum : ''
+                            return phone10 ? `${phone10}@ybl` : ''
+                          })()}
+                          onChange={e => setUpiManualId(e.target.value)}
+                          placeholder="e.g. 9876543210@ybl or name@paytm"
+                          className="w-full h-10 px-3 rounded-lg text-foreground bg-black/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm font-mono"
+                        />
+                        <p className="text-[10px] text-zinc-600 mt-1">Common handles: @ybl (PhonePe), @paytm, @oksbi, @okhdfcbank, @okicici, @okaxis</p>
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Amount (₹)</label>
@@ -374,26 +421,35 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                   <Button
                     onClick={() => {
                       if (!upiContact || !upiAmount) return toast.error('Select a contact and enter amount.')
+                      // Resolve final UPI ID
+                      let finalVpa = upiManualId.trim()
+                      if (!finalVpa) {
+                        const rawNum = upiContactObj?.number || upiContactObj?.id?.replace('@c.us', '') || ''
+                        const phone10 = rawNum.startsWith('91') && rawNum.length === 12 ? rawNum.slice(2) : rawNum.length === 10 ? rawNum : ''
+                        finalVpa = phone10 ? `${phone10}@ybl` : ''  // default to PhonePe (most common in India)
+                      }
+                      if (!finalVpa) return toast.error('Could not determine UPI ID. Please enter it manually.')
+
                       if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-                        // Trigger native UPI via WhatsApp desktop bridge
-                        ;(window as any).aetheriaDesktop.sendUpiPayment(upiContact, upiAmount, upiNote || 'Payment via Aetheria')
-                          .then((res: any) => {
-                            if (res?.success) toast.success(`₹${upiAmount} UPI link sent to ${upiContact}!`)
-                            else toast.error(res?.error || 'UPI payment failed')
-                          })
+                        // Desktop: send via WhatsApp with UPI deep link
+                        const link = `upi://pay?pa=${encodeURIComponent(finalVpa)}&pn=${encodeURIComponent(upiContact)}&am=${upiAmount}&cu=INR&tn=${encodeURIComponent(upiNote || 'Payment via Aetheria')}`
+                        ;(window as any).aetheriaDesktop.sendWhatsappMessage(upiContact,
+                          `💸 *Payment Request via Aetheria*\n\nAmount: ₹${upiAmount}\nNote: ${upiNote || 'Payment'}\n\nPay here (UPI Lite — no PIN needed):\n${link}`
+                        ).then((res: any) => {
+                          if (res?.success) toast.success(`₹${upiAmount} UPI link sent to ${upiContact}!`)
+                          else toast.error(res?.error || 'Failed to send')
+                        })
                       } else {
-                        // Web fallback: build link and attach to message
-                        const contact = contacts.find(c => c.name === upiContact)
-                        const vpa = contact?.upi_id || (contact?.number ? `${contact.number}@ybl` : upiContact)
-                        const link = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(upiContact)}&am=${upiAmount}&cu=INR&tn=${encodeURIComponent(upiNote || 'Payment')}`
-                        setMessage(`💸 Here is your payment link for ₹${upiAmount}: ${link}`)
+                        // Web: build link and attach to compose
+                        const link = `upi://pay?pa=${encodeURIComponent(finalVpa)}&pn=${encodeURIComponent(upiContact)}&am=${upiAmount}&cu=INR&tn=${encodeURIComponent(upiNote || 'Payment via Aetheria')}`
+                        setMessage(`💸 *Payment via Aetheria*\nAmount: ₹${upiAmount}\n\nPay here: ${link}`)
                         setActiveTab('compose')
                         toast.success('UPI link attached to message!')
                       }
                     }}
                     className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold py-6 rounded-xl shadow-lg"
                   >
-                    <CreditCard className="w-4 h-4 mr-2" /> Pay Now via WhatsApp UPI
+                    <CreditCard className="w-4 h-4 mr-2" /> Send Payment Link via WhatsApp
                   </Button>
                 </motion.div>
               )}
