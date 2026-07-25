@@ -42,6 +42,7 @@ export async function proxy(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/about') &&
     !request.nextUrl.pathname.startsWith('/team') &&
     !request.nextUrl.pathname.startsWith('/api/webhooks') &&
+    !request.nextUrl.pathname.startsWith('/api/integrations') &&
     !request.nextUrl.pathname.endsWith('.html')
   ) {
     // no user, potentially respond by redirecting the user to the login page
