@@ -313,10 +313,19 @@ ipcMain.handle('whatsapp-ready', async () => whatsappReady);
 ipcMain.handle('whatsapp-get-qr', async () => currentWhatsappQr);
 
 ipcMain.handle('whatsapp-get-contacts', async () => {
-  if (!whatsappClient) return [];
+  if (!whatsappClient || !whatsappReady) return [];
   try {
-    return (await whatsappClient.getContacts()).filter(c => c.name || c.pushname).map(c => ({ id: c.id._serialized, name: c.name || c.pushname, number: c.number }));
-  } catch { return []; }
+    const all = await whatsappClient.getContacts();
+    return all
+      .filter(c => (c.name || c.pushname) && !c.isGroup)
+      .map(c => ({
+        id: c.id._serialized,
+        name: c.name || c.pushname,
+        number: c.number || c.id.user  // Use id.user as fallback — always a number
+      }))
+      .filter((v, i, a) => a.findIndex(v2 => v2.name === v.name) === i)  // deduplicate by name
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch(e) { console.error('[WA] getContacts failed:', e); return []; }
 });
 
 ipcMain.handle('whatsapp-send', async (event, { to, message }) => {
@@ -342,20 +351,26 @@ ipcMain.handle('whatsapp-get-recent-chats', async () => {
   if (!whatsappReady || !whatsappClient) return { success: false, error: 'Not connected' };
   try {
     const chats = await whatsappClient.getChats();
-    const recent = chats.slice(0, 10);
-    const result = [];
-    for (const chat of recent) {
-      const msgs = await chat.fetchMessages({ limit: 1 });
-      if (msgs.length > 0) {
-        result.push({
+    const recent = chats.filter(c => !c.isGroup).slice(0, 30);  // Top 30 individual chats
+    // Parallel fetch for MAXIMUM speed
+    const results = await Promise.allSettled(
+      recent.map(async (chat) => {
+        const msgs = await chat.fetchMessages({ limit: 1 });
+        if (msgs.length === 0) return null;
+        const lastMsg = msgs[msgs.length - 1];
+        return {
           sender: chat.name || chat.id.user,
-          body: msgs[0].body,
-          timestamp: new Date(msgs[0].timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        });
-      }
-    }
-    return { success: true, messages: result };
-  } catch(e) { return { success: false, error: e.message }; }
+          body: lastMsg.body || (lastMsg.hasMedia ? '[Media]' : '[Message]'),
+          timestamp: new Date(lastMsg.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          unread: chat.unreadCount || 0
+        };
+      })
+    );
+    const messages = results
+      .filter(r => r.status === 'fulfilled' && r.value)
+      .map(r => (r as PromiseFulfilledResult<any>).value);
+    return { success: true, messages };
+  } catch(e) { return { success: false, error: (e as any).message }; }
 });
 
 ipcMain.handle('whatsapp-read', async (event, contactName) => {

@@ -1,31 +1,35 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageSquare, Send, X, Phone, User, Clock, Link2 } from 'lucide-react'
+import { MessageSquare, Send, X, Phone, User, Clock, Link2, Search, RefreshCw, CreditCard } from 'lucide-react'
 import WhatsAppLink from './WhatsAppLink'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { HUDCard, StatusIndicator } from './HUD'
 import { toast } from 'sonner'
 
 export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
   const [to, setTo] = useState('')
+  const [contactSearch, setContactSearch] = useState('')
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [contacts, setContacts] = useState<any[]>([])
+  const [filteredContacts, setFilteredContacts] = useState<any[]>([])
+  const [showContactDropdown, setShowContactDropdown] = useState(false)
   const [isLoadingContacts, setIsLoadingContacts] = useState(true)
+  const [isLoadingChats, setIsLoadingChats] = useState(false)
   const [showPairing, setShowPairing] = useState(false)
   const [activeTab, setActiveTab] = useState<'compose' | 'chats' | 'upi'>('compose')
   const [chats, setChats] = useState<any[]>([])
+  const searchRef = useRef<HTMLDivElement>(null)
   
-  // UPI State
+  // UPI State — auto-populated from contact
+  const [upiContact, setUpiContact] = useState('')
+  const [upiContactSearch, setUpiContactSearch] = useState('')
+  const [showUpiDropdown, setShowUpiDropdown] = useState(false)
   const [upiAmount, setUpiAmount] = useState('')
-  const [upiVpa, setUpiVpa] = useState('')
-  const [upiName, setUpiName] = useState('')
-  const [upiLink, setUpiLink] = useState('')
+  const [upiNote, setUpiNote] = useState('')
 
-  // Dynamic templates based on context
   const quickTemplates = [
     "Sounds good, see you soon!",
     "I'm on my way.",
@@ -33,22 +37,56 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
     "Can't talk right now, I'll call you later."
   ]
 
+  // Load contacts FAST — parallel fetch
   useEffect(() => {
     async function fetchContacts() {
+      setIsLoadingContacts(true)
       if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        const desktopContacts = await (window as any).aetheriaDesktop.getWhatsappContacts()
-        const uniqueContacts = desktopContacts.filter((v: any, i: number, a: any[]) => a.findIndex(v2 => (v2.name === v.name)) === i)
-        setContacts(uniqueContacts)
+        try {
+          const desktopContacts = await (window as any).aetheriaDesktop.getWhatsappContacts()
+          const unique = desktopContacts
+            .filter((c: any) => c.name && c.name.trim() !== '')
+            .filter((v: any, i: number, a: any[]) => a.findIndex(v2 => v2.name === v.name) === i)
+            .sort((a: any, b: any) => a.name.localeCompare(b.name))
+          setContacts(unique)
+        } catch(e) { console.error('Failed to load contacts', e) }
       } else {
-        const { createClient } = await import('@/lib/supabase/client')
-        const supabase = createClient()
-        const { data } = await supabase.from('contacts').select('*').order('name')
-        if (data) setContacts(data)
+        try {
+          const { createClient } = await import('@/lib/supabase/client')
+          const supabase = createClient()
+          const { data } = await supabase.from('contacts').select('*').order('name')
+          if (data) setContacts(data)
+        } catch(e) {}
       }
       setIsLoadingContacts(false)
     }
     fetchContacts()
   }, [])
+
+  // Real-time contact search filter
+  useEffect(() => {
+    if (!contactSearch.trim()) { setFilteredContacts([]); return }
+    const q = contactSearch.toLowerCase()
+    setFilteredContacts(contacts.filter(c => (c.name || '').toLowerCase().includes(q)).slice(0, 8))
+    setShowContactDropdown(true)
+  }, [contactSearch, contacts])
+
+  // UPI contact search
+  const upiFilteredContacts = upiContactSearch.trim()
+    ? contacts.filter(c => (c.name || '').toLowerCase().includes(upiContactSearch.toLowerCase())).slice(0, 6)
+    : []
+
+  // Load chats FAST — parallel using Promise.allSettled
+  const loadChats = async () => {
+    if (typeof window === 'undefined' || !(window as any).aetheriaDesktop) return
+    setIsLoadingChats(true)
+    try {
+      const res = await (window as any).aetheriaDesktop.getWhatsappRecentChats()
+      if (res?.success) setChats(res.messages || [])
+      else toast.error('Sync failed: ' + (res?.error || 'unknown'))
+    } catch(e) { toast.error('Could not reach WhatsApp engine') }
+    setIsLoadingChats(false)
+  }
 
   const handleSend = async () => {
     if (!to || !message) {
@@ -131,13 +169,7 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
                     key={tab}
                     onClick={() => {
                       setActiveTab(tab)
-                      if (tab === 'chats') {
-                         if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-                            (window as any).aetheriaDesktop.readWhatsappMessages('recent').then((res: any) => {
-                               if (res.success) setChats(res.messages || [])
-                            })
-                         }
-                      }
+                      if (tab === 'chats') loadChats()
                     }}
                     className={`flex-1 text-[11px] font-semibold py-1.5 rounded-lg transition-all capitalize ${
                       activeTab === tab 
@@ -162,35 +194,45 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
 
               {activeTab === 'compose' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col h-full">
-                  <div className="grid grid-cols-2 gap-6 mb-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
-                        <Phone className="w-3.5 h-3.5" /> Mobile Number
-                      </label>
-                      <Input 
-                        value={to}
-                        onChange={(e) => setTo(e.target.value)}
-                        placeholder="+1 234 567 8900"
-                        className="glass-input h-12 px-4 text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-indigo-500"
+                  {/* Single smart contact search — shows name, sends by name (backend resolves to number) */}
+                  <div className="mb-6 relative" ref={searchRef}>
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2 mb-2">
+                      <Search className="w-3.5 h-3.5" /> Send To
+                    </label>
+                    <div className="relative">
+                      <input
+                        value={contactSearch || to}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          setContactSearch(v)
+                          setTo(v) // also set to directly for manual numbers
+                          if (!v) setShowContactDropdown(false)
+                        }}
+                        onFocus={() => contactSearch && setShowContactDropdown(true)}
+                        placeholder={isLoadingContacts ? `Loading ${contacts.length || '...'} contacts...` : `Search contacts or type number...`}
+                        className="w-full h-12 px-4 rounded-xl text-foreground bg-white/5 border border-white/10 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm transition-all"
                       />
+                      {isLoadingContacts && <div className="absolute right-4 top-3.5 w-4 h-4 border-2 border-emerald-500/40 border-t-emerald-500 rounded-full animate-spin" />}
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 flex items-center gap-2">
-                        <User className="w-3.5 h-3.5" /> Contacts Directory
-                      </label>
-                      <input 
-                        list="contacts-list"
-                        value={to} 
-                        onChange={(e) => setTo(e.target.value)}
-                        placeholder={isLoadingContacts ? 'Loading contacts...' : 'Type to search...'}
-                        className="glass-input mt-1 w-full h-12 px-4 rounded-xl text-foreground bg-background focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
-                      <datalist id="contacts-list">
-                        {contacts.map(c => (
-                          <option key={c.id || c.name} value={c.name || c.id} />
+                    {showContactDropdown && filteredContacts.length > 0 && (
+                      <div className="absolute z-50 top-full mt-1 w-full bg-zinc-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+                        {filteredContacts.map((c, i) => (
+                          <button key={i} onClick={() => {
+                            setTo(c.name)
+                            setContactSearch(c.name)
+                            setShowContactDropdown(false)
+                          }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 border-b border-white/5 last:border-0 transition-colors">
+                            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-sm flex-shrink-0">
+                              {c.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-foreground">{c.name}</div>
+                              <div className="text-xs text-zinc-500">{c.number || c.id?.split('@')[0] || 'WhatsApp contact'}</div>
+                            </div>
+                          </button>
                         ))}
-                      </datalist>
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2 mb-6">
@@ -236,57 +278,123 @@ export default function WhatsAppModule({ onClose }: { onClose?: () => void }) {
               )}
 
               {activeTab === 'chats' && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Recent Activity</h3>
-                   {chats.length === 0 ? (
-                     <div className="text-center p-8 text-zinc-500 text-sm">No recent messages found or sync pending...</div>
-                   ) : chats.map((c, i) => (
-                     <div key={i} className="bg-white/5 p-4 rounded-xl border border-white/10">
-                        <div className="flex justify-between mb-2">
-                          <span className="text-xs font-bold text-emerald-400">{c.sender}</span>
-                          <span className="text-[10px] text-zinc-500">{c.timestamp}</span>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">All Conversations</h3>
+                    <button onClick={loadChats} className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 transition-colors">
+                      <RefreshCw className={`w-3.5 h-3.5 ${isLoadingChats ? 'animate-spin' : ''}`} /> Sync Now
+                    </button>
+                  </div>
+                  {isLoadingChats ? (
+                    <div className="flex flex-col gap-3">
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="bg-white/5 p-4 rounded-xl border border-white/10 animate-pulse">
+                          <div className="h-3 bg-white/10 rounded w-1/3 mb-2" />
+                          <div className="h-2.5 bg-white/5 rounded w-3/4" />
                         </div>
-                        <p className="text-sm text-zinc-300">{c.body}</p>
-                     </div>
-                   ))}
+                      ))}
+                    </div>
+                  ) : chats.length === 0 ? (
+                    <div className="text-center p-12">
+                      <MessageSquare className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
+                      <p className="text-zinc-500 text-sm">No chats loaded yet.</p>
+                      <button onClick={loadChats} className="mt-4 text-xs text-emerald-400 hover:underline">Tap to sync now</button>
+                    </div>
+                  ) : chats.map((c, i) => (
+                    <button key={i} onClick={() => { setTo(c.sender); setContactSearch(c.sender); setActiveTab('compose') }}
+                      className="w-full text-left bg-white/5 hover:bg-white/10 p-4 rounded-xl border border-white/10 transition-all">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-semibold text-emerald-400">{c.sender}</span>
+                        <span className="text-[10px] text-zinc-500">{c.timestamp}</span>
+                      </div>
+                      <p className="text-sm text-zinc-400 truncate">{c.body}</p>
+                    </button>
+                  ))}
                 </motion.div>
               )}
 
               {activeTab === 'upi' && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                   <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl">
-                      <h3 className="text-xs font-bold text-emerald-500 uppercase mb-1">Aetheria UPI Lite Generation</h3>
-                      <p className="text-xs text-emerald-400/80">Generate a secure `upi://pay` deep link to send via WhatsApp. Perfect for PIN-less microtransactions.</p>
-                   </div>
-                   
-                   <div className="space-y-4">
-                     <div>
-                       <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Payee VPA (UPI ID)</label>
-                       <Input value={upiVpa} onChange={(e) => setUpiVpa(e.target.value)} placeholder="example@upi" className="glass-input mt-1" />
-                     </div>
-                     <div>
-                       <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Payee Name</label>
-                       <Input value={upiName} onChange={(e) => setUpiName(e.target.value)} placeholder="John Doe" className="glass-input mt-1" />
-                     </div>
-                     <div>
-                       <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Amount (₹)</label>
-                       <Input type="number" value={upiAmount} onChange={(e) => setUpiAmount(e.target.value)} placeholder="0.00" className="glass-input mt-1" />
-                     </div>
-                     
-                     <Button 
-                       onClick={() => {
-                         if(!upiVpa || !upiName || !upiAmount) return toast.error('Fill all fields.')
-                         const link = `upi://pay?pa=${encodeURIComponent(upiVpa)}&pn=${encodeURIComponent(upiName)}&am=${encodeURIComponent(upiAmount)}&cu=INR`
-                         setUpiLink(link)
-                         setMessage(`Hey! Here is the payment link for ₹${upiAmount}: ${link}`)
-                         setActiveTab('compose')
-                         toast.success('UPI link generated and attached to message!')
-                       }}
-                       className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
-                     >
-                       Generate & Attach to Message
-                     </Button>
-                   </div>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
+                  <div className="bg-gradient-to-r from-emerald-500/10 to-indigo-500/10 border border-emerald-500/20 p-4 rounded-xl">
+                    <div className="flex items-center gap-2 mb-1">
+                      <CreditCard className="w-4 h-4 text-emerald-400" />
+                      <h3 className="text-xs font-bold text-emerald-400 uppercase">Aetheria UPI Smart Pay</h3>
+                    </div>
+                    <p className="text-xs text-zinc-400">Search a contact — Aetheria auto-fetches their UPI ID. Just enter amount and pay.</p>
+                  </div>
+
+                  {/* Smart contact search for UPI */}
+                  <div className="relative">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1 mb-2 flex items-center gap-2"><User className="w-3 h-3" /> Pay To</label>
+                    <input
+                      value={upiContactSearch}
+                      onChange={(e) => { setUpiContactSearch(e.target.value); setShowUpiDropdown(true) }}
+                      placeholder="Search contact name..."
+                      className="w-full h-12 px-4 rounded-xl text-foreground bg-white/5 border border-white/10 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm"
+                    />
+                    {showUpiDropdown && upiFilteredContacts.length > 0 && (
+                      <div className="absolute z-50 top-full mt-1 w-full bg-zinc-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+                        {upiFilteredContacts.map((c, i) => {
+                          // Auto-build VPA from number if available (phone@bank format from WA)
+                          const autoVpa = c.upi_id || (c.number ? `${c.number}@ybl` : null)
+                          return (
+                            <button key={i} onClick={() => {
+                              setUpiContactSearch(c.name)
+                              setUpiContact(c.name)
+                              setShowUpiDropdown(false)
+                              // Pre-fill message recipient too
+                              setTo(c.name)
+                              setContactSearch(c.name)
+                              if (autoVpa) toast.success(`UPI ID auto-fetched: ${autoVpa}`)
+                              else toast.info('UPI ID not on file — will use WhatsApp Pay link')
+                            }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 border-b border-white/5 last:border-0">
+                              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-sm flex-shrink-0">
+                                {c.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium">{c.name}</div>
+                                <div className="text-xs text-zinc-500">{autoVpa ? `🔗 ${autoVpa}` : 'No UPI ID on file'}</div>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Amount (₹)</label>
+                    <Input type="number" value={upiAmount} onChange={(e) => setUpiAmount(e.target.value)} placeholder="0.00" className="glass-input mt-1 h-12" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Note (Optional)</label>
+                    <Input value={upiNote} onChange={(e) => setUpiNote(e.target.value)} placeholder="Lunch, Cab, etc..." className="glass-input mt-1 h-12" />
+                  </div>
+
+                  <Button
+                    onClick={() => {
+                      if (!upiContact || !upiAmount) return toast.error('Select a contact and enter amount.')
+                      if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+                        // Trigger native UPI via WhatsApp desktop bridge
+                        ;(window as any).aetheriaDesktop.sendUpiPayment(upiContact, upiAmount, upiNote || 'Payment via Aetheria')
+                          .then((res: any) => {
+                            if (res?.success) toast.success(`₹${upiAmount} UPI link sent to ${upiContact}!`)
+                            else toast.error(res?.error || 'UPI payment failed')
+                          })
+                      } else {
+                        // Web fallback: build link and attach to message
+                        const contact = contacts.find(c => c.name === upiContact)
+                        const vpa = contact?.upi_id || (contact?.number ? `${contact.number}@ybl` : upiContact)
+                        const link = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(upiContact)}&am=${upiAmount}&cu=INR&tn=${encodeURIComponent(upiNote || 'Payment')}`
+                        setMessage(`💸 Here is your payment link for ₹${upiAmount}: ${link}`)
+                        setActiveTab('compose')
+                        toast.success('UPI link attached to message!')
+                      }
+                    }}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold py-6 rounded-xl shadow-lg"
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" /> Pay Now via WhatsApp UPI
+                  </Button>
                 </motion.div>
               )}
 

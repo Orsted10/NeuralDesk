@@ -508,7 +508,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
 
     const getApiUrl = (path: string) => {
       if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
-        return `https://aetheria-compute-node.vercel.app${path}`
+        return `https://aetheria-compute.vercel.app${path}`
       }
       return path
     }
@@ -691,6 +691,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       const finalExecPc = assistantMessage.match(/<execute_pc_command>\s*(.*?)\s*<\/execute_pc_command>/is)
       const finalWaSend = assistantMessage.match(/<whatsapp_send>\s*(.*?)\s*<\/whatsapp_send>/is)
       const finalWaRead = assistantMessage.match(/<read_whatsapp>\s*(.*?)\s*<\/read_whatsapp>/is)
+      const finalWaUpi = assistantMessage.match(/<whatsapp_upi_pay>\s*(.*?)\s*<\/whatsapp_upi_pay>/is)
       const finalStoreMemory = assistantMessage.match(/<store_memory>\s*(.*?)\s*<\/store_memory>/is)
       const finalFreeze = assistantMessage.match(/<freeze_process>\s*(.*?)\s*<\/freeze_process>/is)
       const finalGhost = assistantMessage.match(/<ghost_type>\s*(.*?)\s*<\/ghost_type>/is)
@@ -775,6 +776,29 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
               handleSend(`[SYSTEM NOTIFICATION: Failed to read WhatsApp messages. Error: ${res.error}. Inform the user.]`)
             }
           })
+        }
+      }
+
+      if (finalWaUpi) {
+        cleanMessage = cleanMessage.replace(finalWaUpi[0], '').trim()
+        if (typeof window !== 'undefined' && (window as any).aetheriaDesktop) {
+          try {
+            const content = finalWaUpi[1].trim()
+            const parts = content.split('|').map((p: string) => p.trim())
+            const contactName = parts[0]
+            const amount = parts[1]
+            const note = parts[2] || 'Payment via Aetheria'
+            if (contactName && amount) {
+              toast.success(`Protocol Complete: Initiating UPI payment to ${contactName}.`, { icon: '💸' })
+              ;(window as any).aetheriaDesktop.sendUpiPayment(contactName, amount, note).then((res: any) => {
+                if (res?.success) {
+                  handleSend(`[SYSTEM NOTIFICATION: UPI payment link for ₹${amount} sent to ${contactName}. Confirm this naturally.]`)
+                } else {
+                  handleSend(`[SYSTEM NOTIFICATION: UPI payment failed. Error: ${res?.error}. Inform the user.]`)
+                }
+              })
+            }
+          } catch(e) { console.error('Failed to parse whatsapp_upi_pay', e) }
         }
       }
 
