@@ -29,6 +29,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [provider, setProvider] = useState<'openrouter' | 'groq'>('groq')
+  const [language, setLanguage] = useState<'english' | 'hindi'>('english')
   const [latency, setLatency] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
@@ -473,35 +474,43 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
     // if (typeof window !== 'undefined' && (window as any).aetheriaDesktop && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
     //   wsRef.current.send(JSON.stringify({ type: 'speak', text: plainText }))
     //   return;
-    // }
+    const speak = (text: string) => {
+      if (typeof window === 'undefined' || isMuted || !text) return
+      
+      const cleanText = text
+        .replace(/\[SYSTEM NOTIFICATION:.*?\]/g, '')
+        .replace(/<.*?>/g, '')
+        .replace(/[^\w\s.,?!'’"-\u0900-\u097F]/g, '') // Keep alphanumeric, punctuation, and Hindi unicode range
+        .trim()
+        
+      if (!cleanText) return
 
-
-
-    // Final Fallback: Web Speech API
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      const utterance = new SpeechSynthesisUtterance(plainText)
-      utterance.rate = 1.05
-      utterance.pitch = 1.1
-      utterance.volume = ambientVolumeRef.current // Dynamic Ambient Volume
-
-      const voices = window.speechSynthesis.getVoices()
-      // Look for a high quality female voice
-      const preferredVoice = voices.find(v => 
-        v.name.includes('Zira') || 
-        v.name.includes('Female') || 
-        (v.name.includes('Google UK English Female')) ||
-        v.name.includes('Samantha')
-      ) || voices.find(v => v.lang === 'en-US') || voices[0]
-
-      if (preferredVoice) utterance.voice = preferredVoice
-
-      utterance.onstart = () => setIsSpeaking(true)
-      utterance.onend = () => setIsSpeaking(false)
-      utterance.onerror = () => setIsSpeaking(false)
-
-      window.speechSynthesis.speak(utterance)
+      try {
+        window.speechSynthesis.cancel()
+        const utterance = new SpeechSynthesisUtterance(cleanText)
+        utterance.rate = 1.05
+        utterance.pitch = 1.0
+        
+        let voices = window.speechSynthesis.getVoices()
+        if (voices.length > 0) {
+          if (language === 'hindi') {
+            const hindiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('IN'))
+            if (hindiVoice) utterance.voice = hindiVoice
+          } else {
+            const femaleVoice = voices.find(v => (v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Samantha') || v.name.includes('Google UK English Female')) && v.lang.includes('en'))
+            if (femaleVoice) utterance.voice = femaleVoice
+          }
+        }
+        
+        utterance.onstart = () => setIsSpeaking(true)
+        utterance.onend = () => setIsSpeaking(false)
+        utterance.onerror = () => setIsSpeaking(false)
+        
+        window.speechSynthesis.speak(utterance)
+      } catch (e) {
+        console.error("Speech Synthesis Error", e)
+      }
     }
-  }
 
   async function handleSend(overrideInput?: string) {
     const textToSend = overrideInput || input
@@ -590,6 +599,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
           message: textToSend,
           history: messages.slice(-5),
           provider,
+          language,
           context: finalContext,
           osContext,
           isDesktop: typeof window !== 'undefined' && !!(window as any).aetheriaDesktop,
@@ -1261,6 +1271,29 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
                 {p}
               </button>
             ))}
+          </div>
+
+          <div className="flex gap-1 bg-secondary/50 p-1 rounded-xl border border-border">
+            <button
+              onClick={() => setLanguage('english')}
+              className={`text-[10px] font-medium px-3 py-1 rounded-lg transition-all ${
+                language === 'english'
+                  ? 'bg-zinc-700 text-zinc-100 shadow-md'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => setLanguage('hindi')}
+              className={`text-[10px] font-medium px-3 py-1 rounded-lg transition-all ${
+                language === 'hindi'
+                  ? 'bg-zinc-700 text-zinc-100 shadow-md'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              HI
+            </button>
           </div>
         </div>
         <div className="flex gap-4 items-center">

@@ -450,7 +450,7 @@ ipcMain.handle('whatsapp-send', async (event, { to, message }) => {
   try {
     let targetId = to;
     if (!/^\+?\d+$/.test(to.replace(/[-\s()]/g, ''))) {
-      const s = to.toLowerCase();
+      const s = to.toLowerCase().trim();
       if (s.includes('myself') || s === 'me') { targetId = whatsappClient.info.wid._serialized; }
       else {
         const contacts = await whatsappClient.getContacts();

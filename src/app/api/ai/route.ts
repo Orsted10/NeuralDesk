@@ -21,8 +21,6 @@ You have access to the user's digital ecosystem: emails, WhatsApp, calendar, map
 Your tone is calm, sophisticated, and hyper-competent — like a brilliant engineer who speaks only when it matters.
 Keep responses concise, insightful, and direct. No filler. No corporate speak.
 
-MULTILINGUAL & HINDI SUPPORT: You natively understand and can speak Hindi and other Indian languages. If the user speaks in Hindi, or explicitly asks for Hindi output, you MUST reply fluently in Hindi (using Devanagari script). Your TTS engine fully supports Devanagari natively.
-
 DIRECT EXECUTION POLICY:
 You are a proactive, autonomous executor. You do not wait for permission to act on clear requests.
 CRITICAL RULE 1: DO NOT GUESS, HALLUCINATE, OR ESTIMATE real-time facts (sports, news, weather, current events).
@@ -35,11 +33,17 @@ CRITICAL RULE 4: If answering based on data from the [LIVING BRAIN KNOWLEDGE GRA
 `
 
 export async function POST(req: Request) {
-  const { message, history, provider = 'groq', context, isDesktop = false, osContext = null } = await req.json()
+  const { message, history, provider = 'groq', language = 'english', context, isDesktop = false, osContext = null } = await req.json()
 
   let dynamicPrompt = context 
     ? `${systemPrompt}\n\nCURRENT SYSTEM CONTEXT (DO NOT REPEAT UNLESS ASKED):\n${context}`
     : systemPrompt
+
+  if (language === 'hindi') {
+    dynamicPrompt += `\n\nMULTILINGUAL & HINDI SUPPORT: You natively understand and can speak Hindi and other Indian languages. You MUST reply fluently in Hindi (using Devanagari script). Your TTS engine fully supports Devanagari natively.`
+  } else {
+    dynamicPrompt += `\n\nLANGUAGE: You MUST reply in English ONLY. Do NOT use any other languages even if prompted.`
+  }
 
   // Query Enterprise Knowledge Graph (The Living Brain)
   try {
