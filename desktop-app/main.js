@@ -375,6 +375,11 @@ ipcMain.handle('execute-code-local', async (event, { code, language }) => {
       else if (language === 'javascript') cmd = `node "${tmpPath}"`
       else if (language === 'typescript') cmd = `npx ts-node "${tmpPath}"`
       else if (language === 'bash') cmd = `bash "${tmpPath}"`
+      else if (language === 'c') cmd = `gcc "${tmpPath}" -o "${tmpPath}.exe" && "${tmpPath}.exe"`
+      else if (language === 'cpp') cmd = `g++ "${tmpPath}" -o "${tmpPath}.exe" && "${tmpPath}.exe"`
+      else if (language === 'rust') cmd = `rustc "${tmpPath}" -o "${tmpPath}.exe" && "${tmpPath}.exe"`
+      else if (language === 'go') cmd = `go run "${tmpPath}"`
+      else if (language === 'java') cmd = `java "${tmpPath}"`
       
       if (!cmd) return resolve({ success: false, error: `Local execution not supported for ${language}` })
 
@@ -478,6 +483,30 @@ ipcMain.handle('whatsapp-logout', async () => {
     initializeWhatsApp();
     return { success: true };
   } catch (error) { return { success: false, error: error.message }; }
+});
+
+ipcMain.handle('get-system-stats', async () => {
+  const cpus = os.cpus();
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  
+  let totalIdle = 0, totalTick = 0;
+  cpus.forEach(core => {
+    for (const type in core.times) {
+      totalTick += core.times[type];
+    }
+    totalIdle += core.times.idle;
+  });
+  
+  const cpuUsage = 100 - ~~(100 * totalIdle / totalTick);
+  const memUsage = 100 - ~~(100 * freeMem / totalMem);
+  
+  return {
+    cpu: cpuUsage,
+    memory: memUsage,
+    freemem: (freeMem / 1024 / 1024 / 1024).toFixed(2),
+    totalmem: (totalMem / 1024 / 1024 / 1024).toFixed(2)
+  };
 });
 
 ipcMain.handle('get-os-context', async () => {

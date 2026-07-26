@@ -147,9 +147,16 @@ export default function DashboardPage() {
     const timer = setInterval(() => setTime(new Date()), 1000)
     const fetchTelemetry = async () => {
       try {
-        const res = await fetch('/api/gcp-telemetry')
-        const data = await res.json()
-        if (data.cpu !== undefined) setStats({ cpu: data.cpu, ram: data.ram, totalRam: data.totalRam, ramPercent: data.ramPercent, cpuModel: data.cpuModel || 'Unknown CPU' })
+        if (typeof window !== 'undefined' && (window as any).electron) {
+          const localStats = await (window as any).electron.invoke('get-system-stats')
+          if (localStats && localStats.cpu !== undefined) {
+             setStats({ cpu: localStats.cpu, ram: parseFloat(localStats.freemem), totalRam: parseFloat(localStats.totalmem), ramPercent: localStats.memory, cpuModel: 'Local CPU' })
+          }
+        } else {
+          const res = await fetch('/api/gcp-telemetry')
+          const data = await res.json()
+          if (data.cpu !== undefined) setStats({ cpu: data.cpu, ram: data.ram, totalRam: data.totalRam, ramPercent: data.ramPercent, cpuModel: data.cpuModel || 'Unknown CPU' })
+        }
       } catch {}
     }
     fetchTelemetry()
