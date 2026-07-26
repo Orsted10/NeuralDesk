@@ -47,6 +47,7 @@ import CodebaseModule from '@/components/aetheria/CodebaseModule'
 import AmbientSensor from '@/components/aetheria/AmbientSensor'
 import VisionCore from '@/components/aetheria/VisionCore'
 import { HUDCard, StatusIndicator, ParticleBackground } from '@/components/aetheria/HUD'
+import { MobileNativeSetup, MobileShareButton } from '@/components/aetheria/MobileIntegration'
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false)
@@ -259,6 +260,7 @@ export default function DashboardPage() {
       <ParticleBackground />
       <AmbientSensor />
       <VisionCore />
+      <MobileNativeSetup />
 
       {/* Privacy Shield Overlay */}
       <AnimatePresence>
@@ -312,6 +314,8 @@ export default function DashboardPage() {
               {mounted ? time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '...'}
             </div>
           </div>
+
+          <MobileShareButton text="Check out my Aetheria OS node!" url="https://aetheria-compute.vercel.app" />
 
           <button onClick={handleLogout} className="p-2 text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all" title="Sign Out">
             <LogOut className="w-4 h-4" />
