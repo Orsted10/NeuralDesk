@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('aetheriaDesktop', {
   // ─── OS Commands ───────────────────────────────────────────────
   executeCommand: (command) => ipcRenderer.invoke('execute-command', command),
-  executeCodeLocal: (code, language) => ipcRenderer.invoke('execute-code-local', { code, language }),
+  executeCodeLocal: (code, language, files, activeFileId) => ipcRenderer.invoke('execute-code-local', { code, language, files, activeFileId }),
   getOsContext:   () => ipcRenderer.invoke('get-os-context'),
 
   // ─── Memory & Lexicon ──────────────────────────────────────────

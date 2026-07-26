@@ -22,7 +22,13 @@ import {
   Zap,
   Wifi,
   X,
-  Maximize2
+  Maximize2,
+  Play,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  Volume1,
+  VolumeX
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -414,6 +420,21 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-center gap-1.5 text-[9px] text-zinc-600 truncate">
                 <Cpu className="w-3 h-3 flex-shrink-0" /><span className="truncate">{stats.cpuModel}</span>
+              </div>
+            </div>
+          </HUDCard>
+
+          <HUDCard title="Media Controls">
+            <div className="flex flex-col gap-3">
+              <div className="flex justify-center items-center gap-4 text-zinc-400">
+                <button onClick={() => typeof window !== 'undefined' && (window as any).electron?.invoke('media-control', 'prev')} className="hover:text-white transition-colors p-2"><SkipBack className="w-4 h-4" /></button>
+                <button onClick={() => typeof window !== 'undefined' && (window as any).electron?.invoke('media-control', 'playpause')} className="text-zinc-100 hover:text-white transition-colors p-2 bg-white/5 rounded-full"><Play className="w-5 h-5 fill-current" /></button>
+                <button onClick={() => typeof window !== 'undefined' && (window as any).electron?.invoke('media-control', 'next')} className="hover:text-white transition-colors p-2"><SkipForward className="w-4 h-4" /></button>
+              </div>
+              <div className="flex justify-between items-center px-4 text-zinc-500">
+                <button onClick={() => typeof window !== 'undefined' && (window as any).electron?.invoke('media-control', 'voldown')} className="hover:text-white transition-colors"><Volume1 className="w-3 h-3" /></button>
+                <button onClick={() => typeof window !== 'undefined' && (window as any).electron?.invoke('media-control', 'mute')} className="hover:text-white transition-colors"><VolumeX className="w-3 h-3" /></button>
+                <button onClick={() => typeof window !== 'undefined' && (window as any).electron?.invoke('media-control', 'volup')} className="hover:text-white transition-colors"><Volume2 className="w-3 h-3" /></button>
               </div>
             </div>
           </HUDCard>

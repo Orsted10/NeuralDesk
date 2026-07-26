@@ -362,13 +362,40 @@ ipcMain.handle('execute-command', async (event, command) => {
   });
 });
 
-ipcMain.handle('execute-code-local', async (event, { code, language }) => {
+ipcMain.handle('execute-code-local', async (event, { code, language, files, activeFileId }) => {
   return new Promise((resolve) => {
     try {
-      const extMap = { python: 'py', javascript: 'js', typescript: 'ts', cpp: 'cpp', c: 'c', rust: 'rs', go: 'go', java: 'java', bash: 'sh' }
-      const ext = extMap[language] || 'txt'
-      const tmpPath = path.join(app.getPath('temp'), `aetheria_run_${Date.now()}.${ext}`)
-      fs.writeFileSync(tmpPath, code)
+      const runDir = path.join(app.getPath('temp'), `aetheria_run_${Date.now()}`)
+      fs.mkdirSync(runDir, { recursive: true })
+
+      let tmpPath = ''
+
+      if (files && files.length > 0) {
+        const buildTree = (nodes, currentPath) => {
+          for (const node of nodes) {
+            const nodePath = path.join(currentPath, node.name)
+            if (node.type === 'folder') {
+              if (!fs.existsSync(nodePath)) fs.mkdirSync(nodePath)
+              if (node.children) buildTree(node.children, nodePath)
+            } else {
+              fs.writeFileSync(nodePath, node.content || '')
+              if (node.id === activeFileId) tmpPath = nodePath
+            }
+          }
+        }
+        buildTree(files, runDir)
+        if (!tmpPath) {
+          const extMap = { python: 'py', javascript: 'js', typescript: 'ts', cpp: 'cpp', c: 'c', rust: 'rs', go: 'go', java: 'java', bash: 'sh' }
+          const ext = extMap[language] || 'txt'
+          tmpPath = path.join(runDir, `main.${ext}`)
+          fs.writeFileSync(tmpPath, code)
+        }
+      } else {
+        const extMap = { python: 'py', javascript: 'js', typescript: 'ts', cpp: 'cpp', c: 'c', rust: 'rs', go: 'go', java: 'java', bash: 'sh' }
+        const ext = extMap[language] || 'txt'
+        tmpPath = path.join(runDir, `main.${ext}`)
+        fs.writeFileSync(tmpPath, code)
+      }
 
       let cmd = ''
       if (language === 'python') cmd = `python "${tmpPath}"`
@@ -383,8 +410,10 @@ ipcMain.handle('execute-code-local', async (event, { code, language }) => {
       
       if (!cmd) return resolve({ success: false, error: `Local execution not supported for ${language}` })
 
-      exec(cmd, { timeout: 15000 }, (error, stdout, stderr) => {
-        fs.unlinkSync(tmpPath)
+      exec(cmd, { cwd: runDir, timeout: 15000 }, (error, stdout, stderr) => {
+        // Clean up the temp directory
+        fs.rm(runDir, { recursive: true, force: true }, () => {})
+        
         if (error) resolve({ success: false, error: error.message, stderr, stdout })
         else resolve({ success: true, stdout, stderr })
       })
@@ -507,6 +536,28 @@ ipcMain.handle('get-system-stats', async () => {
     freemem: (freeMem / 1024 / 1024 / 1024).toFixed(2),
     totalmem: (totalMem / 1024 / 1024 / 1024).toFixed(2)
   };
+});
+
+ipcMain.handle('media-control', async (event, action) => {
+  if (process.platform !== 'win32') return { success: false, error: 'Media controls only supported on Windows.' };
+  
+  const keys = {
+    'playpause': 179,
+    'next': 176,
+    'prev': 177,
+    'volup': 175,
+    'voldown': 174,
+    'mute': 173
+  };
+  
+  const keyCode = keys[action];
+  if (!keyCode) return { success: false, error: 'Invalid media action.' };
+  
+  return new Promise((resolve) => {
+    exec(`powershell -command "$wshell = New-Object -ComObject wscript.shell; $wshell.SendKeys([char]${keyCode})"`, (err) => {
+      resolve({ success: !err });
+    });
+  });
 });
 
 ipcMain.handle('get-os-context', async () => {

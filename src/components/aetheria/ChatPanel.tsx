@@ -630,6 +630,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
         const storeMemoryMatch = assistantMessage.match(/<store_memory>\s*(.*?)\s*<\/store_memory>/is)
         const freezeMatch = assistantMessage.match(/<freeze_process>\s*(.*?)\s*<\/freeze_process>/is)
         const ghostMatch = assistantMessage.match(/<ghost_type>\s*(.*?)\s*<\/ghost_type>/is)
+        const workflowMatch = assistantMessage.match(/<execute_workflow>\s*(.*?)\s*<\/execute_workflow>/is)
 
         if (actionMatch) {
           displayMessage = displayMessage.replace(actionMatch[0], '')
@@ -670,6 +671,9 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
         if (ghostMatch) {
           displayMessage = displayMessage.replace(ghostMatch[0], '')
         }
+        if (workflowMatch) {
+          displayMessage = displayMessage.replace(workflowMatch[0], '')
+        }
 
         setMessages((prev) => {
           const last = prev[prev.length - 1]
@@ -696,6 +700,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
       const finalStoreMemory = assistantMessage.match(/<store_memory>\s*(.*?)\s*<\/store_memory>/is)
       const finalFreeze = assistantMessage.match(/<freeze_process>\s*(.*?)\s*<\/freeze_process>/is)
       const finalGhost = assistantMessage.match(/<ghost_type>\s*(.*?)\s*<\/ghost_type>/is)
+      const finalWorkflow = assistantMessage.match(/<execute_workflow>\s*(.*?)\s*<\/execute_workflow>/is)
 
       let cleanMessage = assistantMessage.replace(/<thought>[\s\S]*?<\/thought>/gi, '').trim()
 
@@ -734,6 +739,22 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
               handleSend(`[SYSTEM NOTIFICATION: Command failed. Error: ${res.error}. Inform the user naturally.]`)
             }
           })
+        }
+      }
+
+      if (finalWorkflow) {
+        cleanMessage = cleanMessage.replace(finalWorkflow[0], '').trim()
+        const workflowName = finalWorkflow[1].trim()
+        toast.success(`Protocol Complete: Executing Workflow '${workflowName}'.`, { icon: '⚙️' })
+        
+        if (workflowName.toLowerCase().includes('deploy') || workflowName.toLowerCase().includes('build')) {
+           window.dispatchEvent(new CustomEvent('open-module', { detail: 'codebase' }))
+           setTimeout(() => {
+             // Simulate build trigger
+             handleSend(`[SYSTEM NOTIFICATION: Triggered codebase deployment pipeline successfully.]`)
+           }, 2000)
+        } else {
+           handleSend(`[SYSTEM NOTIFICATION: Triggered custom workflow '${workflowName}' successfully.]`)
         }
       }
 

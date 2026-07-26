@@ -102,7 +102,7 @@ export default function CodebaseModule({ onClose }: { onClose?: () => void }) {
       // 1. If running in desktop app, try local execution first (fast, native, offline)
       if (typeof window !== 'undefined' && (window as any).aetheriaDesktop && (window as any).aetheriaDesktop.executeCodeLocal) {
         setOutput('⏳ Executing locally via Aetheria Desktop Engine...\n')
-        const res = await (window as any).aetheriaDesktop.executeCodeLocal(activeFile.content, activeLang)
+        const res = await (window as any).aetheriaDesktop.executeCodeLocal(activeFile.content, activeLang, files, activeFileId)
         if (res) {
           const out = res.stdout || res.stderr || res.error || 'No output.'
           setOutput(out)
