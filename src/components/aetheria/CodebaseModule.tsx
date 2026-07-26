@@ -279,7 +279,7 @@ export default function CodebaseModule({ onClose }: { onClose?: () => void }) {
               }}
               className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
-              {Object.entries(LANGUAGES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              {Object.entries(LANGUAGES).map(([k, v]) => <option key={k} value={k} className="bg-zinc-900 text-zinc-300">{v.label}</option>)}
             </select>
             <Button onClick={runCode} disabled={isRunning} className="h-8 bg-emerald-500 hover:bg-emerald-600 text-white text-xs gap-1.5 px-4 rounded-lg shadow-lg shadow-emerald-500/20">
               {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
