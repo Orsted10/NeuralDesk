@@ -458,23 +458,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
     return text.trim()
   }
 
-  async function speak(text: string) {
-    if (isMuted) return;
-    
-    // Strip markdown tags and other xml tags before speaking
-    const plainText = text
-      .replace(/<\/?[^>]+(>|$)/g, "")
-      .replace(/[*_#]/g, "")
-      .trim();
-      
-    if (!plainText) return;
-
-    // Route TTS to Local Python WebSocket if available (Desktop App Only)
-    // NOTE: Commented out to use the browser TTS (Web Speech API) even in the Desktop App, as requested by the user.
-    // if (typeof window !== 'undefined' && (window as any).aetheriaDesktop && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-    //   wsRef.current.send(JSON.stringify({ type: 'speak', text: plainText }))
-    //   return;
-    const speak = (text: string) => {
+  const speak = (text: string) => {
       if (typeof window === 'undefined' || isMuted || !text) return
       
       const cleanText = text
