@@ -458,7 +458,7 @@ export default function ChatPanel({ onVoiceStateChange, context, userName = 'You
     return text.trim()
   }
 
-  const speak = (text: string) => {
+  function speak(text: string) {
       if (typeof window === 'undefined' || isMuted || !text) return
       
       const cleanText = text
